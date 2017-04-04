@@ -10,7 +10,7 @@ int main()
 {
 	sf::RenderWindow window(sf::VideoMode(WINDOW_WIDTH, WINDOW_HEIGHT), "GJK");
 	GridManager gm;
-	gm.GenerateMap(WINDOW_WIDTH, WINDOW_HEIGHT, 20, 20);
+	gm.GenerateMap(WINDOW_WIDTH, WINDOW_HEIGHT, 40, 40);
 	while (window.isOpen())
 	{
 		sf::Event event;
