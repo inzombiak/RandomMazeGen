@@ -1,9 +1,9 @@
 #include "Tile.h"
 
-Tile::Tile(const sf::RectangleShape& tile, const sf::Color& color, const Tile::TileType& type, int borderWidth, const sf::Color& borderColor)
+Tile::Tile(const sf::RectangleShape& tile, const Tile::TileType& type, int borderWidth, const sf::Color& borderColor)
 {
 	m_tile = tile;
-	m_tile.setFillColor(color);
+	m_tile.setFillColor(m_typeToColor[Empty]);
 	m_type = type;
 	m_direction = PassageDirection::None;
 	m_borderWidth = borderWidth;
@@ -17,6 +17,10 @@ void Tile::SetDirection(const Tile::PassageDirection& dir)
 {
 	m_direction = dir;
 }
+void Tile::AddDirection(const PassageDirection& dir)
+{
+	m_direction = m_direction | dir;
+}
 Tile::TileType Tile::GetType() const
 {
 	return m_type;
@@ -24,6 +28,7 @@ Tile::TileType Tile::GetType() const
 void Tile::SetType(const TileType& type)
 {
 	m_type = type;
+	m_tile.setFillColor(m_typeToColor[type]);
 }
 sf::Vector2f Tile::GetPosition() const
 {
@@ -32,11 +37,6 @@ sf::Vector2f Tile::GetPosition() const
 void Tile::SetPosition(const sf::Vector2f& newPosition)
 {
 	m_tile.setPosition(newPosition);
-}
-
-void Tile::SetColor(const sf::Color& newColor)
-{
-	m_tile.setFillColor(newColor);
 }
 
 void Tile::Draw(sf::RenderWindow& rw)
@@ -94,3 +94,5 @@ void Tile::Reset()
 	m_type = TileType::Empty;
 	m_direction = PassageDirection::None;
 }
+
+Tile::TileTypeToColorMap Tile::m_typeToColor = { { Tile::TileType::Empty, sf::Color::White }, { Tile::TileType::Floor, sf::Color(51, 102, 153) } };

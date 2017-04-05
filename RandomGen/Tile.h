@@ -24,21 +24,24 @@ public:
 		None = 16
 	};
 
-	Tile(const sf::RectangleShape& tile, const sf::Color& color, const Tile::TileType& type, int borderWidth, const sf::Color& borderColor);
+	Tile(const sf::RectangleShape& tile, const Tile::TileType& type, int borderWidth, const sf::Color& borderColor);
 	
 	PassageDirection GetDirection() const;
 	void SetDirection(const PassageDirection& dir);
+	void AddDirection(const PassageDirection& dir);
 	TileType GetType() const;
 	void SetType(const TileType& type);
 	sf::Vector2f GetPosition() const;
 	void SetPosition(const sf::Vector2f& newPosition);
-	void SetColor(const sf::Color& newColor);
 
 	void Reset();
 
 	void Draw(sf::RenderWindow& rw);
 
 private:
+	typedef std::map<Tile::TileType, sf::Color> TileTypeToColorMap;
+	static TileTypeToColorMap m_typeToColor;
+
 	sf::RectangleShape m_tile;
 	int m_borderWidth;
 	sf::Color m_borderColor;

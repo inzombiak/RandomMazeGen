@@ -19,6 +19,7 @@ public:
 	enum MazeGenerator
 	{
 		RecursiveBacktracker,
+		EllersAlgorithm
 	};
 
 	GridManager();
@@ -35,12 +36,15 @@ private:
 	void GenerateMaze();
 	/*
 		I implemented 2 different maze generators
-		Base on research Recursive Backtracker is optimal
+		Based on research Recursive Backtracker is optimal
 	*/
 	//1. RecursiveBacktracker
 	void RecursiveBacktrackerGenerator();
 	void CarvePassage(int startI, int startJ);
 
+	//2. Eller's Algorithm
+	void EllersAlgorithmGenerator();
+	
 	//TODO: Should asssign to a pointer not to m_currentShape(which should be a pointer)
 	bool GetShapeContainingPoint(const sf::Vector2f& point);
 
@@ -52,11 +56,9 @@ private:
 	float m_tileHeight;
 	const int BORDER_WIDTH = 1;
 	const sf::Color BORDER_COLOR = sf::Color::Red;
-	MazeGenerator m_mazeGenerator = RecursiveBacktracker;
+	MazeGenerator m_mazeGenerator = EllersAlgorithm;
 
 	std::vector<std::vector<Tile>> m_tiles;
-	typedef std::map<Tile::TileType, sf::Color> TileTypeToColorMap;
-	TileTypeToColorMap m_typeToColor;
 };
 
 #endif
