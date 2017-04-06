@@ -10,7 +10,7 @@ int main()
 {
 	sf::RenderWindow window(sf::VideoMode(WINDOW_WIDTH, WINDOW_HEIGHT), "GJK");
 	GridManager gm;
-	gm.GenerateMap(WINDOW_WIDTH, WINDOW_HEIGHT, 40, 40);
+	gm.GenerateMap(WINDOW_WIDTH, WINDOW_HEIGHT, 20, 20);
 	while (window.isOpen())
 	{
 		sf::Event event;
@@ -20,9 +20,12 @@ int main()
 				window.close();
 			if (event.type == sf::Event::KeyPressed)
 			{
-				if (event.key.code == sf::Keyboard::G)
+				if (event.key.code == sf::Keyboard::R)
 					gm.RandomizeMap();
-				
+				else if (event.key.code == sf::Keyboard::G)
+					gm.ToggleMazeGenerator();
+				else if (event.key.code == sf::Keyboard::T)
+					gm.ToggleMazeGenerateType();
 			}
 		}
 

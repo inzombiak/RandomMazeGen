@@ -29,6 +29,7 @@ void Tile::SetType(const TileType& type)
 {
 	m_type = type;
 	m_tile.setFillColor(m_typeToColor[type]);
+
 }
 sf::Vector2f Tile::GetPosition() const
 {
@@ -93,6 +94,7 @@ void Tile::Reset()
 {
 	m_type = TileType::Empty;
 	m_direction = PassageDirection::None;
+	m_tile.setFillColor(m_typeToColor[Empty]);
 }
 
 Tile::TileTypeToColorMap Tile::m_typeToColor = { { Tile::TileType::Empty, sf::Color::White }, { Tile::TileType::Floor, sf::Color(51, 102, 153) } };

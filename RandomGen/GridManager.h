@@ -1,11 +1,13 @@
 #ifndef GRID_MANAGER_H
 #define GRID_MANAGER_H
 
+#include "Tile.h"
+#include "IMazeGenerator.h"
+
 #include <vector>
 #include <queue>
 #include <map>
-
-#include "Tile.h"
+#include <thread>
 
 /*
 	TODO: Maze generators implemented using policies (Modern C++ Design)
@@ -26,25 +28,16 @@ public:
 
 	void GenerateMap(int windowWidth, int windowHeight, unsigned int rows, unsigned int columns);
 	void RandomizeMap();
+	void ToggleMazeGenerator();
+	void ToggleMazeGenerateType();
 
 	void Draw(sf::RenderWindow& rw);
 
 private:
 
-	//Step 1: Make a maze
-	//See http://www.jamisbuck.org/presentations/rubyconf2011/index.html#backtracker-drunk-walk
+	//Generates maze, use GenerateMazeByStep to visiualize
 	void GenerateMaze();
-	/*
-		I implemented 2 different maze generators
-		Based on research Recursive Backtracker is optimal
-	*/
-	//1. RecursiveBacktracker
-	void RecursiveBacktrackerGenerator();
-	void CarvePassage(int startI, int startJ);
 
-	//2. Eller's Algorithm
-	void EllersAlgorithmGenerator();
-	
 	//TODO: Should asssign to a pointer not to m_currentShape(which should be a pointer)
 	bool GetShapeContainingPoint(const sf::Vector2f& point);
 
@@ -56,8 +49,11 @@ private:
 	float m_tileHeight;
 	const int BORDER_WIDTH = 1;
 	const sf::Color BORDER_COLOR = sf::Color::Red;
-	MazeGenerator m_mazeGenerator = EllersAlgorithm;
 
+	MazeGenerator m_mazeGenerator = RecursiveBacktracker;
+	GenerateType m_mazeGenerateType = Full;
+
+	std::thread m_mazeGeneratorThread;
 	std::vector<std::vector<Tile>> m_tiles;
 };
 

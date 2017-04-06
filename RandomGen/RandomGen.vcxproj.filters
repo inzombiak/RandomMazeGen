@@ -13,12 +13,21 @@
       <UniqueIdentifier>{67DA6AB6-F800-4c08-8B7A-83BB121AAD01}</UniqueIdentifier>
       <Extensions>rc;ico;cur;bmp;dlg;rc2;rct;bin;rgs;gif;jpg;jpeg;jpe;resx;tiff;tif;png;wav;mfcribbon-ms</Extensions>
     </Filter>
+    <Filter Include="Header Files\MazeGen">
+      <UniqueIdentifier>{73189443-aa36-492e-9015-b9ed60328bad}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source Files\MazeGen">
+      <UniqueIdentifier>{76c5b953-7c15-40b3-8a51-a54a14f0b192}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Header Files\Utilities">
+      <UniqueIdentifier>{3676cfe7-b949-4e68-bfa3-1c9348a7d28d}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source Files\Utilities">
+      <UniqueIdentifier>{f5683648-e498-467f-a97d-5f4fac7ff9d1}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="main.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="Math.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="GridManager.cpp">
@@ -27,16 +36,40 @@
     <ClCompile Include="Tile.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="IMazeGenerator.cpp">
+      <Filter>Source Files\MazeGen</Filter>
+    </ClCompile>
+    <ClCompile Include="Math.cpp">
+      <Filter>Source Files\Utilities</Filter>
+    </ClCompile>
+    <ClCompile Include="MGEllers.cpp">
+      <Filter>Source Files\MazeGen</Filter>
+    </ClCompile>
+    <ClCompile Include="MGRecursiveBacktracker.cpp">
+      <Filter>Source Files\MazeGen</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="GridManager.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="Math.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
     <ClInclude Include="Tile.h">
       <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="IMazeGenerator.h">
+      <Filter>Header Files\MazeGen</Filter>
+    </ClInclude>
+    <ClInclude Include="Singleton.h">
+      <Filter>Header Files\Utilities</Filter>
+    </ClInclude>
+    <ClInclude Include="Math.h">
+      <Filter>Header Files\Utilities</Filter>
+    </ClInclude>
+    <ClInclude Include="MGEllers.h">
+      <Filter>Header Files\MazeGen</Filter>
+    </ClInclude>
+    <ClInclude Include="MGRecursiveBacktracker.h">
+      <Filter>Header Files\MazeGen</Filter>
     </ClInclude>
   </ItemGroup>
 </Project>
