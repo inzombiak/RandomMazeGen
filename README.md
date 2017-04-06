@@ -13,8 +13,8 @@ Note: I'll add buttons after I'm done, until then bare with keyboard controlls
  * G - toggle maze generator(Recursive is default)
  * T - toggles visualization(disabled by default)
 
-## Requirements:
-SFML for rendering
+## Build Requirements:
+SFML 2.4.2 for rendering
 
 ## References:
 * Dungeon Generation
