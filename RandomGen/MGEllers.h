@@ -9,7 +9,7 @@
 class MGEllers : public IMazeGenerator
 {
 public:
-	void GenerateMaze(std::vector<std::vector<Tile>>& tiles, const GenerateType& genType, unsigned seed, int sleepDuration) override;
+	void GenerateMaze(std::vector<std::vector<Tile>>& tiles, const GameDefs::GenerateType& genType, unsigned seed, int sleepDuration) override;
 protected:
 
 	void GenerateFull() override;
@@ -33,8 +33,6 @@ private:
 
 	bool CompareAndMergeSets(const std::pair<int, int>& first, const std::pair<int, int>& second);
 
-	int m_rowCount;
-	int m_columnCount;
 	int m_lastSet;
 	//Keeps track of the rows sets
 	std::vector<std::pair<std::pair<int, int>, int>> m_rowSets;
@@ -43,6 +41,7 @@ private:
 	std::map<int, std::vector<std::pair<int, int>>> m_setToIndices;
 	typedef std::map<int, std::vector<std::pair<int, int>>>::iterator sToIIterator;
 
+	static const std::pair<int, int> INVALID_INDICES;
 };
 
 #endif

@@ -3,19 +3,23 @@
 #include "MGEllers.h"
 #include "MGRecursiveBacktracker.h"
 
+#include "RoomGenerator.h"
+
 #include "Singleton.h"
+#include "Math.h"
 
 #include <iostream>
 #include <chrono>     
 
-//#include <set>
-#include "Math.h"
+using namespace GameDefs;
 
 typedef SingletonHolder<MGEllers, CreationPolicies::CreateWithNew, LifetimePolicies::DefaultLifetime> MGEllersSingleton;
 typedef SingletonHolder<MGRecursiveBacktracker, CreationPolicies::CreateWithNew, LifetimePolicies::DefaultLifetime> MGRecursiveBacktrackerSingleton;
+typedef SingletonHolder<RoomGenerator, CreationPolicies::CreateWithNew, LifetimePolicies::DefaultLifetime> RoomGeneratorSingleton;
 
 GridManager::GridManager()
 {
+
 }
 
 void GridManager::GenerateMap(int windowWidth, int windowHeight, unsigned int rows, unsigned int columns)
@@ -28,13 +32,17 @@ void GridManager::GenerateMap(int windowWidth, int windowHeight, unsigned int ro
 	m_tileWidth = (float)(m_windowWidth -  (BORDER_WIDTH * (columns))) / (float)m_columnCount;
 	m_tileHeight = (float)(m_windowHeight - (BORDER_WIDTH * (rows))) / (float)m_rowCount;
 
+	RoomGeneratorSingleton::Instance().SetRoomHorizontalBounds(sf::Vector2i(2, m_rowCount / 5));
+	RoomGeneratorSingleton::Instance().SetRoomVerticalBounds(sf::Vector2i(2, m_rowCount / 5));
+	RoomGeneratorSingleton::Instance().SetPlacementAttemptCount(90);
+
 	m_tiles.reserve(m_rowCount);
 	std::vector<Tile> row;
 	sf::RectangleShape newTile(sf::Vector2f(m_tileWidth, m_tileHeight));
 	newTile.setOutlineThickness(0);
 
-	row.resize(m_columnCount, Tile(newTile, Tile::TileType::Empty, BORDER_WIDTH, BORDER_COLOR));
-	Tile::TileType tileType;
+	row.resize(m_columnCount, Tile(newTile, TileType::Empty, BORDER_WIDTH, BORDER_COLOR));
+	TileType tileType;
 
 	for (int i = 0; i < m_rowCount; ++i)
 	{
@@ -46,7 +54,7 @@ void GridManager::GenerateMap(int windowWidth, int windowHeight, unsigned int ro
 		m_tiles.push_back(row);
 	}
 
-	GenerateMaze();
+	RandomizeMap();
 }
 
 void GridManager::Draw(sf::RenderWindow& rw)
@@ -76,7 +84,13 @@ void GridManager::RandomizeMap()
 		}
 	}
 
+	GenerateRooms();
 	GenerateMaze();
+}
+
+void GridManager::Close()
+{
+	MGRecursiveBacktrackerSingleton::Instance().TerminateGeneration();
 }
 
 void GridManager::ToggleMazeGenerator()
@@ -105,4 +119,9 @@ void GridManager::GenerateMaze()
 		m_mazeGeneratorThread.detach();
 	else
 		m_mazeGeneratorThread.join();
+}
+
+void GridManager::GenerateRooms()
+{
+	RoomGeneratorSingleton::Instance().GenerateRoom(m_tiles, m_mazeGenerateType, std::chrono::system_clock::now().time_since_epoch().count(), 25);
 }

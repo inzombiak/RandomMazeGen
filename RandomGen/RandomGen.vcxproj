@@ -90,14 +90,17 @@
     <ClCompile Include="main.cpp" />
     <ClCompile Include="Math.cpp" />
     <ClCompile Include="MGRecursiveBacktracker.cpp" />
+    <ClCompile Include="RoomGenerator.cpp" />
     <ClCompile Include="Tile.cpp" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="GameDefs.h" />
     <ClInclude Include="MGEllers.h" />
     <ClInclude Include="GridManager.h" />
     <ClInclude Include="IMazeGenerator.h" />
     <ClInclude Include="Math.h" />
     <ClInclude Include="MGRecursiveBacktracker.h" />
+    <ClInclude Include="RoomGenerator.h" />
     <ClInclude Include="Singleton.h" />
     <ClInclude Include="Tile.h" />
   </ItemGroup>

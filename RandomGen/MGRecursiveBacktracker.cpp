@@ -2,30 +2,55 @@
 #include <thread>
 #include <mutex>
 
-std::recursive_timed_mutex mutex;
+using namespace GameDefs;
 
 void MGRecursiveBacktracker::GenerateMaze(std::vector<std::vector<Tile>>& tiles, const GenerateType& genType, unsigned seed, int sleepDuration)
 {
 	if (tiles.size() < 1)
 		return;
 
+	{
+		std::unique_lock<std::mutex> lock(m_generatingMutex);
+		m_generating = true;
+	}
+
 	m_generateType = genType;
 	m_sleepDuration = sleepDuration;
 	m_randomNumGen.seed(seed);
 	m_tiles = &tiles;
-	(*m_tiles)[0][0].SetType(Tile::TileType::Floor);
+
+	m_rowCount = (*m_tiles).size();
+	m_columnCount = (*m_tiles)[0].size();
 
 	if (genType == Step)
 		GenerateByStep();
 	else
 		GenerateFull();
+
+	{
+		std::unique_lock<std::mutex> lock(m_generatingMutex);
+		m_generating = false;
+	}
 }
 
 void MGRecursiveBacktracker::GenerateFull()
 {
 	m_done = false;
 
-	CarvePassageFull(0, 0);
+	int startI = 0 , startJ = 0;
+
+	while (startI < m_rowCount && startJ < m_columnCount)
+	{
+		if ((*m_tiles)[startI][startJ].GetType() == TileType::Empty)
+		{
+			(*m_tiles)[startI][startJ].SetType(TileType::Passage);
+			CarvePassageFull(startI, startJ);
+		}
+
+		
+		startI++;
+		startJ++;
+	}
 
 	m_done = true;
 }
@@ -45,15 +70,15 @@ void MGRecursiveBacktracker::CarvePassageFull(int startI, int startJ)
 		nextI = startI + DIRECTION_CHANGES[index].first;
 		nextJ = startJ + DIRECTION_CHANGES[index].second;
 
-		if (nextI >= 0 && nextI < (*m_tiles).size() &&
-			nextJ >= 0 && nextJ < (*m_tiles)[0].size() &&
-			(*m_tiles)[nextI][nextJ].GetType() == Tile::TileType::Empty)
+		if (nextI >= 0 && nextI < m_rowCount &&
+			nextJ >= 0 && nextJ < m_columnCount &&
+			(*m_tiles)[nextI][nextJ].GetType() == TileType::Empty)
 		{
 
 			(*m_tiles)[nextI][nextJ].AddDirection(OPPOSITE_DIRECTIONS[index]);
 			(*m_tiles)[startI][startJ].AddDirection(DIRECTIONS[index]);
 
-			(*m_tiles)[nextI][nextJ].SetType(Tile::TileType::Floor);
+			(*m_tiles)[nextI][nextJ].SetType(TileType::Passage);
 
 			CarvePassageFull(nextI, nextJ);
 		}
@@ -71,7 +96,20 @@ void MGRecursiveBacktracker::GenerateByStep()
 		m_doneCV.notify_all();
 	}
 	
-	CarvePassageByStep(0, 0);
+	int startI = 0, startJ = 0;
+
+	while (startI < m_rowCount && startJ < m_columnCount)
+	{
+		if ((*m_tiles)[startI][startJ].GetType() == TileType::Empty)
+		{
+			(*m_tiles)[startI][startJ].SetType(TileType::Passage);
+			CarvePassageByStep(startI, startJ);
+		}
+
+
+		startI++;
+		startJ++;
+	}
 
 	{
 		std::unique_lock<std::mutex> lock(m_doneCVMutex);
@@ -107,7 +145,7 @@ void MGRecursiveBacktracker::CarvePassageByStep(int startI, int startJ)
 
 		if (nextI >= 0 && nextI < (*m_tiles).size() && 
 			nextJ >= 0 && nextJ < (*m_tiles)[0].size() && 
-			(*m_tiles)[nextI][nextJ].GetType() == Tile::TileType::Empty)
+			(*m_tiles)[nextI][nextJ].GetType() == TileType::Empty)
 		{
 			if (!m_generate.test_and_set())
 			{
@@ -118,7 +156,7 @@ void MGRecursiveBacktracker::CarvePassageByStep(int startI, int startJ)
 			(*m_tiles)[nextI][nextJ].AddDirection(OPPOSITE_DIRECTIONS[index]);
 			(*m_tiles)[startI][startJ].AddDirection(DIRECTIONS[index]);
 
-			(*m_tiles)[nextI][nextJ].SetType(Tile::TileType::Floor);
+			(*m_tiles)[nextI][nextJ].SetType(TileType::Passage);
 
 			std::this_thread::sleep_for(std::chrono::milliseconds(m_sleepDuration));
 

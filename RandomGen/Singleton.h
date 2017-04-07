@@ -388,7 +388,7 @@ private:
 	static void DestorySingleton()
 	{
 
-		assert(m_destroyed);
+		assert(!m_destroyed);
 		CreationPolicy<T>::Destroy(m_instance);
 		m_destroyed = true;
 

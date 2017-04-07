@@ -4,6 +4,8 @@
 #include <chrono> 
 #include <thread>
 
+using namespace GameDefs;
+
 void MGEllers::GenerateMaze(std::vector<std::vector<Tile>>& tiles, const GenerateType& genType, unsigned seed, int sleepDuration)
 {
 	if (tiles.size() < 1)
@@ -14,20 +16,29 @@ void MGEllers::GenerateMaze(std::vector<std::vector<Tile>>& tiles, const Generat
 		m_generateType = genType;
 	}
 
+	{
+		std::unique_lock<std::mutex> lock(m_doneCVMutex);
+		m_generating = true;
+	}
+
+
 	m_sleepDuration = sleepDuration;
 	m_randomNumGen.seed(seed);
 	m_tiles = &tiles;
 	m_lastSet = 0;
 	m_rowCount = (*m_tiles).size();
-	if (m_rowCount < 1)
-		return;
 	m_columnCount = (*m_tiles)[0].size();
 	m_rowSets.resize(m_columnCount, std::make_pair(std::make_pair(-1, -1), -1));
 
-	if (genType == Step)
+	if (genType == GameDefs::Step)
 		GenerateByStep();
 	else
 		GenerateFull();
+
+	{
+		std::unique_lock<std::mutex> lock(m_doneCVMutex);
+		m_generating = false;
+	}
 }
 
 bool MGEllers::CompareAndMergeSets(const std::pair<int, int>& first, const std::pair<int, int>& second)
@@ -72,7 +83,14 @@ void MGEllers::InitalizeRow(int row)
 	m_setToIndices.clear();
 	for (int j = 0; j < m_columnCount; ++j)
 	{
-		(*m_tiles)[row][j].SetType(Tile::TileType::Floor);
+		if ((*m_tiles)[row][j].GetType() == GameDefs::Room)
+		{
+			m_rowSets[j].first = INVALID_INDICES;
+			continue;
+		}
+			
+
+		(*m_tiles)[row][j].SetType(GameDefs::Passage);
 		m_rowSets[j].first = std::make_pair(row, j);
 
 		if (m_rowSets[j].second == -1)
@@ -92,28 +110,31 @@ void MGEllers::MergeColumns(int row)
 	{
 		if (m_rowSets[0].second != m_rowSets[1].second)
 		{
-			(*m_tiles)[row][0].AddDirection(Tile::PassageDirection::East);
-			(*m_tiles)[row][1].AddDirection(Tile::PassageDirection::West);
+			(*m_tiles)[row][0].AddDirection(PassageDirection::East);
+			(*m_tiles)[row][1].AddDirection(PassageDirection::West);
 		}
 
 		if (m_rowSets[m_columnCount - 1].second != m_rowSets[m_columnCount - 2].second)
 		{
-			(*m_tiles)[row][m_columnCount - 1].AddDirection(Tile::PassageDirection::West);
-			(*m_tiles)[row][m_columnCount - 2].AddDirection(Tile::PassageDirection::East);
+			(*m_tiles)[row][m_columnCount - 1].AddDirection(PassageDirection::West);
+			(*m_tiles)[row][m_columnCount - 2].AddDirection(PassageDirection::East);
 		}
 
 		for (int j = 1; j < m_columnCount - 1; ++j)
 		{
-			next = current = std::make_pair(row, j);
-			next.second = j + 1;
+			current = m_rowSets[j].first;
+			next = m_rowSets[j + 1].first;
+
+			if (current == INVALID_INDICES || next == INVALID_INDICES)
+				continue;
 
 			//If the connection already exists, move on
 			if (m_rowSets[j].second == m_rowSets[j + 1].second)
 				continue;
 
 			//Otherwise connect
-			(*m_tiles)[current.first][current.second].AddDirection(Tile::PassageDirection::East);
-			(*m_tiles)[next.first][next.second].AddDirection(Tile::PassageDirection::West);
+			(*m_tiles)[current.first][current.second].AddDirection(PassageDirection::East);
+			(*m_tiles)[next.first][next.second].AddDirection(PassageDirection::West);
 		}
 
 		return;
@@ -123,41 +144,47 @@ void MGEllers::MergeColumns(int row)
 	std::uniform_int_distribution<int> distributionHorizontal(0, 2);
 	directionIndex = distributionHorizontal(m_randomNumGen);
 
-	if (DIRECTIONS[directionIndex] == Tile::PassageDirection::East)
+	if (DIRECTIONS[directionIndex] == PassageDirection::East)
 	{
-		current = std::make_pair(row, 0);
-		next = std::make_pair(row, 1);
+		current = m_rowSets[0].first;
+		next = m_rowSets[1].first;
 
-		if (CompareAndMergeSets(current, next))
+		if (current != INVALID_INDICES && next != INVALID_INDICES &&
+			CompareAndMergeSets(current, next))
 		{
-			(*m_tiles)[row][0].AddDirection(Tile::PassageDirection::East);
-			(*m_tiles)[row][1].AddDirection(Tile::PassageDirection::West);
+			(*m_tiles)[row][0].AddDirection(PassageDirection::East);
+			(*m_tiles)[row][1].AddDirection(PassageDirection::West);
 		}
 	}
 
 	directionIndex = distributionHorizontal(m_randomNumGen);
-	if (DIRECTIONS[directionIndex] == Tile::PassageDirection::West)
+	if (DIRECTIONS[directionIndex] == PassageDirection::West)
 	{
-		current = std::make_pair(row, m_columnCount - 1);
-		next = std::make_pair(row, m_columnCount - 2);
+		current = m_rowSets[m_columnCount - 1].first;
+		next = m_rowSets[m_columnCount - 2].first;
 
-		if (CompareAndMergeSets(current, next))
+		if (current != INVALID_INDICES && next != INVALID_INDICES &&
+			CompareAndMergeSets(current, next))
 		{
-			(*m_tiles)[row][m_columnCount - 1].AddDirection(Tile::PassageDirection::West);
-			(*m_tiles)[row][m_columnCount - 2].AddDirection(Tile::PassageDirection::East);
+			(*m_tiles)[row][m_columnCount - 1].AddDirection(PassageDirection::West);
+			(*m_tiles)[row][m_columnCount - 2].AddDirection(PassageDirection::East);
 		}
 	}
 
 	//Since we only merge left or right, 2 means don't merge
 	for (int j = 1; j < m_columnCount - 1; ++j)
 	{
+
 		directionIndex = distributionHorizontal(m_randomNumGen);
 
 		if (directionIndex == 2)
 			continue;
 
-		next = current = std::make_pair(row, j);
-		next.second = current.second + DIRECTION_CHANGES[directionIndex].second;
+		current = m_rowSets[j].first;
+		next = m_rowSets[j + DIRECTION_CHANGES[directionIndex].second].first;
+
+		if (current == INVALID_INDICES || next == INVALID_INDICES)
+			continue;
 
 		if (CompareAndMergeSets(current, next))
 		{
@@ -179,18 +206,24 @@ void MGEllers::MakeVerticalCuts(int row)
 	{
 		makeVerticalCut = distributionVertical(m_randomNumGen);
 		setIndex = m_rowSets[j].second;
+
 		//If we should cut, or this is the last member of the set and we haven't made a cut, make a cut
 		if (makeVerticalCut || (!verticalSet.count(setIndex) && (j == m_columnCount - 1 || m_rowSets[j + 1].second != setIndex)))
 		{
 			current = m_rowSets[j].first;
-			(*m_tiles)[current.first][current.second].AddDirection(Tile::PassageDirection::South);
-			(*m_tiles)[current.first + 1][current.second].AddDirection(Tile::PassageDirection::North);
+			if (current == INVALID_INDICES || (*m_tiles)[current.first + 1][current.second].GetType() != TileType::Empty)
+				continue;
+
+			(*m_tiles)[current.first][current.second].AddDirection(PassageDirection::South);
+			(*m_tiles)[current.first + 1][current.second].AddDirection(PassageDirection::North);
+			verticalSet.insert(setIndex);
 		}
 		else
 			m_rowSets[j].second = -1;
 
 	}
 }
+
 void MGEllers::GenerateFull()
 {
 	for (int i = 0; i < m_rowCount; ++i)
@@ -217,8 +250,12 @@ void MGEllers::InitalizeRowByStep(int row)
 		}
 
 		std::this_thread::sleep_for(std::chrono::milliseconds(m_sleepDuration));
-
-		(*m_tiles)[row][j].SetType(Tile::TileType::Floor);
+		if ((*m_tiles)[row][j].GetType() == GameDefs::Room)
+		{
+			m_rowSets[j].first = INVALID_INDICES;
+			continue;
+		}
+		(*m_tiles)[row][j].SetType(TileType::Passage);
 		m_rowSets[j].first = std::make_pair(row, j);
 
 		if (m_rowSets[j].second == -1)
@@ -238,28 +275,31 @@ void MGEllers::MergeColumnsByStep(int row)
 	{
 		if (m_rowSets[0].second != m_rowSets[1].second)
 		{
-			(*m_tiles)[row][0].AddDirection(Tile::PassageDirection::East);
-			(*m_tiles)[row][1].AddDirection(Tile::PassageDirection::West);
+			(*m_tiles)[row][0].AddDirection(PassageDirection::East);
+			(*m_tiles)[row][1].AddDirection(PassageDirection::West);
 		}
 
 		if (m_rowSets[m_columnCount - 1].second != m_rowSets[m_columnCount - 2].second)
 		{
-			(*m_tiles)[row][m_columnCount - 1].AddDirection(Tile::PassageDirection::West);
-			(*m_tiles)[row][m_columnCount - 2].AddDirection(Tile::PassageDirection::East);
+			(*m_tiles)[row][m_columnCount - 1].AddDirection(PassageDirection::West);
+			(*m_tiles)[row][m_columnCount - 2].AddDirection(PassageDirection::East);
 		}
 
 		for (int j = 1; j < m_columnCount - 1; ++j)
 		{
-			next = current = std::make_pair(row, j);
-			next.second = j + 1;
+			current = m_rowSets[j].first;
+			next = m_rowSets[j + 1].first;
+
+			if (current == INVALID_INDICES || next == INVALID_INDICES)
+				continue;
 
 			//If the connection already exists, move on
 			if (m_rowSets[j].second == m_rowSets[j + 1].second)
 				continue;
 
 			//Otherwise connect
-			(*m_tiles)[current.first][current.second].AddDirection(Tile::PassageDirection::East);
-			(*m_tiles)[next.first][next.second].AddDirection(Tile::PassageDirection::West);
+			(*m_tiles)[current.first][current.second].AddDirection(PassageDirection::East);
+			(*m_tiles)[next.first][next.second].AddDirection(PassageDirection::West);
 		}
 
 		return;
@@ -269,28 +309,30 @@ void MGEllers::MergeColumnsByStep(int row)
 	std::uniform_int_distribution<int> distributionHorizontal(0, 2);
 	directionIndex = distributionHorizontal(m_randomNumGen);
 
-	if (DIRECTIONS[directionIndex] == Tile::PassageDirection::East)
+	if (DIRECTIONS[directionIndex] == PassageDirection::East)
 	{
-		current = std::make_pair(row, 0);
-		next = std::make_pair(row, 1);
+		current = m_rowSets[0].first;
+		next = m_rowSets[1].first;
 
-		if (CompareAndMergeSets(current, next))
+		if (current != INVALID_INDICES && next != INVALID_INDICES &&
+			CompareAndMergeSets(current, next))
 		{
-			(*m_tiles)[row][0].AddDirection(Tile::PassageDirection::East);
-			(*m_tiles)[row][1].AddDirection(Tile::PassageDirection::West);
+			(*m_tiles)[row][0].AddDirection(PassageDirection::East);
+			(*m_tiles)[row][1].AddDirection(PassageDirection::West);
 		}
 	}
 
 	directionIndex = distributionHorizontal(m_randomNumGen);
-	if (DIRECTIONS[directionIndex] == Tile::PassageDirection::West)
+	if (DIRECTIONS[directionIndex] == PassageDirection::West)
 	{
-		current = std::make_pair(row, m_columnCount - 1);
-		next = std::make_pair(row, m_columnCount - 2);
+		current = m_rowSets[m_columnCount - 1].first;
+		next = m_rowSets[m_columnCount - 2].first;
 
-		if (CompareAndMergeSets(current, next))
+		if (current != INVALID_INDICES && next != INVALID_INDICES &&
+			CompareAndMergeSets(current, next))
 		{
-			(*m_tiles)[row][m_columnCount - 1].AddDirection(Tile::PassageDirection::West);
-			(*m_tiles)[row][m_columnCount - 2].AddDirection(Tile::PassageDirection::East);
+			(*m_tiles)[row][m_columnCount - 1].AddDirection(PassageDirection::West);
+			(*m_tiles)[row][m_columnCount - 2].AddDirection(PassageDirection::East);
 		}
 	}
 
@@ -308,10 +350,11 @@ void MGEllers::MergeColumnsByStep(int row)
 		if (directionIndex == 2)
 			continue;
 
-		next = current = std::make_pair(row, j);
-		next.second = current.second + DIRECTION_CHANGES[directionIndex].second;
+		current = m_rowSets[j].first;
+		next = m_rowSets[j + DIRECTION_CHANGES[directionIndex].second].first;
 
-		if (CompareAndMergeSets(current, next))
+		if (current == INVALID_INDICES || next == INVALID_INDICES)
+			continue;
 		{
 			(*m_tiles)[current.first][current.second].AddDirection(DIRECTIONS[directionIndex]);
 			(*m_tiles)[next.first][next.second].AddDirection(OPPOSITE_DIRECTIONS[directionIndex]);
@@ -341,8 +384,12 @@ void MGEllers::MakeVerticalCutsByStep(int row)
 		if (makeVerticalCut || (!verticalSet.count(setIndex) && (j == m_columnCount - 1 || m_rowSets[j + 1].second != setIndex)))
 		{
 			current = m_rowSets[j].first;
-			(*m_tiles)[current.first][current.second].AddDirection(Tile::PassageDirection::South);
-			(*m_tiles)[current.first + 1][current.second].AddDirection(Tile::PassageDirection::North);
+
+			if (current == INVALID_INDICES || (*m_tiles)[current.first + 1][current.second].GetType() != TileType::Empty)
+				continue;
+
+			(*m_tiles)[current.first][current.second].AddDirection(PassageDirection::South);
+			(*m_tiles)[current.first + 1][current.second].AddDirection(PassageDirection::North);
 		}
 		else
 			m_rowSets[j].second = -1;
@@ -391,3 +438,5 @@ void MGEllers::GenerateByStep()
 	}
 
 }
+
+const std::pair<int, int> MGEllers::INVALID_INDICES = std::make_pair(-1, -1);

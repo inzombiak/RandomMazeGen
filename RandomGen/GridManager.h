@@ -30,12 +30,13 @@ public:
 	void RandomizeMap();
 	void ToggleMazeGenerator();
 	void ToggleMazeGenerateType();
-
+	void Close();
 	void Draw(sf::RenderWindow& rw);
 
 private:
-
-	//Generates maze, use GenerateMazeByStep to visiualize
+	//Generates rooms
+	void GenerateRooms();
+	//Generates maze
 	void GenerateMaze();
 
 	//TODO: Should asssign to a pointer not to m_currentShape(which should be a pointer)
@@ -51,7 +52,7 @@ private:
 	const sf::Color BORDER_COLOR = sf::Color::Red;
 
 	MazeGenerator m_mazeGenerator = RecursiveBacktracker;
-	GenerateType m_mazeGenerateType = Full;
+	GameDefs::GenerateType m_mazeGenerateType = GameDefs::Step;
 
 	std::thread m_mazeGeneratorThread;
 	std::vector<std::vector<Tile>> m_tiles;

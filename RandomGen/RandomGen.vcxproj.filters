@@ -25,6 +25,12 @@
     <Filter Include="Source Files\Utilities">
       <UniqueIdentifier>{f5683648-e498-467f-a97d-5f4fac7ff9d1}</UniqueIdentifier>
     </Filter>
+    <Filter Include="Header Files\RoomGen">
+      <UniqueIdentifier>{37882dd6-939b-4bd8-a9da-ec4f751d8db8}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source Files\RoomGen">
+      <UniqueIdentifier>{0bf527af-69dd-4e4e-85e3-d0c49e4afb01}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="main.cpp">
@@ -48,6 +54,9 @@
     <ClCompile Include="MGRecursiveBacktracker.cpp">
       <Filter>Source Files\MazeGen</Filter>
     </ClCompile>
+    <ClCompile Include="RoomGenerator.cpp">
+      <Filter>Source Files\RoomGen</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="GridManager.h">
@@ -70,6 +79,12 @@
     </ClInclude>
     <ClInclude Include="MGRecursiveBacktracker.h">
       <Filter>Header Files\MazeGen</Filter>
+    </ClInclude>
+    <ClInclude Include="RoomGenerator.h">
+      <Filter>Header Files\RoomGen</Filter>
+    </ClInclude>
+    <ClInclude Include="GameDefs.h">
+      <Filter>Header Files\Utilities</Filter>
     </ClInclude>
   </ItemGroup>
 </Project>
