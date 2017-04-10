@@ -6,6 +6,8 @@
 
 #include "GameDefs.h"
 
+#include<map>
+
 class Tile
 {
 
@@ -15,23 +17,29 @@ public:
 	GameDefs::PassageDirection GetDirection() const;
 	void SetDirection(const GameDefs::PassageDirection& dir);
 	void AddDirection(const GameDefs::PassageDirection& dir);
+	bool HasDirection(const GameDefs::PassageDirection& dir);
 	GameDefs::TileType GetType() const;
 	void SetType(const GameDefs::TileType& type);
 	sf::Vector2f GetPosition() const;
 	void SetPosition(const sf::Vector2f& newPosition);
+	void SetID(int newID);
+	int GetID() const;
+	void SetColor(const sf::Color& color);
+	void SetBorder(const GameDefs::PassageDirection& border, int borderWidth, const sf::Color& color);
 
 	void Reset();
 
 	void Draw(sf::RenderWindow& rw);
 
 private:
-	typedef std::map<GameDefs::TileType, sf::Color> TileTypeToColorMap;
-	static TileTypeToColorMap m_typeToColor;
+	int m_id;
 
 	sf::RectangleShape m_tile;
-	int m_borderWidth;
-	sf::Color m_borderColor;
 
+	//TODO: TOO BRUTE FORCE
+	std::map<GameDefs::PassageDirection, std::pair<int, sf::Color>> m_borderInfo;
+
+	std::pair<int, sf::Color> m_defaultBorderInfo;
 	GameDefs::PassageDirection m_direction;
 	GameDefs::TileType m_type;
 };

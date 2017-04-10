@@ -18,10 +18,9 @@ public:
 	void SetRoomVerticalBounds(const sf::Vector2i& newVertBounds);
 	sf::Vector2i GetRoomVerticalBounds();
 	
-	void GenerateRoom(std::vector<std::vector<Tile>>& tiles, const GameDefs::GenerateType& genType, unsigned seed, int sleepDuration);
+	const std::vector<sf::IntRect>& GenerateRoom(std::vector<std::vector<Tile>>& tiles, const GameDefs::GenerateType& genType, unsigned seed, int sleepDuration);
 
 private:
-
 
 	//Allows full to run faster
 	void GenerateFull();

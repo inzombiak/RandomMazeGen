@@ -2,29 +2,32 @@
 
 using namespace GameDefs;
 
-void RoomGenerator::GenerateRoom(std::vector<std::vector<Tile>>& tiles, const GenerateType& genType, unsigned seed, int sleepDuration)
+const std::vector<sf::IntRect>& RoomGenerator::GenerateRoom(std::vector<std::vector<Tile>>& tiles, const GenerateType& genType, unsigned seed, int sleepDuration)
 {
-	if (tiles.size() < 1)
-		return;
+	m_rooms.clear();
+	m_rowCount = tiles.size();
+	if (m_rowCount < 1)
+		return m_rooms;
 
 	{
 		std::unique_lock<std::mutex> lock(m_doneCVMutex);
 		m_generateType = genType;
 	}
 
+
 	m_sleepDuration = sleepDuration;
 	m_randomNumGen.seed(seed);
 	m_tiles = &tiles;
-	m_rowCount = (*m_tiles).size();
-	if (m_rowCount < 1)
-		return;
+
 	m_columnCount = (*m_tiles)[0].size();
-	m_rooms.clear();
+;
 
 	if (genType == Step)
 		GenerateByStep();
 	else
 		GenerateFull();
+
+	return m_rooms;
 }
 
 void RoomGenerator::GenerateFull()
@@ -45,12 +48,11 @@ void RoomGenerator::GenerateFull()
 	while (attempts > 0)
 	{
 		attempts--;
-
 		sf::IntRect room;
-		room.width = roomHorizontal(m_randomNumGen) + 1;
-		room.height = roomVertical(m_randomNumGen) + 1;
-		room.left = roomX(m_randomNumGen) - 1;
-		room.top = roomY(m_randomNumGen) - 1;
+		room.width = roomHorizontal(m_randomNumGen);
+		room.height = roomVertical(m_randomNumGen);
+		room.left = roomX(m_randomNumGen);
+		room.top = roomY(m_randomNumGen);
 
 		if (room.left + room.width > m_columnCount)
 			room.left -= room.left + room.width - m_columnCount;
@@ -71,31 +73,34 @@ void RoomGenerator::GenerateFull()
 		if (!validRoom)
 			continue;
 
+		int setID = GameDefs::GetNextSetID();
 		PassageDirection dirs;
-		for (int i = room.top + 1; i < room.top + room.height; ++i)
+		for (int i = room.top; i < room.top + room.height; ++i)
 		{
-			for (int j = room.left + 1; j < room.left + room.width; ++j)
+			for (int j = room.left; j < room.left + room.width; ++j)
 			{
 				dirs = PassageDirection::North | PassageDirection::South | PassageDirection::East | PassageDirection::West;
 
-				if (i == room.top + 1)
+				if (i == room.top)
 				{
 					dirs = dirs & ~PassageDirection::North;
 				}
-				else if (i == room.top + room.height)
+				else if (i == room.top + room.height - 1)
 				{
 					dirs = dirs & ~PassageDirection::South;
 				}
-				if (j == room.left + 1)
+				if (j == room.left)
 				{
 					dirs = dirs & ~PassageDirection::West;
 				}
-				else if (j == room.left + room.width)
+				else if (j == room.left + room.width - 1)
 				{
 					dirs = dirs & ~PassageDirection::East;
 				}
 				(*m_tiles)[i][j].SetType(TileType::Room);
 				(*m_tiles)[i][j].SetDirection(dirs);
+				(*m_tiles)[i][j].SetID(setID);
+				(*m_tiles)[i][j].SetColor(GameDefs::GetSetColor(setID));
 			}
 		}
 

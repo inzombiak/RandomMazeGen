@@ -41,10 +41,6 @@ protected:
 	virtual void GenerateFull() = 0;
 	virtual void GenerateByStep() = 0;
 
-	static std::array<GameDefs::PassageDirection, 4>	DIRECTIONS; 
-	static std::array<GameDefs::PassageDirection, 4>	OPPOSITE_DIRECTIONS;
-	static std::array<std::pair<int, int>, 4>		DIRECTION_CHANGES;
-
 	int m_rowCount;
 	int m_columnCount;
 	std::vector<std::vector<Tile>>* m_tiles;

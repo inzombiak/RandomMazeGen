@@ -5,11 +5,16 @@ using namespace GameDefs;
 Tile::Tile(const sf::RectangleShape& tile, const TileType& type, int borderWidth, const sf::Color& borderColor)
 {
 	m_tile = tile;
-	m_tile.setFillColor(m_typeToColor[Empty]);
+	//m_tile.setFillColor();
 	m_type = type;
 	m_direction = PassageDirection::None;
-	m_borderWidth = borderWidth;
-	m_borderColor = borderColor;
+
+	m_defaultBorderInfo = std::make_pair(borderWidth, borderColor);
+
+	m_borderInfo[PassageDirection::North] = m_defaultBorderInfo;
+	m_borderInfo[PassageDirection::South] = m_defaultBorderInfo;
+	m_borderInfo[PassageDirection::East] = m_defaultBorderInfo;
+	m_borderInfo[PassageDirection::West] = m_defaultBorderInfo;
 }
 PassageDirection Tile::GetDirection() const
 {
@@ -23,6 +28,10 @@ void Tile::AddDirection(const PassageDirection& dir)
 {
 	m_direction = m_direction | dir;
 }
+bool Tile::HasDirection(const GameDefs::PassageDirection& dir)
+{
+	return (m_direction & dir) == dir;
+}
 TileType Tile::GetType() const
 {
 	return m_type;
@@ -30,9 +39,21 @@ TileType Tile::GetType() const
 void Tile::SetType(const TileType& type)
 {
 	m_type = type;
-	m_tile.setFillColor(m_typeToColor[type]);
-
 }
+
+void Tile::SetID(int newID)
+{
+	m_id = newID;
+}
+int Tile::GetID() const
+{
+	return m_id;
+}
+void Tile::SetColor(const sf::Color& color)
+{
+	m_tile.setFillColor(color);
+}
+
 sf::Vector2f Tile::GetPosition() const
 {
 	return m_tile.getPosition();
@@ -40,6 +61,11 @@ sf::Vector2f Tile::GetPosition() const
 void Tile::SetPosition(const sf::Vector2f& newPosition)
 {
 	m_tile.setPosition(newPosition);
+}
+
+void Tile::SetBorder(const GameDefs::PassageDirection& border, int borderWidth, const sf::Color& color)
+{
+	m_borderInfo[border] = std::make_pair(borderWidth, color);
 }
 
 void Tile::Draw(sf::RenderWindow& rw)
@@ -50,53 +76,44 @@ void Tile::Draw(sf::RenderWindow& rw)
 	sf::Vector2f borderPos;
 	sf::RectangleShape border;
 	
+	for (int i = 0; i < 4; ++i)
+	{
+		borderPos = m_tile.getPosition();
+		if(DIRECTIONS[i] == PassageDirection::North)
+			border.setSize(sf::Vector2f(m_tile.getSize().x, m_borderInfo[DIRECTIONS[i]].first));
+		else if (DIRECTIONS[i] == PassageDirection::South)
+		{
+			borderPos.y += m_tile.getSize().y;
+			border.setSize(sf::Vector2f(m_tile.getSize().x, m_borderInfo[DIRECTIONS[i]].first));
+		}
+		else if (DIRECTIONS[i] == PassageDirection::East)
+		{
+			borderPos.x += m_tile.getSize().x;
+			border.setSize(sf::Vector2f(m_borderInfo[DIRECTIONS[i]].first, m_tile.getSize().y));
+		}
+		else if (DIRECTIONS[i] == PassageDirection::West)
+			border.setSize(sf::Vector2f(m_borderInfo[DIRECTIONS[i]].first, m_tile.getSize().y));
 
-	border.setSize(sf::Vector2f(m_tile.getSize().x, m_borderWidth));
+		border.setPosition(borderPos);
+		border.setFillColor(m_tile.getFillColor());
 
-	borderPos = m_tile.getPosition();
-	border.setPosition(borderPos);
-	border.setFillColor(m_tile.getFillColor());
-	if ((m_direction & PassageDirection::North) != PassageDirection::North)
-		border.setFillColor(m_borderColor);
+		if ((m_direction & DIRECTIONS[i]) != DIRECTIONS[i])
+			border.setFillColor(m_borderInfo[DIRECTIONS[i]].second);
 
-	rw.draw(border);
-
-	borderPos = m_tile.getPosition();
-	borderPos.y += m_tile.getSize().y;
-	border.setPosition(borderPos);
-	border.setFillColor(m_tile.getFillColor());
-	if ((m_direction & PassageDirection::South) != PassageDirection::South)
-		border.setFillColor(m_borderColor);
-		
-	rw.draw(border);
-
-	border.setSize(sf::Vector2f(m_borderWidth, m_tile.getSize().y));
-
-	borderPos = m_tile.getPosition();
-	borderPos.x += m_tile.getSize().x;
-	border.setPosition(borderPos);
-	border.setFillColor(m_tile.getFillColor());
-
-	if ((m_direction & PassageDirection::East) != PassageDirection::East)
-		border.setFillColor(m_borderColor);
-
-	rw.draw(border);
-
-	borderPos = m_tile.getPosition();
-	border.setPosition(borderPos);
-	border.setFillColor(m_tile.getFillColor());
-
-	if ((m_direction & PassageDirection::West) != PassageDirection::West)
-		border.setFillColor(m_borderColor);
-
-	rw.draw(border);
+		rw.draw(border);
+	}
 }
 
 void Tile::Reset()
 {
 	m_type = TileType::Empty;
 	m_direction = PassageDirection::None;
-	m_tile.setFillColor(m_typeToColor[Empty]);
-}
+	m_tile.setFillColor(sf::Color::White);
 
-Tile::TileTypeToColorMap Tile::m_typeToColor = { { TileType::Empty, sf::Color::White }, { TileType::Passage, sf::Color(51, 102, 153) }, { TileType::Room, sf::Color(81, 74, 224) } };
+
+	m_borderInfo[PassageDirection::North] = m_defaultBorderInfo;
+	m_borderInfo[PassageDirection::South] = m_defaultBorderInfo;
+	m_borderInfo[PassageDirection::East] = m_defaultBorderInfo;
+	m_borderInfo[PassageDirection::West] = m_defaultBorderInfo;
+
+}

@@ -38,18 +38,26 @@ void MGRecursiveBacktracker::GenerateFull()
 	m_done = false;
 
 	int startI = 0 , startJ = 0;
-
-	while (startI < m_rowCount && startJ < m_columnCount)
+	int id;
+	while (startI < m_rowCount)
 	{
-		if ((*m_tiles)[startI][startJ].GetType() == TileType::Empty)
+		startJ = 0;
+
+		while (startJ < m_columnCount)
 		{
-			(*m_tiles)[startI][startJ].SetType(TileType::Passage);
-			CarvePassageFull(startI, startJ);
+			if ((*m_tiles)[startI][startJ].GetType() == TileType::Empty)
+			{
+				id = GameDefs::GetNextSetID();
+				(*m_tiles)[startI][startJ].SetType(TileType::Passage);
+				(*m_tiles)[startI][startJ].SetID(id);
+				(*m_tiles)[startI][startJ].SetColor(GameDefs::GetSetColor(id));
+				CarvePassageFull(startI, startJ);
+			}
+
+			startJ++;
 		}
 
-		
 		startI++;
-		startJ++;
 	}
 
 	m_done = true;
@@ -60,7 +68,7 @@ void MGRecursiveBacktracker::CarvePassageFull(int startI, int startJ)
 
 	std::array<int, 4> directionIndices = { 0, 1, 2, 3 };
 	shuffle(directionIndices.begin(), directionIndices.end(), m_randomNumGen);
-	int nextI, nextJ, index;
+	int nextI, nextJ, index, id;
 
 	for (int i = 0; i < 4; ++i)
 	{
@@ -77,9 +85,10 @@ void MGRecursiveBacktracker::CarvePassageFull(int startI, int startJ)
 
 			(*m_tiles)[nextI][nextJ].AddDirection(OPPOSITE_DIRECTIONS[index]);
 			(*m_tiles)[startI][startJ].AddDirection(DIRECTIONS[index]);
-
+			id = GameDefs::GetCurrentSetID();
 			(*m_tiles)[nextI][nextJ].SetType(TileType::Passage);
-
+			(*m_tiles)[nextI][nextJ].SetID(id);
+			(*m_tiles)[nextI][nextJ].SetColor(GameDefs::GetSetColor(id));
 			CarvePassageFull(nextI, nextJ);
 		}
 
@@ -97,18 +106,26 @@ void MGRecursiveBacktracker::GenerateByStep()
 	}
 	
 	int startI = 0, startJ = 0;
-
-	while (startI < m_rowCount && startJ < m_columnCount)
+	int id;
+	while (startI < m_rowCount)
 	{
-		if ((*m_tiles)[startI][startJ].GetType() == TileType::Empty)
+		startJ = 0;
+
+		while (startJ < m_columnCount)
 		{
-			(*m_tiles)[startI][startJ].SetType(TileType::Passage);
-			CarvePassageByStep(startI, startJ);
+			if ((*m_tiles)[startI][startJ].GetType() == TileType::Empty)
+			{
+				id = GameDefs::GetNextSetID();
+				(*m_tiles)[startI][startJ].SetType(TileType::Passage);
+				(*m_tiles)[startI][startJ].SetID(id);
+				(*m_tiles)[startI][startJ].SetColor(GameDefs::GetSetColor(id));
+				CarvePassageByStep(startI, startJ);
+			}
+
+			startJ++;
 		}
 
-
 		startI++;
-		startJ++;
 	}
 
 	{
@@ -128,7 +145,7 @@ void MGRecursiveBacktracker::CarvePassageByStep(int startI, int startJ)
 
 	std::array<int, 4> directionIndices = { 0, 1, 2, 3 };
 	shuffle(directionIndices.begin(), directionIndices.end(), m_randomNumGen);
-	int nextI, nextJ, index;
+	int nextI, nextJ, index, id;
 
 	for (int i = 0; i < 4; ++i)
 	{
@@ -137,11 +154,11 @@ void MGRecursiveBacktracker::CarvePassageByStep(int startI, int startJ)
 			m_generate.clear();
 			return;
 		}
-
+		std::this_thread::sleep_for(std::chrono::milliseconds(m_sleepDuration));
 		index = directionIndices[i];
 
-		nextI = startI + DIRECTION_CHANGES[index].first;
-		nextJ = startJ + DIRECTION_CHANGES[index].second;
+		nextI = startI + GameDefs::DIRECTION_CHANGES[index].first;
+		nextJ = startJ + GameDefs::DIRECTION_CHANGES[index].second;
 
 		if (nextI >= 0 && nextI < (*m_tiles).size() && 
 			nextJ >= 0 && nextJ < (*m_tiles)[0].size() && 
@@ -153,12 +170,14 @@ void MGRecursiveBacktracker::CarvePassageByStep(int startI, int startJ)
 				return;
 			}
 
-			(*m_tiles)[nextI][nextJ].AddDirection(OPPOSITE_DIRECTIONS[index]);
-			(*m_tiles)[startI][startJ].AddDirection(DIRECTIONS[index]);
-
+			(*m_tiles)[nextI][nextJ].AddDirection(GameDefs::OPPOSITE_DIRECTIONS[index]);
+			(*m_tiles)[startI][startJ].AddDirection(GameDefs::DIRECTIONS[index]);
+			id = GameDefs::GetCurrentSetID();
 			(*m_tiles)[nextI][nextJ].SetType(TileType::Passage);
+			(*m_tiles)[nextI][nextJ].SetID(id);
+			(*m_tiles)[nextI][nextJ].SetColor(GameDefs::GetSetColor(id));
 
-			std::this_thread::sleep_for(std::chrono::milliseconds(m_sleepDuration));
+			
 
 			CarvePassageByStep(nextI, nextJ);
 		}
