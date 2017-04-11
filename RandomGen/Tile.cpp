@@ -8,6 +8,7 @@ Tile::Tile(const sf::RectangleShape& tile, const TileType& type, int borderWidth
 	//m_tile.setFillColor();
 	m_type = type;
 	m_direction = PassageDirection::None;
+	m_id = -1;
 
 	m_defaultBorderInfo = std::make_pair(borderWidth, borderColor);
 
@@ -43,6 +44,9 @@ void Tile::SetType(const TileType& type)
 
 void Tile::SetID(int newID)
 {
+	//TODO: This might be a bad idea
+	SetIDManagerSingleton::Instance().RemoveFromSet(m_id);
+	SetIDManagerSingleton::Instance().AddToSet(newID);
 	m_id = newID;
 }
 int Tile::GetID() const
@@ -79,27 +83,33 @@ void Tile::Draw(sf::RenderWindow& rw)
 	for (int i = 0; i < 4; ++i)
 	{
 		borderPos = m_tile.getPosition();
-		if(DIRECTIONS[i] == PassageDirection::North)
+		
+		if (DIRECTIONS[i] == PassageDirection::North)
+		{
 			border.setSize(sf::Vector2f(m_tile.getSize().x, m_borderInfo[DIRECTIONS[i]].first));
+		}
 		else if (DIRECTIONS[i] == PassageDirection::South)
 		{
-			borderPos.y += m_tile.getSize().y;
+			borderPos.y += m_tile.getSize().y - m_borderInfo[DIRECTIONS[i]].first;
 			border.setSize(sf::Vector2f(m_tile.getSize().x, m_borderInfo[DIRECTIONS[i]].first));
 		}
 		else if (DIRECTIONS[i] == PassageDirection::East)
 		{
-			borderPos.x += m_tile.getSize().x;
+			borderPos.x += m_tile.getSize().x - m_borderInfo[DIRECTIONS[i]].first;
 			border.setSize(sf::Vector2f(m_borderInfo[DIRECTIONS[i]].first, m_tile.getSize().y));
 		}
 		else if (DIRECTIONS[i] == PassageDirection::West)
+		{
 			border.setSize(sf::Vector2f(m_borderInfo[DIRECTIONS[i]].first, m_tile.getSize().y));
-
+		}
+			
 		border.setPosition(borderPos);
 		border.setFillColor(m_tile.getFillColor());
 
 		if ((m_direction & DIRECTIONS[i]) != DIRECTIONS[i])
 			border.setFillColor(m_borderInfo[DIRECTIONS[i]].second);
-
+		else
+			continue;
 		rw.draw(border);
 	}
 }
@@ -109,7 +119,7 @@ void Tile::Reset()
 	m_type = TileType::Empty;
 	m_direction = PassageDirection::None;
 	m_tile.setFillColor(sf::Color::White);
-
+	m_id = -1;
 
 	m_borderInfo[PassageDirection::North] = m_defaultBorderInfo;
 	m_borderInfo[PassageDirection::South] = m_defaultBorderInfo;

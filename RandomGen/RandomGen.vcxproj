@@ -84,6 +84,7 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClCompile Include="MazeConnector.cpp" />
     <ClCompile Include="MGEllers.cpp" />
     <ClCompile Include="GridManager.cpp" />
     <ClCompile Include="IMazeGenerator.cpp" />
@@ -95,6 +96,7 @@
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="GameDefs.h" />
+    <ClInclude Include="MazeConnector.h" />
     <ClInclude Include="MGEllers.h" />
     <ClInclude Include="GridManager.h" />
     <ClInclude Include="IMazeGenerator.h" />

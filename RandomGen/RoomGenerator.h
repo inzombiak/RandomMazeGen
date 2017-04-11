@@ -35,6 +35,7 @@ private:
 	std::vector<std::vector<Tile>>* m_tiles;
 	int m_rowCount;
 	int m_columnCount;
+	int m_seed;
 	//For step generation
 	//TODO: STATIC MAY CAUSE ISSUES
 	static std::atomic_flag m_generate;
@@ -43,6 +44,7 @@ private:
 	std::mutex m_horizontalMutex;
 	std::mutex m_verticalMutex;
 	std::mutex m_attemptMutex;
+
 	static std::atomic<bool> m_done;
 	int m_sleepDuration;
 

@@ -29,7 +29,7 @@ void MGEllers::GenerateMaze(std::vector<std::vector<Tile>>& tiles, const Generat
 	m_rowCount = (*m_tiles).size();
 	m_columnCount = (*m_tiles)[0].size();
 	m_rowSets.resize(m_columnCount, std::make_pair(std::make_pair(-1, -1), -1));
-
+	m_seed = seed;
 	if (genType == GameDefs::Step)
 		GenerateByStep();
 	else

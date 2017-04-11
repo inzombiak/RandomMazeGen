@@ -44,7 +44,7 @@ protected:
 	int m_rowCount;
 	int m_columnCount;
 	std::vector<std::vector<Tile>>* m_tiles;
-
+	int m_seed;
 	//For step generation
 	//TODO: STATIC MAY CAUSE ISSUES
 	static std::atomic_flag m_generate;

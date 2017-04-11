@@ -18,7 +18,7 @@ void MGRecursiveBacktracker::GenerateMaze(std::vector<std::vector<Tile>>& tiles,
 	m_sleepDuration = sleepDuration;
 	m_randomNumGen.seed(seed);
 	m_tiles = &tiles;
-
+	m_seed = seed;
 	m_rowCount = (*m_tiles).size();
 	m_columnCount = (*m_tiles)[0].size();
 
@@ -47,10 +47,10 @@ void MGRecursiveBacktracker::GenerateFull()
 		{
 			if ((*m_tiles)[startI][startJ].GetType() == TileType::Empty)
 			{
-				id = GameDefs::GetNextSetID();
+				id = SetIDManagerSingleton::Instance().GetNextSetID();
 				(*m_tiles)[startI][startJ].SetType(TileType::Passage);
 				(*m_tiles)[startI][startJ].SetID(id);
-				(*m_tiles)[startI][startJ].SetColor(GameDefs::GetSetColor(id));
+				(*m_tiles)[startI][startJ].SetColor(SetIDManagerSingleton::Instance().GetSetColor(id, m_seed));
 				CarvePassageFull(startI, startJ);
 			}
 
@@ -85,10 +85,10 @@ void MGRecursiveBacktracker::CarvePassageFull(int startI, int startJ)
 
 			(*m_tiles)[nextI][nextJ].AddDirection(OPPOSITE_DIRECTIONS[index]);
 			(*m_tiles)[startI][startJ].AddDirection(DIRECTIONS[index]);
-			id = GameDefs::GetCurrentSetID();
+			id = SetIDManagerSingleton::Instance().GetCurrentSetID();
 			(*m_tiles)[nextI][nextJ].SetType(TileType::Passage);
 			(*m_tiles)[nextI][nextJ].SetID(id);
-			(*m_tiles)[nextI][nextJ].SetColor(GameDefs::GetSetColor(id));
+			(*m_tiles)[nextI][nextJ].SetColor(SetIDManagerSingleton::Instance().GetSetColor(id, m_seed));
 			CarvePassageFull(nextI, nextJ);
 		}
 
@@ -115,10 +115,10 @@ void MGRecursiveBacktracker::GenerateByStep()
 		{
 			if ((*m_tiles)[startI][startJ].GetType() == TileType::Empty)
 			{
-				id = GameDefs::GetNextSetID();
+				id = SetIDManagerSingleton::Instance().GetNextSetID();
 				(*m_tiles)[startI][startJ].SetType(TileType::Passage);
 				(*m_tiles)[startI][startJ].SetID(id);
-				(*m_tiles)[startI][startJ].SetColor(GameDefs::GetSetColor(id));
+				(*m_tiles)[startI][startJ].SetColor(SetIDManagerSingleton::Instance().GetSetColor(id, m_seed));
 				CarvePassageByStep(startI, startJ);
 			}
 
@@ -172,10 +172,10 @@ void MGRecursiveBacktracker::CarvePassageByStep(int startI, int startJ)
 
 			(*m_tiles)[nextI][nextJ].AddDirection(GameDefs::OPPOSITE_DIRECTIONS[index]);
 			(*m_tiles)[startI][startJ].AddDirection(GameDefs::DIRECTIONS[index]);
-			id = GameDefs::GetCurrentSetID();
+			id = SetIDManagerSingleton::Instance().GetCurrentSetID();
 			(*m_tiles)[nextI][nextJ].SetType(TileType::Passage);
 			(*m_tiles)[nextI][nextJ].SetID(id);
-			(*m_tiles)[nextI][nextJ].SetColor(GameDefs::GetSetColor(id));
+			(*m_tiles)[nextI][nextJ].SetColor(SetIDManagerSingleton::Instance().GetSetColor(id, m_seed));
 
 			
 

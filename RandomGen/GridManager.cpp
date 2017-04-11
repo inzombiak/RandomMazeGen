@@ -5,7 +5,8 @@
 
 #include "RoomGenerator.h"
 
-#include "Singleton.h"
+#include "MazeConnector.h"
+
 #include "Math.h"
 
 #include <iostream>
@@ -16,11 +17,7 @@ using namespace GameDefs;
 typedef SingletonHolder<MGEllers, CreationPolicies::CreateWithNew, LifetimePolicies::DefaultLifetime> MGEllersSingleton;
 typedef SingletonHolder<MGRecursiveBacktracker, CreationPolicies::CreateWithNew, LifetimePolicies::DefaultLifetime> MGRecursiveBacktrackerSingleton;
 typedef SingletonHolder<RoomGenerator, CreationPolicies::CreateWithNew, LifetimePolicies::DefaultLifetime> RoomGeneratorSingleton;
-
-GridManager::GridManager()
-{
-
-}
+typedef SingletonHolder<MazeConnector, CreationPolicies::CreateWithNew, LifetimePolicies::DefaultLifetime> MazeConnectorSingleton;
 
 void GridManager::GenerateMap(int windowWidth, int windowHeight, unsigned int rows, unsigned int columns)
 {
@@ -29,12 +26,12 @@ void GridManager::GenerateMap(int windowWidth, int windowHeight, unsigned int ro
 	m_rowCount = rows;
 	m_columnCount = columns;
 
-	m_tileWidth = (float)(m_windowWidth -  (BORDER_WIDTH * (columns))) / (float)m_columnCount;
-	m_tileHeight = (float)(m_windowHeight - (BORDER_WIDTH * (rows))) / (float)m_rowCount;
+	m_tileWidth = (float)(m_windowWidth) / (float)m_columnCount;
+	m_tileHeight = (float)(m_windowHeight) / (float)m_rowCount;
 
 	RoomGeneratorSingleton::Instance().SetRoomHorizontalBounds(sf::Vector2i(2, m_rowCount / 5));
 	RoomGeneratorSingleton::Instance().SetRoomVerticalBounds(sf::Vector2i(2, m_rowCount / 5));
-	RoomGeneratorSingleton::Instance().SetPlacementAttemptCount(rows*columns/2);
+	RoomGeneratorSingleton::Instance().SetPlacementAttemptCount(rows*columns/4);
 
 	m_tiles.reserve(m_rowCount);
 	std::vector<Tile> row;
@@ -48,13 +45,16 @@ void GridManager::GenerateMap(int windowWidth, int windowHeight, unsigned int ro
 	{
 		for (int j = 0; j < m_columnCount; ++j)
 		{
-			row[j].SetPosition(sf::Vector2f((m_tileWidth + BORDER_WIDTH) * j, (m_tileHeight + BORDER_WIDTH) * i));
+			row[j].SetPosition(sf::Vector2f(m_tileWidth * j, m_tileHeight  * i));
 		}
 
 		m_tiles.push_back(row);
 	}
 
 	RandomizeMap();
+
+	m_prevMazeGen = m_mazeGenerator;
+	m_prevMazeGenType = m_mazeGenerateType;
 }
 
 void GridManager::Draw(sf::RenderWindow& rw)
@@ -70,11 +70,20 @@ void GridManager::Draw(sf::RenderWindow& rw)
 
 void GridManager::RandomizeMap()
 {
-	if (m_mazeGenerator == MazeGenerator::RecursiveBacktracker)
-		MGRecursiveBacktrackerSingleton::Instance().TerminateGeneration();
-	else
-		MGEllersSingleton::Instance().TerminateGeneration();
+	if (m_prevMazeGenType == Step)
+	{
+		if (m_prevMazeGen == MazeGenerator::RecursiveBacktracker)
+			MGRecursiveBacktrackerSingleton::Instance().TerminateGeneration();
+		else
+			MGEllersSingleton::Instance().TerminateGeneration();
 
+		MazeConnectorSingleton::Instance().TerminateGeneration();
+		m_terminated = true;
+	}
+
+	m_prevMazeGenType = m_mazeGenerateType;
+	m_prevMazeGen = m_mazeGenerator;
+	SetIDManagerSingleton::Instance().Reset();
 	//Reset Map
 	for (int i = 0; i < m_rowCount; ++i)
 	{
@@ -83,9 +92,16 @@ void GridManager::RandomizeMap()
 			m_tiles[i][j].Reset();
 		}
 	}
+	m_terminated = false;
 	m_simPhase = GeneratingRooms;
+	m_seed = std::chrono::system_clock::now().time_since_epoch().count();
 
+	auto start = std::chrono::high_resolution_clock::now();
 	std::vector<sf::IntRect> rooms = GenerateRooms();
+	auto finish = std::chrono::high_resolution_clock::now();
+	std::chrono::duration<double> elapsed = finish - start;
+	std::cout << "Room generation elapsed time: " << elapsed.count() << std::endl;
+	
 	m_simPhase = GeneratingMaze;
 	GenerateMaze();
 	ConnectMap(rooms);
@@ -117,26 +133,31 @@ void GridManager::GenerateMaze()
 	if (m_mazeGenerateType == GenerateType::Step)
 	{
 		if (m_mazeGenerator == MazeGenerator::RecursiveBacktracker)
-			m_connectMapFuture = std::async(std::launch::async, &MGRecursiveBacktracker::GenerateMaze, MGRecursiveBacktrackerSingleton::Instance(), std::ref(m_tiles), m_mazeGenerateType, std::chrono::system_clock::now().time_since_epoch().count(), 25);
+			m_connectMapFuture = std::async(std::launch::async, &MGRecursiveBacktracker::GenerateMaze, MGRecursiveBacktrackerSingleton::Instance(), std::ref(m_tiles), m_mazeGenerateType, m_seed, m_threadSleepTime);
 		else
-			m_connectMapFuture = std::async(std::launch::async, &MGEllers::GenerateMaze, MGEllersSingleton::Instance(), std::ref(m_tiles), m_mazeGenerateType, std::chrono::system_clock::now().time_since_epoch().count(), 25);
+			m_connectMapFuture = std::async(std::launch::async, &MGEllers::GenerateMaze, MGEllersSingleton::Instance(), std::ref(m_tiles), m_mazeGenerateType, m_seed, m_threadSleepTime);
 	}
 	else
 	{
+		auto start = std::chrono::high_resolution_clock::now();
 		if (m_mazeGenerator == MazeGenerator::RecursiveBacktracker)
-			MGRecursiveBacktrackerSingleton::Instance().GenerateMaze(m_tiles, m_mazeGenerateType, std::chrono::system_clock::now().time_since_epoch().count(), 25);
+			MGRecursiveBacktrackerSingleton::Instance().GenerateMaze(m_tiles, m_mazeGenerateType, m_seed, m_threadSleepTime);
 		else
-			MGEllersSingleton::Instance().GenerateMaze(m_tiles, m_mazeGenerateType, std::chrono::system_clock::now().time_since_epoch().count(), 25);
+			MGEllersSingleton::Instance().GenerateMaze(m_tiles, m_mazeGenerateType, m_seed, m_threadSleepTime);
+		auto finish = std::chrono::high_resolution_clock::now();
+		std::chrono::duration<double> elapsed = finish - start;
+		std::cout << "Maze generation elapsed time: " << elapsed.count() << std::endl;
 	}
 }
 
 const std::vector<sf::IntRect>& GridManager::GenerateRooms()
 {
-	return RoomGeneratorSingleton::Instance().GenerateRoom(m_tiles, m_mazeGenerateType, std::chrono::system_clock::now().time_since_epoch().count(), 25);
+	return RoomGeneratorSingleton::Instance().GenerateRoom(m_tiles, m_mazeGenerateType, m_seed, m_threadSleepTime);
 }
 
 template<typename T>
-bool future_is_ready(std::future<T>& t){
+bool future_is_ready(std::future<T>& t)
+{
 	return t.wait_for(std::chrono::seconds(30)) == std::future_status::ready;
 }
 
@@ -150,191 +171,27 @@ void GridManager::ConnectMap(const std::vector<sf::IntRect>& rooms)
 	else
 	{
 		m_simPhase = ConnectingMap;
+		auto start = std::chrono::high_resolution_clock::now();
 		ConnectMapWorker(rooms);
+		auto finish = std::chrono::high_resolution_clock::now();
+		std::chrono::duration<double> elapsed = finish - start;
+		std::cout << "Maze connection elapsed time: " << elapsed.count() << std::endl;
 	}
 
 }
 void GridManager::ConnectMapWorker(const std::vector<sf::IntRect>& rooms)
 {
-	m_simPhase = ConnectingMap;
-
-	std::vector<std::pair<std::pair<int, int>, int>> possibleDoors; // Last int is passage direction, see GameDefs::DIRECTIONS
-	int maxDoors, currDoors;
-	int roomX, roomY, roomW, roomH, row, column, dirIndex;
-	std::pair<int, int> tileIndices, nextTileIndices;
-	std::default_random_engine engine(std::chrono::system_clock::now().time_since_epoch().count());
-	std::uniform_int_distribution<int> dist(0, 4);
-	GetNextSetID();
-	std::set<int> connectedSets;
-	for (int i = 0; i < rooms.size(); ++i)
-	{
-		roomX = rooms[i].left;
-		roomY = rooms[i].top;
-		roomW = rooms[i].width;
-		roomH = rooms[i].height;
-		maxDoors = 3;
-		currDoors = 0;
-		possibleDoors.clear();
-		for (column = roomX; column < roomX + roomW; ++column)
-		{
-			if (roomY > 0)
-				possibleDoors.push_back(std::make_pair(std::make_pair(roomY, column), 2));
-			if (roomY + roomH < m_rowCount)
-				possibleDoors.push_back(std::make_pair(std::make_pair(roomY + roomH - 1, column), 3));
-		}
-
-		for (row = roomY; row < roomY + roomH; ++row)
-		{
-			if (roomX > 0)
-				possibleDoors.push_back(std::make_pair(std::make_pair(row, roomX), 0));
-			if (roomX + roomW < m_rowCount - 1)
-				possibleDoors.push_back(std::make_pair(std::make_pair(row, roomX + roomW), 1));;
-		}
-
-
-		//Randomize attempts
-		shuffle(possibleDoors.begin(), possibleDoors.end(), engine);
-		int j;
-		for (j = 0; j < possibleDoors.size() && currDoors < maxDoors; ++j)
-		{
-			if (true)//(dist(engine) == 0)
-			{
-				tileIndices = possibleDoors[j].first;
-
-				dirIndex = possibleDoors[j].second;
-				nextTileIndices.first = tileIndices.first + DIRECTION_CHANGES[dirIndex].first;
-				nextTileIndices.second = tileIndices.second + DIRECTION_CHANGES[dirIndex].second;
-
-				if (m_tiles[nextTileIndices.first][nextTileIndices.second].GetID() == m_tiles[tileIndices.first][tileIndices.second].GetID())
-					continue;
-
-				m_tiles[tileIndices.first][tileIndices.second].AddDirection(GameDefs::DIRECTIONS[dirIndex]);
-				m_tiles[nextTileIndices.first][nextTileIndices.second].AddDirection(GameDefs::OPPOSITE_DIRECTIONS[dirIndex]);
-				m_tiles[tileIndices.first][tileIndices.second].SetBorder(GameDefs::DIRECTIONS[dirIndex], 4, sf::Color::Yellow);
-				m_tiles[nextTileIndices.first][nextTileIndices.second].SetBorder(GameDefs::OPPOSITE_DIRECTIONS[dirIndex], 4, sf::Color::Yellow);
-
-				FloodSet(tileIndices, GetCurrentSetID());
-
-				currDoors++;
-			}
-		}
-	}
+	MazeConnectorSingleton::Instance().ConnectMaze(rooms, m_tiles, m_mazeGenerateType, m_seed, m_threadSleepTime);
 }
 
 void GridManager::ConnectMapWorkerByStep(std::vector<sf::IntRect> rooms)
 {
 	if (m_mazeGenerateType == GenerateType::Step)
 	{
-		if (future_is_ready(m_connectMapFuture))
+		if (future_is_ready(m_connectMapFuture) && !m_terminated)
 		{
 			m_simPhase = ConnectingMap;
-
-		}
-	}
-	std::vector<std::pair<std::pair<int, int>, int>> possibleDoors; // Last int is passage direction, see GameDefs::DIRECTIONS
-	int maxDoors, currDoors;
-	int roomX, roomY, roomW, roomH, row, column, dirIndex;
-	std::pair<int, int> tileIndices, nextTileIndices;
-	std::default_random_engine engine(std::chrono::system_clock::now().time_since_epoch().count());
-	std::uniform_int_distribution<int> dist(0, 1);
-	GetNextSetID();
-	std::set<int> connectedSets;
-	for (int i = 0; i < rooms.size(); ++i)
-	{
-		roomX = rooms[i].left;
-		roomY = rooms[i].top;
-		roomW = rooms[i].width;
-		roomH = rooms[i].height;
-		maxDoors = 3;
-		currDoors = 0;
-		possibleDoors.clear();
-		for (column = roomX; column < roomX + roomW; ++column)
-		{
-			if (roomY > 0)
-				possibleDoors.push_back(std::make_pair(std::make_pair(roomY, column), 2));
-			if (roomY + roomH < m_rowCount)
-				possibleDoors.push_back(std::make_pair(std::make_pair(roomY + roomH - 1, column), 3));
-		}
-
-		for (row = roomY; row < roomY + roomH; ++row)
-		{
-			if (roomX > 0)
-				possibleDoors.push_back(std::make_pair(std::make_pair(row, roomX), 0));
-			if (roomX + roomW < m_rowCount - 1)
-				possibleDoors.push_back(std::make_pair(std::make_pair(row, roomX + roomW), 1));;
-		}
-
-
-		//Randomize attempts
-		shuffle(possibleDoors.begin(), possibleDoors.end(), engine);
-		int j;
-		for (j = 0; j < possibleDoors.size() && currDoors < maxDoors; ++j)
-		{
-			if (true)//(dist(engine) == 0)
-			{
-				tileIndices = possibleDoors[j].first;
-
-				dirIndex = possibleDoors[j].second;
-				nextTileIndices.first = tileIndices.first + DIRECTION_CHANGES[dirIndex].first;
-				nextTileIndices.second = tileIndices.second + DIRECTION_CHANGES[dirIndex].second;
-
-				if (m_tiles[nextTileIndices.first][nextTileIndices.second].GetID() == m_tiles[tileIndices.first][tileIndices.second].GetID())
-					continue;
-
-				m_tiles[tileIndices.first][tileIndices.second].AddDirection(GameDefs::DIRECTIONS[dirIndex]);
-				m_tiles[nextTileIndices.first][nextTileIndices.second].AddDirection(GameDefs::OPPOSITE_DIRECTIONS[dirIndex]);
-				m_tiles[tileIndices.first][tileIndices.second].SetBorder(GameDefs::DIRECTIONS[dirIndex], 4, sf::Color::Yellow);
-				m_tiles[nextTileIndices.first][nextTileIndices.second].SetBorder(GameDefs::OPPOSITE_DIRECTIONS[dirIndex], 4, sf::Color::Yellow);
-
-				FloodSetByStep(tileIndices, GetCurrentSetID());
-
-				currDoors++;
-			}
-		}
-	}
-}
-
-void GridManager::FloodSet(const std::pair<int, int>& indices, int id)
-{
-	if (indices.first < 0 || indices.first >= m_rowCount
-		|| indices.second < 0 || indices.second >= m_columnCount || m_tiles[indices.first][indices.second].GetID() == id)
-		return;
-
-	std::pair<int, int> nextIndices;
-	m_tiles[indices.first][indices.second].SetID(id);
-	m_tiles[indices.first][indices.second].SetColor(GameDefs::GetSetColor(id));
-
-	for (int i = 0; i < 4; ++i)
-	{
-		if (m_tiles[indices.first][indices.second].HasDirection(DIRECTIONS[i]))
-		{
-			nextIndices.first = indices.first + DIRECTION_CHANGES[i].first;
-			nextIndices.second = indices.second + DIRECTION_CHANGES[i].second;
-
-			FloodSet(nextIndices, id);
-		}
-	}
-}
-
-void GridManager::FloodSetByStep(const std::pair<int, int>& indices, int id)
-{
-	if (indices.first < 0 || indices.first >= m_rowCount
-		|| indices.second < 0 || indices.second >= m_columnCount || m_tiles[indices.first][indices.second].GetID() == id)
-		return;
-
-	std::pair<int, int> nextIndices;
-	m_tiles[indices.first][indices.second].SetID(id);
-	m_tiles[indices.first][indices.second].SetColor(GameDefs::GetSetColor(id));
-
-	for (int i = 0; i < 4; ++i)
-	{
-		if (m_tiles[indices.first][indices.second].HasDirection(DIRECTIONS[i]))
-		{
-			nextIndices.first =	indices.first + DIRECTION_CHANGES[i].first;
-			nextIndices.second = indices.second + DIRECTION_CHANGES[i].second;
-			std::this_thread::sleep_for(std::chrono::milliseconds(25));
-
-			FloodSetByStep(nextIndices, id);
+			MazeConnectorSingleton::Instance().ConnectMaze(rooms, m_tiles, m_mazeGenerateType, m_seed, m_threadSleepTime);
 		}
 	}
 }

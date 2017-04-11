@@ -32,8 +32,6 @@ public:
 		EllersAlgorithm
 	};
 
-	GridManager();
-
 	void GenerateMap(int windowWidth, int windowHeight, unsigned int rows, unsigned int columns);
 	void RandomizeMap();
 	void ToggleMazeGenerator();
@@ -62,13 +60,20 @@ private:
 	int m_columnCount;
 	float m_tileWidth;
 	float m_tileHeight;
-	const int BORDER_WIDTH = 1;
+	const int BORDER_WIDTH = 2;
 	const sf::Color BORDER_COLOR = sf::Color::Black;
+
+	bool m_terminated;
 
 	SimulationPhase m_simPhase;
 	MazeGenerator m_mazeGenerator = RecursiveBacktracker;
-	GameDefs::GenerateType m_mazeGenerateType = GameDefs::Full;
+	MazeGenerator m_prevMazeGen;
 
+	GameDefs::GenerateType m_mazeGenerateType = GameDefs::Full;
+	GameDefs::GenerateType m_prevMazeGenType = GameDefs::Full;
+
+	int m_threadSleepTime = 5;
+	int m_seed;
 	std::thread m_mazeGeneratorThread;
 	std::future<void> m_connectMapFuture;
 	std::thread m_mazeConnectorThread;

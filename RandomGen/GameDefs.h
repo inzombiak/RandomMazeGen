@@ -5,6 +5,8 @@
 #include <random> 
 #include <array>
 
+#include "Singleton.h"
+
 namespace GameDefs
 {
 
@@ -43,47 +45,97 @@ namespace GameDefs
 		return static_cast<PassageDirection>(~static_cast<int>(a));
 	}
 
+	//Set management
+	
 	namespace Private
 	{
-		typedef std::map<int, sf::Color> SetIDToColorMap;
-		static SetIDToColorMap SET_ID_TO_COLOR;
+		class SetIDManager
+		{
+		public:
+			inline void Reset()
+			{
+				m_setIDToColor.clear();
+				m_setMemberCount.clear();
+				m_prevRandomSeed = -1;
+				m_lastSetID = -1;
+			}
+			inline int GetCurrentSetID()
+			{
+				return m_lastSetID;
+			}
 
-		static int LAST_SET_ID = -1;
+			inline int GetNextSetID()
+			{
+				int set = ++m_lastSetID;
+				m_setMemberCount[set] = 0;
+
+				return set;
+			}
+			inline void AddToSet(int set)
+			{
+				auto it = m_setMemberCount.find(set);
+				if (it == m_setMemberCount.end())
+					return;
+
+				it->second++;
+			}
+			inline int GetSetMemberCount(int set)
+			{
+				auto it = m_setMemberCount.find(set);
+				if (it == m_setMemberCount.end())
+					return 0;
+
+				return it->second;
+			}
+			inline void RemoveFromSet(int set)
+			{
+				auto it = m_setMemberCount.find(set);
+				if (it == m_setMemberCount.end())
+					return;
+
+				it->second--;
+				if (it->second <= 0)
+					m_setMemberCount.erase(it);
+			}
+			inline sf::Color GetSetColor(int set, int seed)
+			{
+				auto it = m_setIDToColor.find(set);
+				if (it != m_setIDToColor.end())
+					return it->second;
+
+				std::uniform_int_distribution<int> dist(0, 255);
+
+				if (seed != m_prevRandomSeed)
+				{
+					m_prevRandomSeed = seed;
+					m_randomEngine.seed(seed);
+				}
+
+				sf::Color color;
+
+				color.a = 255;
+				color.r = dist(m_randomEngine);
+				color.g = dist(m_randomEngine);
+				color.b = dist(m_randomEngine);
+
+				m_setIDToColor[set] = color;
+
+				return color;
+
+			}
+		private:
+
+			typedef std::map<int, sf::Color> SetIDToColorMap;
+			SetIDToColorMap m_setIDToColor;
+			std::default_random_engine m_randomEngine;
+			std::map<int, int> m_setMemberCount;
+			int m_prevRandomSeed = -1;
+
+			int m_lastSetID = -1;
+		};
 	}
 
-	inline int GetCurrentSetID()
-	{
-		return Private::LAST_SET_ID;
-	}
-
-	inline int GetNextSetID()
-	{
-		Private::LAST_SET_ID++;
-		return Private::LAST_SET_ID;
-	}
-
-	inline sf::Color GetSetColor(int set)
-	{
-		auto it = Private::SET_ID_TO_COLOR.find(set);
-		if (it != Private::SET_ID_TO_COLOR.end())
-			return it->second;
-
-		int seed = std::chrono::system_clock::now().time_since_epoch().count();
-		std::uniform_int_distribution<int> dist(0, 255);
-		std::default_random_engine randomEngine(seed);
-
-		sf::Color color;
-
-		color.a = 255;
-		color.r = dist(randomEngine);
-		color.g = dist(randomEngine);
-		color.b = dist(randomEngine);
-
-		Private::SET_ID_TO_COLOR[set] = color;
-
-		return color;
-
-	}
+	typedef SingletonHolder<Private::SetIDManager, CreationPolicies::CreateWithNew, LifetimePolicies::DefaultLifetime> SetIDManagerSingleton;
 
 	static std::array<PassageDirection, 4>			DIRECTIONS = { GameDefs::East, GameDefs::West, GameDefs::North, GameDefs::South };
 	static std::array<PassageDirection, 4>			OPPOSITE_DIRECTIONS = { GameDefs::West, GameDefs::East, GameDefs::South, GameDefs::North };;

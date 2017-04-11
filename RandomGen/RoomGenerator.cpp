@@ -18,9 +18,8 @@ const std::vector<sf::IntRect>& RoomGenerator::GenerateRoom(std::vector<std::vec
 	m_sleepDuration = sleepDuration;
 	m_randomNumGen.seed(seed);
 	m_tiles = &tiles;
-
+	m_seed = seed;
 	m_columnCount = (*m_tiles)[0].size();
-;
 
 	if (genType == Step)
 		GenerateByStep();
@@ -73,7 +72,7 @@ void RoomGenerator::GenerateFull()
 		if (!validRoom)
 			continue;
 
-		int setID = GameDefs::GetNextSetID();
+		int setID = SetIDManagerSingleton::Instance().GetNextSetID();
 		PassageDirection dirs;
 		for (int i = room.top; i < room.top + room.height; ++i)
 		{
@@ -100,7 +99,7 @@ void RoomGenerator::GenerateFull()
 				(*m_tiles)[i][j].SetType(TileType::Room);
 				(*m_tiles)[i][j].SetDirection(dirs);
 				(*m_tiles)[i][j].SetID(setID);
-				(*m_tiles)[i][j].SetColor(GameDefs::GetSetColor(setID));
+				(*m_tiles)[i][j].SetColor(SetIDManagerSingleton::Instance().GetSetColor(setID, m_seed));
 			}
 		}
 
