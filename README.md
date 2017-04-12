@@ -6,8 +6,7 @@ I decided to write a separate generator using C++/SFML, then port it to C#/Unity
 
 Also includes ability visualize generator through the magic of \~\~MuLtIThReAdIng\~\~.
 
-~~Note: I'll add buttons after I'm done, until then bare with keyboard controls~~
-Note: I'll add buttons later
+Note: ~~I'll add buttons after I'm done, until then bare with keyboard controls~~ I'll add buttons later
 
 ## Directions
  * R - generate new map
