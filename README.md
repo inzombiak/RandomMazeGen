@@ -1,12 +1,13 @@
 # RandomGen
-WIP Random dungeon generator
+Random dungeon generator
 
 A game I am currently working on with a friend requires randomly generated stealth levels with randomly placed enemies, treasures and power-ups.
 I decided to write a separate generator using C++/SFML, then port it to C#/Unity.
 
 Also includes ability visualize generator through the magic of \~\~MuLtIThReAdIng\~\~.
 
-Note: I'll add buttons after I'm done, until then bare with keyboard controlls
+~~Note: I'll add buttons after I'm done, until then bare with keyboard controls~~
+Note: I'll add buttons later
 
 ## Directions
  * R - generate new map
