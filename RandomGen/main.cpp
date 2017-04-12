@@ -9,6 +9,7 @@ const int WINDOW_WIDTH = 800;
 int main()
 {
 	sf::RenderWindow window(sf::VideoMode(WINDOW_WIDTH, WINDOW_HEIGHT), "Random Gen");
+
 	GridManager gm;
 	gm.GenerateMap(WINDOW_WIDTH, WINDOW_HEIGHT, 30, 30);
 
@@ -19,6 +20,7 @@ int main()
 	while (window.isOpen())
 	{
 		sf::Event event;
+
 		while (window.pollEvent(event))
 		{
 			if (event.type == sf::Event::Closed)

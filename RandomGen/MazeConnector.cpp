@@ -12,15 +12,10 @@ void MazeConnector::ConnectMaze(const std::vector<sf::IntRect>& rooms, std::vect
 	if (m_rowCount < 1 || m_rooms.size() < 1)
 		return;
 	{
-		std::unique_lock<std::mutex> lock(m_doneCVMutex);
+		std::unique_lock<std::mutex> lock;
 		m_generateType = genType;
 	}
-
-	{
-		std::unique_lock<std::mutex> lock(m_doneCVMutex);
-		m_generating = true;
-	}
-
+	m_distribution = std::uniform_int_distribution<int>(0, 5);
 	m_sleepDuration = sleepDuration;
 	m_randomNumGen.seed(seed);
 	m_tiles = &tiles;
@@ -28,14 +23,13 @@ void MazeConnector::ConnectMaze(const std::vector<sf::IntRect>& rooms, std::vect
 	m_columnCount = (*m_tiles)[0].size();
 
 	if (genType == Step)
+	{
 		ConnectByStep();
+		SetDoneState(true);
+	}
 	else
 		ConnectFull();
 
-	{
-		std::unique_lock<std::mutex> lock(m_doneCVMutex);
-		m_generating = false;
-	}
 }
 
 void MazeConnector::ConnectFull()
@@ -109,7 +103,7 @@ void MazeConnector::ConnectRoomFull(int index)
 		//Done
 		break;
 	}
-	std::uniform_int_distribution<int> dist(0, 4);
+
 	//Now we clear the possible doors, with a small chance of opening them up if theyre valid
 	//TODO: CONTINUING MIGHT CAUSE ISSUES
 	for (; j < possibleDoors.size(); ++j)
@@ -122,7 +116,7 @@ void MazeConnector::ConnectRoomFull(int index)
 		currID = (*m_tiles)[tileIndices.first][tileIndices.second].GetID();
 		nextID = (*m_tiles)[nextTileIndices.first][nextTileIndices.second].GetID();
 
-		if (dist(m_randomNumGen) == 0 || 
+		if (m_distribution(m_randomNumGen) == 0 ||
 			nextID != currID)
 		{
 
@@ -141,22 +135,46 @@ void MazeConnector::ConnectRoomFull(int index)
 	}
 }
 
+void MazeConnector::FloodSet(const std::pair<int, int>& indices, int id)
+{
+	if (indices.first < 0 || indices.first >= m_rowCount
+		|| indices.second < 0 || indices.second >= m_columnCount || (*m_tiles)[indices.first][indices.second].GetID() == id)
+		return;
+
+	std::pair<int, int> nextIndices;
+	(*m_tiles)[indices.first][indices.second].SetID(id);
+	(*m_tiles)[indices.first][indices.second].SetColor(SetIDManagerSingleton::Instance().GetSetColor(id, m_seed));
+
+	for (int i = 0; i < 4; ++i)
+	{
+		if ((*m_tiles)[indices.first][indices.second].HasDirection(DIRECTIONS[i]))
+		{
+			nextIndices.first = indices.first + DIRECTION_CHANGES[i].first;
+			nextIndices.second = indices.second + DIRECTION_CHANGES[i].second;
+
+			FloodSet(nextIndices, id);
+		}
+	}
+}
+
 void MazeConnector::ConnectByStep()
 {
-	m_generate.test_and_set();
-	{
-		std::unique_lock<std::mutex> lock(m_doneCVMutex);
-		m_done = false;
-		m_doneCV.notify_all();
-	}
-	for (int i = 0; i < m_rooms.size(); ++i)
-		ConnectRoomByStep(i);
+	CanGenerate();
 
+	SetDoneState(false);
+
+	for (int i = 0; i < m_rooms.size(); ++i)
 	{
-		std::unique_lock<std::mutex> lock(m_doneCVMutex);
-		m_done = true;
-		m_doneCV.notify_all();
+		if (!CanGenerate())
+		{
+			ClearGenerate();
+			break;
+		}
+		ConnectRoomByStep(i);
 	}
+
+
+	SetDoneState(true);
 }
 
 void MazeConnector::ConnectRoomByStep(int index)
@@ -172,6 +190,12 @@ void MazeConnector::ConnectRoomByStep(int index)
 	//Create list of possible doors
 	for (column = roomX; column < roomX + roomW; ++column)
 	{
+		if (!CanGenerate())
+		{
+			ClearGenerate();
+			break;
+		}
+
 		if (roomY > 0)
 			possibleDoors.push_back(std::make_pair(std::make_pair(roomY, column), 2));
 
@@ -181,6 +205,12 @@ void MazeConnector::ConnectRoomByStep(int index)
 
 	for (row = roomY; row < roomY + roomH; ++row)
 	{
+		if (!CanGenerate())
+		{
+			ClearGenerate();
+			break;
+		}
+
 		if (roomX > 0)
 			possibleDoors.push_back(std::make_pair(std::make_pair(row, roomX), 0));
 
@@ -196,6 +226,12 @@ void MazeConnector::ConnectRoomByStep(int index)
 	//Loop until we find an unconnected region
 	for (j = 0; j < possibleDoors.size(); ++j)
 	{
+
+		if (!CanGenerate())
+		{
+			ClearGenerate();
+			break;
+		}
 
 		tileIndices = possibleDoors[j].first;
 
@@ -223,11 +259,17 @@ void MazeConnector::ConnectRoomByStep(int index)
 		//Done
 		break;
 	}
-	std::uniform_int_distribution<int> dist(0, 5);
+	
 	//Now we clear the possible doors, with a small chance of opening them up if theyre valid
 	//TODO: CONTINUING MIGHT CAUSE ISSUES
 	for (; j < possibleDoors.size(); ++j)
 	{
+		if (!CanGenerate())
+		{
+			ClearGenerate();
+			break;
+		}
+
 		tileIndices = possibleDoors[j].first;
 
 		dirIndex = possibleDoors[j].second;
@@ -235,7 +277,7 @@ void MazeConnector::ConnectRoomByStep(int index)
 		nextTileIndices.second = tileIndices.second + DIRECTION_CHANGES[dirIndex].second;
 		currID = (*m_tiles)[tileIndices.first][tileIndices.second].GetID();
 		nextID = (*m_tiles)[nextTileIndices.first][nextTileIndices.second].GetID();
-		if (dist(m_randomNumGen) == 0 ||
+		if (m_distribution(m_randomNumGen) == 0 ||
 			nextID != currID)
 		{
 
@@ -254,34 +296,11 @@ void MazeConnector::ConnectRoomByStep(int index)
 	}
 }
 
-
-void MazeConnector::FloodSet(const std::pair<int, int>& indices, int id)
-{
-	if (indices.first < 0 || indices.first >= m_rowCount
-		|| indices.second < 0 || indices.second >= m_columnCount || (*m_tiles)[indices.first][indices.second].GetID() == id)
-		return;
-
-	std::pair<int, int> nextIndices;
-	(*m_tiles)[indices.first][indices.second].SetID(id);
-	(*m_tiles)[indices.first][indices.second].SetColor(SetIDManagerSingleton::Instance().GetSetColor(id, m_seed));
-
-	for (int i = 0; i < 4; ++i)
-	{
-		if ((*m_tiles)[indices.first][indices.second].HasDirection(DIRECTIONS[i]))
-		{
-			nextIndices.first = indices.first + DIRECTION_CHANGES[i].first;
-			nextIndices.second = indices.second + DIRECTION_CHANGES[i].second;
-
-			FloodSet(nextIndices, id);
-		}
-	}
-}
-
 void MazeConnector::FloodSetByStep(const std::pair<int, int>& indices, int id)
 {
-	if (!m_generate.test_and_set())
+	if (!CanGenerate())
 	{
-		m_generate.clear();
+		ClearGenerate();
 		return;
 	}
 
@@ -295,9 +314,9 @@ void MazeConnector::FloodSetByStep(const std::pair<int, int>& indices, int id)
 
 	for (int i = 0; i < 4; ++i)
 	{
-		if (!m_generate.test_and_set())
+		if (!CanGenerate())
 		{
-			m_generate.clear();
+			ClearGenerate();
 			return;
 		}
 

@@ -9,11 +9,6 @@ void MGRecursiveBacktracker::GenerateMaze(std::vector<std::vector<Tile>>& tiles,
 	if (tiles.size() < 1)
 		return;
 
-	{
-		std::unique_lock<std::mutex> lock(m_generatingMutex);
-		m_generating = true;
-	}
-
 	m_generateType = genType;
 	m_sleepDuration = sleepDuration;
 	m_randomNumGen.seed(seed);
@@ -27,16 +22,10 @@ void MGRecursiveBacktracker::GenerateMaze(std::vector<std::vector<Tile>>& tiles,
 	else
 		GenerateFull();
 
-	{
-		std::unique_lock<std::mutex> lock(m_generatingMutex);
-		m_generating = false;
-	}
 }
 
 void MGRecursiveBacktracker::GenerateFull()
 {
-	m_done = false;
-
 	int startI = 0 , startJ = 0;
 	int id;
 	while (startI < m_rowCount)
@@ -59,8 +48,6 @@ void MGRecursiveBacktracker::GenerateFull()
 
 		startI++;
 	}
-
-	m_done = true;
 }
 
 void MGRecursiveBacktracker::CarvePassageFull(int startI, int startJ)
@@ -93,26 +80,32 @@ void MGRecursiveBacktracker::CarvePassageFull(int startI, int startJ)
 		}
 
 	}
+
+	
 }
 
 
 void MGRecursiveBacktracker::GenerateByStep()
 {
-	m_generate.test_and_set();
-	{
-		std::unique_lock<std::mutex> lock(m_doneCVMutex);
-		m_done = false;
-		m_doneCV.notify_all();
-	}
-	
+	CanGenerate();
+	SetDoneState(false);
 	int startI = 0, startJ = 0;
 	int id;
 	while (startI < m_rowCount)
 	{
 		startJ = 0;
-
+		if (!CanGenerate())
+		{
+			ClearGenerate();
+			break;
+		}
 		while (startJ < m_columnCount)
 		{
+			if (!CanGenerate())
+			{
+				ClearGenerate();
+				break;
+			}
 			if ((*m_tiles)[startI][startJ].GetType() == TileType::Empty)
 			{
 				id = SetIDManagerSingleton::Instance().GetNextSetID();
@@ -128,18 +121,14 @@ void MGRecursiveBacktracker::GenerateByStep()
 		startI++;
 	}
 
-	{
-		std::unique_lock<std::mutex> lock(m_doneCVMutex);
-		m_done = true;
-		m_doneCV.notify_all();
-	}
+	SetDoneState(true);
 }
 
 void MGRecursiveBacktracker::CarvePassageByStep(int startI, int startJ)
 {
-	if (!m_generate.test_and_set())
+	if (!CanGenerate())
 	{
-		m_generate.clear();
+		ClearGenerate();
 		return;
 	}
 
@@ -149,11 +138,12 @@ void MGRecursiveBacktracker::CarvePassageByStep(int startI, int startJ)
 
 	for (int i = 0; i < 4; ++i)
 	{
-		if (!m_generate.test_and_set())
+		if (!CanGenerate())
 		{
-			m_generate.clear();
+			ClearGenerate();
 			return;
 		}
+
 		std::this_thread::sleep_for(std::chrono::milliseconds(m_sleepDuration));
 		index = directionIndices[i];
 
@@ -164,9 +154,9 @@ void MGRecursiveBacktracker::CarvePassageByStep(int startI, int startJ)
 			nextJ >= 0 && nextJ < (*m_tiles)[0].size() && 
 			(*m_tiles)[nextI][nextJ].GetType() == TileType::Empty)
 		{
-			if (!m_generate.test_and_set())
+			if (!CanGenerate())
 			{
-				m_generate.clear();
+				ClearGenerate();
 				return;
 			}
 

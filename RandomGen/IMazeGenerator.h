@@ -2,39 +2,14 @@
 #define I_MAZE_GENERATOR_H
 
 #include "Tile.h"
+#include "IThreadedSolver.h"
 
-#include <array>
-#include <random>  
-#include <atomic>
-#include <condition_variable>
-
-class IMazeGenerator
+class IMazeGenerator : public IThreadedSolver
 {
 public:
 	virtual ~IMazeGenerator() {};
 
 	virtual void GenerateMaze(std::vector<std::vector<Tile>>& tiles, const GameDefs::GenerateType& genType, unsigned seed, int sleepDuration) = 0;
-	void TerminateGeneration()
-	{
-		{
-			std::unique_lock<std::mutex> lock(m_generatingMutex);
-			if (!m_generating)
-				return;
-		}
-
-		{
-			std::unique_lock<std::mutex> lock(m_doneCVMutex);
-			if (m_generateType != GameDefs::Step)
-				return;
-		}
-
-		m_generate.clear();
-
-		std::unique_lock<std::mutex> lock(m_doneCVMutex);
-		auto not_paused = [this](){return m_done == true; };
-		m_doneCV.wait(lock, not_paused);
-	}
-
 protected:
 	IMazeGenerator(){}
 	//Allows full to run faster
@@ -45,17 +20,9 @@ protected:
 	int m_columnCount;
 	std::vector<std::vector<Tile>>* m_tiles;
 	int m_seed;
-	//For step generation
-	//TODO: STATIC MAY CAUSE ISSUES
-	static std::atomic_flag m_generate;
-	static std::condition_variable m_doneCV;                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                
-	static std::mutex m_doneCVMutex;
-	static std::mutex m_generatingMutex;
-	static std::atomic<bool> m_done;
-	static bool m_generating;
 	int m_sleepDuration;
 
-	static GameDefs::GenerateType m_generateType;
+	GameDefs::GenerateType m_generateType;
 	std::default_random_engine m_randomNumGen;
 };
 

@@ -84,10 +84,10 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClCompile Include="DeadEndRemover.cpp" />
     <ClCompile Include="MazeConnector.cpp" />
     <ClCompile Include="MGEllers.cpp" />
     <ClCompile Include="GridManager.cpp" />
-    <ClCompile Include="IMazeGenerator.cpp" />
     <ClCompile Include="main.cpp" />
     <ClCompile Include="Math.cpp" />
     <ClCompile Include="MGRecursiveBacktracker.cpp" />
@@ -95,7 +95,9 @@
     <ClCompile Include="Tile.cpp" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="DeadEndRemover.h" />
     <ClInclude Include="GameDefs.h" />
+    <ClInclude Include="IThreadedSolver.h" />
     <ClInclude Include="MazeConnector.h" />
     <ClInclude Include="MGEllers.h" />
     <ClInclude Include="GridManager.h" />

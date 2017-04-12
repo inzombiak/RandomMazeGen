@@ -18,11 +18,13 @@ class GridManager
 {
 
 public:
+	GridManager() {}
 	enum SimulationPhase
 	{
 		GeneratingRooms,
 		GeneratingMaze,
 		ConnectingMap,
+		RemovingDeadEnds,
 		Done,
 	};
 
@@ -40,16 +42,22 @@ public:
 	void Draw(sf::RenderWindow& rw);
 
 private:
+	GridManager(const GridManager&obj) {}
+
 	//Step 1: Generates rooms
 	const std::vector<sf::IntRect>& GenerateRooms();
 	//Step 2: Generates maze
 	void GenerateMaze();
+	void GenerateMazeWorker();
+	void GenerateMazeWorkerByStep();
 	//Step 3: Connect them
 	void ConnectMap(const std::vector<sf::IntRect>& rooms);
 	void ConnectMapWorker(const std::vector<sf::IntRect>& rooms);
-	void FloodSet(const std::pair<int, int>& index, int id);
 	void ConnectMapWorkerByStep(std::vector<sf::IntRect> rooms);
-	void FloodSetByStep(const std::pair<int, int>& index, int id);
+	//Step 4: Remove dead ends
+	void RemoveDeadEnds();
+	void RemoveDeadEndsWorker();
+	void RemoveDeadEndsWorkerByStep();
 
 	//TODO: Should asssign to a pointer not to m_currentShape(which should be a pointer)
 	bool GetShapeContainingPoint(const sf::Vector2f& point);
@@ -61,9 +69,13 @@ private:
 	float m_tileWidth;
 	float m_tileHeight;
 	const int BORDER_WIDTH = 2;
+	int m_threadSleepTime = 5;
+	int m_seed;
+	int m_removeDeadEndsPercentage = 50;
+
 	const sf::Color BORDER_COLOR = sf::Color::Black;
 
-	bool m_terminated;
+	std::atomic<bool> m_terminated;
 
 	SimulationPhase m_simPhase;
 	MazeGenerator m_mazeGenerator = RecursiveBacktracker;
@@ -72,11 +84,17 @@ private:
 	GameDefs::GenerateType m_mazeGenerateType = GameDefs::Full;
 	GameDefs::GenerateType m_prevMazeGenType = GameDefs::Full;
 
-	int m_threadSleepTime = 5;
-	int m_seed;
-	std::thread m_mazeGeneratorThread;
-	std::future<void> m_connectMapFuture;
 	std::thread m_mazeConnectorThread;
+	std::thread m_removeDeadEndsThread;
+
+	std::condition_variable m_connectMapCV;
+	std::mutex m_connectMapCVMutex;
+	std::atomic<bool> m_connectMap = true;
+
+	std::condition_variable m_removeDeadEndsCV;
+	std::mutex m_removeDeadEndsCVMutex;
+	std::atomic<bool> m_removeDeadEnds = true;
+
 	std::vector<std::vector<Tile>> m_tiles;
 };
 

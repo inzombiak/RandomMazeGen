@@ -12,15 +12,9 @@ void MGEllers::GenerateMaze(std::vector<std::vector<Tile>>& tiles, const Generat
 		return;
 
 	{
-		std::unique_lock<std::mutex> lock(m_doneCVMutex);
+		std::unique_lock<std::mutex> lock;
 		m_generateType = genType;
 	}
-
-	{
-		std::unique_lock<std::mutex> lock(m_doneCVMutex);
-		m_generating = true;
-	}
-
 
 	m_sleepDuration = sleepDuration;
 	m_randomNumGen.seed(seed);
@@ -35,10 +29,7 @@ void MGEllers::GenerateMaze(std::vector<std::vector<Tile>>& tiles, const Generat
 	else
 		GenerateFull();
 
-	{
-		std::unique_lock<std::mutex> lock(m_doneCVMutex);
-		m_generating = false;
-	}
+
 }
 
 bool MGEllers::CompareAndMergeSets(const std::pair<int, int>& first, const std::pair<int, int>& second)
@@ -140,7 +131,7 @@ void MGEllers::MergeColumns(int row)
 		return;
 	}
 
-	int nextI, nextJ, directionIndex;
+	int directionIndex;
 	std::uniform_int_distribution<int> distributionHorizontal(0, 2);
 	directionIndex = distributionHorizontal(m_randomNumGen);
 
@@ -195,7 +186,7 @@ void MGEllers::MergeColumns(int row)
 }
 void MGEllers::MakeVerticalCuts(int row)
 {
-	bool makeVerticalCut;
+	int makeVerticalCut;
 	std::uniform_int_distribution<int> distributionVertical(0, 1);
 	std::set<int> verticalSet;
 	verticalSet.clear();
@@ -243,9 +234,9 @@ void MGEllers::InitalizeRowByStep(int row)
 	m_setToIndices.clear();
 	for (int j = 0; j < m_columnCount; ++j)
 	{
-		if (!m_generate.test_and_set())
+		if (!CanGenerate())
 		{
-			m_generate.clear();
+			ClearGenerate();
 			break;
 		}
 
@@ -305,7 +296,7 @@ void MGEllers::MergeColumnsByStep(int row)
 		return;
 	}
 
-	int nextI, nextJ, directionIndex;
+	int directionIndex;
 	std::uniform_int_distribution<int> distributionHorizontal(0, 2);
 	directionIndex = distributionHorizontal(m_randomNumGen);
 
@@ -339,11 +330,12 @@ void MGEllers::MergeColumnsByStep(int row)
 	//Since we only merge left or right, 2 means don't merge
 	for (int j = 1; j < m_columnCount - 1; ++j)
 	{
-		if (!m_generate.test_and_set())
+		if (!CanGenerate())
 		{
-			m_generate.clear();
+			ClearGenerate();
 			break;
 		}
+
 		std::this_thread::sleep_for(std::chrono::milliseconds(m_sleepDuration));
 		directionIndex = distributionHorizontal(m_randomNumGen);
 
@@ -363,7 +355,7 @@ void MGEllers::MergeColumnsByStep(int row)
 }
 void MGEllers::MakeVerticalCutsByStep(int row)
 {
-	bool makeVerticalCut;
+	int makeVerticalCut;
 	std::uniform_int_distribution<int> distributionVertical(0, 1);
 	std::set<int> verticalSet;
 	verticalSet.clear();
@@ -372,11 +364,12 @@ void MGEllers::MakeVerticalCutsByStep(int row)
 
 	for (int j = 0; j < m_columnCount; ++j)
 	{
-		if (!m_generate.test_and_set())
+		if (!CanGenerate())
 		{
-			m_generate.clear();
+			ClearGenerate();
 			break;
 		}
+
 		std::this_thread::sleep_for(std::chrono::milliseconds(m_sleepDuration));
 		makeVerticalCut = distributionVertical(m_randomNumGen);
 		setIndex = m_rowSets[j].second;
@@ -399,27 +392,23 @@ void MGEllers::MakeVerticalCutsByStep(int row)
 
 void MGEllers::GenerateByStep()
 {
-	m_generate.test_and_set();
-	{
-		std::unique_lock<std::mutex> lock(m_doneCVMutex);
-		m_done = false;
-		m_doneCV.notify_all();
-	}
+	CanGenerate();
+	SetDoneState(false);
 
 	for (int i = 0; i < m_rowCount; ++i)
 	{
-		if (!m_generate.test_and_set())
+		if (!CanGenerate())
 		{
-			m_generate.clear();
+			ClearGenerate();
 			break;
 		}
 		
 		InitalizeRowByStep(i);
 		std::this_thread::sleep_for(std::chrono::milliseconds(m_sleepDuration * 2));
 
-		if (!m_generate.test_and_set())
+		if (!CanGenerate())
 		{
-			m_generate.clear();
+			ClearGenerate();
 			break;
 		}
 
@@ -431,11 +420,8 @@ void MGEllers::GenerateByStep()
 		MakeVerticalCutsByStep(i);
 		std::this_thread::sleep_for(std::chrono::milliseconds(m_sleepDuration * 2));
 	}
-	{
-		std::unique_lock<std::mutex> lock(m_doneCVMutex);
-		m_done = true;
-		m_doneCV.notify_all();
-	}
+
+	SetDoneState(true);
 
 }
 

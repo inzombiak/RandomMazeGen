@@ -29,9 +29,27 @@ void Tile::AddDirection(const PassageDirection& dir)
 {
 	m_direction = m_direction | dir;
 }
+void Tile::RemoveDirection(const GameDefs::PassageDirection& dir)
+{
+	m_direction = m_direction & ~dir;
+}
 bool Tile::HasDirection(const GameDefs::PassageDirection& dir)
 {
 	return (m_direction & dir) == dir;
+}
+std::vector<int> Tile::GetPassageDirectionIndices()
+{
+	std::vector<int> result;
+	if (HasDirection(PassageDirection::East))
+		result.push_back(0);
+	if (HasDirection(PassageDirection::West))
+		result.push_back(1);
+	if (HasDirection(PassageDirection::North))
+		result.push_back(2);
+	if (HasDirection(PassageDirection::South))
+		result.push_back(3);
+
+	return result;
 }
 TileType Tile::GetType() const
 {
@@ -76,10 +94,14 @@ void Tile::Draw(sf::RenderWindow& rw)
 {
 	rw.draw(m_tile);
 
+	//Dont draw borders for empty tiles
+	if (m_type == Empty)
+		return;
+
 	//Draw "walls"
 	sf::Vector2f borderPos;
 	sf::RectangleShape border;
-	
+
 	for (int i = 0; i < 4; ++i)
 	{
 		borderPos = m_tile.getPosition();
@@ -106,10 +128,11 @@ void Tile::Draw(sf::RenderWindow& rw)
 		border.setPosition(borderPos);
 		border.setFillColor(m_tile.getFillColor());
 
-		if ((m_direction & DIRECTIONS[i]) != DIRECTIONS[i])
+		if (!HasDirection(DIRECTIONS[i]))
 			border.setFillColor(m_borderInfo[DIRECTIONS[i]].second);
 		else
 			continue;
+
 		rw.draw(border);
 	}
 }
