@@ -11,7 +11,7 @@ int main()
 	sf::RenderWindow window(sf::VideoMode(WINDOW_WIDTH, WINDOW_HEIGHT), "Random Gen");
 
 	GridManager gm;
-	gm.GenerateMap(WINDOW_WIDTH, WINDOW_HEIGHT, 30, 30);
+	gm.GenerateMap(WINDOW_WIDTH, WINDOW_HEIGHT, 40, 40);
 
 	std::cout << "R - Generate New Map" << std::endl;
 	std::cout << "G - Toggle Maze Generator(Recursive Backtacker(default) and Eller's Algortihm)" << std::endl;

@@ -15,15 +15,16 @@ void MGEllers::GenerateMaze(std::vector<std::vector<Tile>>& tiles, const Generat
 		std::unique_lock<std::mutex> lock;
 		m_generateType = genType;
 	}
-
+	m_rowSets.clear();
+	m_setToIndices.clear();
 	m_sleepDuration = sleepDuration;
 	m_randomNumGen.seed(seed);
 	m_tiles = &tiles;
-	m_lastSet = 0;
 	m_rowCount = (*m_tiles).size();
 	m_columnCount = (*m_tiles)[0].size();
 	m_rowSets.resize(m_columnCount, std::make_pair(std::make_pair(-1, -1), -1));
 	m_seed = seed;
+
 	if (genType == GameDefs::Step)
 		GenerateByStep();
 	else
@@ -46,25 +47,44 @@ bool MGEllers::CompareAndMergeSets(const std::pair<int, int>& first, const std::
 	if (firstSetIndex == secondSetIndex)
 		return false;
 
-	minSetIndex = std::min(firstSetIndex, secondSetIndex);
-	maxSetIndex = std::max(firstSetIndex, secondSetIndex);
-
-	sToIIterator maxIt = m_setToIndices.find(maxSetIndex);
-	sToIIterator minIt = m_setToIndices.find(minSetIndex);
+	sToIIterator firstIt = m_setToIndices.find(firstSetIndex);
+	sToIIterator secondIt = m_setToIndices.find(secondSetIndex);
+	sToIIterator maxIt, minIt;
+	if (firstIt == m_setToIndices.end() || secondIt == m_setToIndices.end())
+		return false;
+	if (firstIt->second.size() > secondIt->second.size())
+	{
+		minIt = secondIt;
+		minSetIndex = secondSetIndex;
+		maxIt = firstIt;
+		maxSetIndex = firstSetIndex;
+	}
+	else
+	{
+		minIt = firstIt;
+		minSetIndex = firstSetIndex;
+		maxIt = secondIt;
+		maxSetIndex = secondSetIndex;
+	}
 
 	if (maxIt == m_setToIndices.end() || minIt == m_setToIndices.end())
 		assert(0);
 
-	auto maxSetTiles = maxIt->second;
-	
-	for (int i = 0; i < maxSetTiles.size(); ++i)
+	auto minSetTiles = minIt->second;
+	std::pair<int, int> indices;
+	for (int i = 0; i < minSetTiles.size(); ++i)
 	{
-		m_rowSets[maxSetTiles[i].second].second = minSetIndex;
+		indices = minSetTiles[i];
+		if (indices == INVALID_INDICES)
+			continue;
+		m_rowSets[minSetTiles[i].second].second = maxSetIndex;
+		(*m_tiles)[indices.first][indices.second].SetID(maxSetIndex);
+		(*m_tiles)[indices.first][indices.second].SetColor(SetIDManagerSingleton::Instance().GetSetColor(maxSetIndex, m_seed));
 	}
 
-	minIt->second.insert(minIt->second.end(), maxSetTiles.begin(), maxSetTiles.end());
+	maxIt->second.insert(maxIt->second.end(), minSetTiles.begin(), minSetTiles.end());
 
-	m_setToIndices.erase(maxIt);
+	m_setToIndices.erase(minIt);
 
 	return true;
 }
@@ -80,14 +100,16 @@ void MGEllers::InitalizeRow(int row)
 			continue;
 		}
 			
-
+		(*m_tiles)[row][j].SetType(TileType::Passage);
+		(*m_tiles)[row][j].SetID(GameDefs::SetIDManagerSingleton::Instance().GetCurrentSetID());
+		(*m_tiles)[row][j].SetColor(SetIDManagerSingleton::Instance().GetSetColor(GameDefs::SetIDManagerSingleton::Instance().GetCurrentSetID(), m_seed));
 		(*m_tiles)[row][j].SetType(GameDefs::Passage);
 		m_rowSets[j].first = std::make_pair(row, j);
 
 		if (m_rowSets[j].second == -1)
 		{
-			m_rowSets[j].second = m_lastSet;
-			m_lastSet++;
+//			m_rowSets[j].second = m_lastSet;
+			//m_lastSet++;
 		}
 				
 		m_setToIndices[m_rowSets[j].second].push_back(m_rowSets[j].first);
@@ -231,7 +253,8 @@ void MGEllers::GenerateFull()
 
 void MGEllers::InitalizeRowByStep(int row)
 {
-	m_setToIndices.clear();
+	//m_setToIndices.clear();
+	int id;
 	for (int j = 0; j < m_columnCount; ++j)
 	{
 		if (!CanGenerate())
@@ -239,41 +262,47 @@ void MGEllers::InitalizeRowByStep(int row)
 			ClearGenerate();
 			break;
 		}
-
+		
 		std::this_thread::sleep_for(std::chrono::milliseconds(m_sleepDuration));
 		if ((*m_tiles)[row][j].GetType() == GameDefs::Room)
 		{
 			m_rowSets[j].first = INVALID_INDICES;
 			continue;
 		}
-		(*m_tiles)[row][j].SetType(TileType::Passage);
-		m_rowSets[j].first = std::make_pair(row, j);
 
 		if (m_rowSets[j].second == -1)
-		{
-			m_rowSets[j].second = m_lastSet;
-			m_lastSet++;
-		}
+			id = m_rowSets[j].second = GameDefs::SetIDManagerSingleton::Instance().GetNextSetID();
+		else
+			id = m_rowSets[j].second;
 
-		m_setToIndices[m_rowSets[j].second].push_back(m_rowSets[j].first);
+		(*m_tiles)[row][j].SetType(TileType::Passage);
+		(*m_tiles)[row][j].SetID(id);
+		(*m_tiles)[row][j].SetColor(SetIDManagerSingleton::Instance().GetSetColor(id, m_seed));
+		m_rowSets[j].first = std::make_pair(row, j);
+
+
+		m_setToIndices[id].push_back(m_rowSets[j].first);
 
 	}
 }
 void MGEllers::MergeColumnsByStep(int row)
 {
 	std::pair<int, int> current, next;
+	int id;
 	if (row == m_rowCount - 1)
 	{
 		if (m_rowSets[0].second != m_rowSets[1].second)
 		{
 			(*m_tiles)[row][0].AddDirection(PassageDirection::East);
 			(*m_tiles)[row][1].AddDirection(PassageDirection::West);
+			CompareAndMergeSets(std::make_pair(row, 0), std::make_pair(row, 1));
 		}
 
 		if (m_rowSets[m_columnCount - 1].second != m_rowSets[m_columnCount - 2].second)
 		{
 			(*m_tiles)[row][m_columnCount - 1].AddDirection(PassageDirection::West);
 			(*m_tiles)[row][m_columnCount - 2].AddDirection(PassageDirection::East);
+			CompareAndMergeSets(std::make_pair(row, m_columnCount - 1), std::make_pair(row, m_columnCount - 2));
 		}
 
 		for (int j = 1; j < m_columnCount - 1; ++j)
@@ -285,14 +314,13 @@ void MGEllers::MergeColumnsByStep(int row)
 				continue;
 
 			//If the connection already exists, move on
-			if (m_rowSets[j].second == m_rowSets[j + 1].second)
+			if (!CompareAndMergeSets(current, next))
 				continue;
 
 			//Otherwise connect
 			(*m_tiles)[current.first][current.second].AddDirection(PassageDirection::East);
 			(*m_tiles)[next.first][next.second].AddDirection(PassageDirection::West);
 		}
-
 		return;
 	}
 
@@ -347,6 +375,7 @@ void MGEllers::MergeColumnsByStep(int row)
 
 		if (current == INVALID_INDICES || next == INVALID_INDICES)
 			continue;
+		if (CompareAndMergeSets(current, next))
 		{
 			(*m_tiles)[current.first][current.second].AddDirection(DIRECTIONS[directionIndex]);
 			(*m_tiles)[next.first][next.second].AddDirection(OPPOSITE_DIRECTIONS[directionIndex]);
@@ -359,7 +388,7 @@ void MGEllers::MakeVerticalCutsByStep(int row)
 	std::uniform_int_distribution<int> distributionVertical(0, 1);
 	std::set<int> verticalSet;
 	verticalSet.clear();
-	int setIndex;
+	int setIndex, id;
 	std::pair<int, int> current;
 
 	for (int j = 0; j < m_columnCount; ++j)

@@ -34,7 +34,7 @@ void GridManager::GenerateMap(int windowWidth, int windowHeight, unsigned int ro
 
 	RoomGeneratorSingleton::Instance().SetRoomHorizontalBounds(sf::Vector2i(2, m_rowCount / 5));
 	RoomGeneratorSingleton::Instance().SetRoomVerticalBounds(sf::Vector2i(2, m_rowCount / 5));
-	RoomGeneratorSingleton::Instance().SetPlacementAttemptCount(rows*columns/100);
+	RoomGeneratorSingleton::Instance().SetPlacementAttemptCount(rows*columns/10);
 
 	m_tiles.reserve(m_rowCount);
 	std::vector<Tile> row;

@@ -33,7 +33,6 @@ private:
 
 	bool CompareAndMergeSets(const std::pair<int, int>& first, const std::pair<int, int>& second);
 
-	int m_lastSet;
 	//Keeps track of the rows sets
 	std::vector<std::pair<std::pair<int, int>, int>> m_rowSets;
 
