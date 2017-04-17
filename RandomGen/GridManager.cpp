@@ -75,6 +75,21 @@ void GridManager::RandomizeMap()
 	if (m_prevMazeGenType == Step)
 	{
 		m_terminated = true;
+
+		//Remove locks
+		{
+			std::unique_lock<std::mutex> lock(m_connectMapCVMutex);
+			m_connectMap = true;
+			m_connectMapCV.notify_all();
+		}
+
+		{
+			std::unique_lock<std::mutex> lock(m_removeDeadEndsCVMutex);
+			m_removeDeadEnds = true;
+			m_removeDeadEndsCV.notify_all();
+		}
+
+
 		if (m_prevMazeGen == MazeGenerator::RecursiveBacktracker)
 			MGRecursiveBacktrackerSingleton::Instance().TerminateGeneration();
 		else

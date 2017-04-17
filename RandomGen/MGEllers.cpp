@@ -18,12 +18,13 @@ void MGEllers::GenerateMaze(std::vector<std::vector<Tile>>& tiles, const Generat
 	m_rowSets.clear();
 	m_setToIndices.clear();
 	m_sleepDuration = sleepDuration;
-	m_randomNumGen.seed(seed);
+	m_seed = seed;
+	m_randomNumGen.seed(m_seed);
 	m_tiles = &tiles;
 	m_rowCount = (*m_tiles).size();
 	m_columnCount = (*m_tiles)[0].size();
 	m_rowSets.resize(m_columnCount, std::make_pair(std::make_pair(-1, -1), -1));
-	m_seed = seed;
+
 
 	if (genType == GameDefs::Step)
 		GenerateByStep();
@@ -35,12 +36,6 @@ void MGEllers::GenerateMaze(std::vector<std::vector<Tile>>& tiles, const Generat
 
 bool MGEllers::CompareAndMergeSets(const std::pair<int, int>& first, const std::pair<int, int>& second)
 {
-	/*
-		I'm going off the assumption that the smaller the 
-		set index, the older the set and the higher the chances that it contains more
-		tiles and thus easier to merge into than from
-	*/
-
 	int firstSetIndex, secondSetIndex, minSetIndex, maxSetIndex;
 	firstSetIndex = m_rowSets[first.second].second;
 	secondSetIndex = m_rowSets[second.second].second;
@@ -50,8 +45,10 @@ bool MGEllers::CompareAndMergeSets(const std::pair<int, int>& first, const std::
 	sToIIterator firstIt = m_setToIndices.find(firstSetIndex);
 	sToIIterator secondIt = m_setToIndices.find(secondSetIndex);
 	sToIIterator maxIt, minIt;
+
 	if (firstIt == m_setToIndices.end() || secondIt == m_setToIndices.end())
 		return false;
+
 	if (firstIt->second.size() > secondIt->second.size())
 	{
 		minIt = secondIt;
@@ -77,7 +74,10 @@ bool MGEllers::CompareAndMergeSets(const std::pair<int, int>& first, const std::
 		indices = minSetTiles[i];
 		if (indices == INVALID_INDICES)
 			continue;
-		m_rowSets[minSetTiles[i].second].second = maxSetIndex;
+
+		if (indices.first == first.first)
+			m_rowSets[minSetTiles[i].second].second = maxSetIndex;
+
 		(*m_tiles)[indices.first][indices.second].SetID(maxSetIndex);
 		(*m_tiles)[indices.first][indices.second].SetColor(SetIDManagerSingleton::Instance().GetSetColor(maxSetIndex, m_seed));
 	}
@@ -91,46 +91,50 @@ bool MGEllers::CompareAndMergeSets(const std::pair<int, int>& first, const std::
 
 void MGEllers::InitalizeRow(int row)
 {
-	m_setToIndices.clear();
+	//m_setToIndices.clear();
+	int id;
 	for (int j = 0; j < m_columnCount; ++j)
 	{
 		if ((*m_tiles)[row][j].GetType() == GameDefs::Room)
 		{
 			m_rowSets[j].first = INVALID_INDICES;
+			m_rowSets[j].second = -1;
 			continue;
 		}
 			
+		if (m_rowSets[j].second == -1)
+			id = m_rowSets[j].second = GameDefs::SetIDManagerSingleton::Instance().GetNextSetID();
+		else
+			id = m_rowSets[j].second;
+
 		(*m_tiles)[row][j].SetType(TileType::Passage);
-		(*m_tiles)[row][j].SetID(GameDefs::SetIDManagerSingleton::Instance().GetCurrentSetID());
-		(*m_tiles)[row][j].SetColor(SetIDManagerSingleton::Instance().GetSetColor(GameDefs::SetIDManagerSingleton::Instance().GetCurrentSetID(), m_seed));
-		(*m_tiles)[row][j].SetType(GameDefs::Passage);
+		(*m_tiles)[row][j].SetID(id);
+		(*m_tiles)[row][j].SetColor(SetIDManagerSingleton::Instance().GetSetColor(id, m_seed));
 		m_rowSets[j].first = std::make_pair(row, j);
 
-		if (m_rowSets[j].second == -1)
-		{
-//			m_rowSets[j].second = m_lastSet;
-			//m_lastSet++;
-		}
-				
-		m_setToIndices[m_rowSets[j].second].push_back(m_rowSets[j].first);
+
+		m_setToIndices[id].push_back(m_rowSets[j].first);
 
 	}
 }
 void MGEllers::MergeColumns(int row)
 {
 	std::pair<int, int> current, next;
+	int id;
 	if (row == m_rowCount - 1)
 	{
 		if (m_rowSets[0].second != m_rowSets[1].second)
 		{
 			(*m_tiles)[row][0].AddDirection(PassageDirection::East);
 			(*m_tiles)[row][1].AddDirection(PassageDirection::West);
+			CompareAndMergeSets(std::make_pair(row, 0), std::make_pair(row, 1));
 		}
 
 		if (m_rowSets[m_columnCount - 1].second != m_rowSets[m_columnCount - 2].second)
 		{
 			(*m_tiles)[row][m_columnCount - 1].AddDirection(PassageDirection::West);
 			(*m_tiles)[row][m_columnCount - 2].AddDirection(PassageDirection::East);
+			CompareAndMergeSets(std::make_pair(row, m_columnCount - 1), std::make_pair(row, m_columnCount - 2));
 		}
 
 		for (int j = 1; j < m_columnCount - 1; ++j)
@@ -142,14 +146,13 @@ void MGEllers::MergeColumns(int row)
 				continue;
 
 			//If the connection already exists, move on
-			if (m_rowSets[j].second == m_rowSets[j + 1].second)
+			if (!CompareAndMergeSets(current, next))
 				continue;
 
 			//Otherwise connect
 			(*m_tiles)[current.first][current.second].AddDirection(PassageDirection::East);
 			(*m_tiles)[next.first][next.second].AddDirection(PassageDirection::West);
 		}
-
 		return;
 	}
 
@@ -187,7 +190,6 @@ void MGEllers::MergeColumns(int row)
 	//Since we only merge left or right, 2 means don't merge
 	for (int j = 1; j < m_columnCount - 1; ++j)
 	{
-
 		directionIndex = distributionHorizontal(m_randomNumGen);
 
 		if (directionIndex == 2)
@@ -198,7 +200,6 @@ void MGEllers::MergeColumns(int row)
 
 		if (current == INVALID_INDICES || next == INVALID_INDICES)
 			continue;
-
 		if (CompareAndMergeSets(current, next))
 		{
 			(*m_tiles)[current.first][current.second].AddDirection(DIRECTIONS[directionIndex]);
@@ -212,24 +213,24 @@ void MGEllers::MakeVerticalCuts(int row)
 	std::uniform_int_distribution<int> distributionVertical(0, 1);
 	std::set<int> verticalSet;
 	verticalSet.clear();
-	int setIndex;
+	int setIndex, id;
 	std::pair<int, int> current;
 
 	for (int j = 0; j < m_columnCount; ++j)
 	{
+
 		makeVerticalCut = distributionVertical(m_randomNumGen);
 		setIndex = m_rowSets[j].second;
-
 		//If we should cut, or this is the last member of the set and we haven't made a cut, make a cut
 		if (makeVerticalCut || (!verticalSet.count(setIndex) && (j == m_columnCount - 1 || m_rowSets[j + 1].second != setIndex)))
 		{
 			current = m_rowSets[j].first;
+
 			if (current == INVALID_INDICES || (*m_tiles)[current.first + 1][current.second].GetType() != TileType::Empty)
 				continue;
 
 			(*m_tiles)[current.first][current.second].AddDirection(PassageDirection::South);
 			(*m_tiles)[current.first + 1][current.second].AddDirection(PassageDirection::North);
-			verticalSet.insert(setIndex);
 		}
 		else
 			m_rowSets[j].second = -1;
@@ -267,6 +268,7 @@ void MGEllers::InitalizeRowByStep(int row)
 		if ((*m_tiles)[row][j].GetType() == GameDefs::Room)
 		{
 			m_rowSets[j].first = INVALID_INDICES;
+			m_rowSets[j].second = -1;
 			continue;
 		}
 
