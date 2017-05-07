@@ -59,29 +59,16 @@ void GridManager::GenerateMap(int windowWidth, int windowHeight, unsigned int ro
 	m_prevMazeGenType = m_mazeGenerateType;
 }
 
-void GridManager::Draw(sf::RenderWindow& rw)
+void GridManager::Terminate()
 {
-	for (int i = 0; i < m_rowCount; ++i)
+	m_terminated = true;
+
+	//Remove locks
 	{
-		for (int j = 0; j < m_columnCount; ++j)
-		{
-			m_tiles[i][j].Draw(rw);
-		}
+		std::unique_lock<std::mutex> lock(m_connectMapCVMutex);
+		m_connectMap = true;
+		m_connectMapCV.notify_all();
 	}
-}
-
-void GridManager::RandomizeMap()
-{
-	if (m_prevMazeGenType == Step)
-	{
-		m_terminated = true;
-
-		//Remove locks
-		{
-			std::unique_lock<std::mutex> lock(m_connectMapCVMutex);
-			m_connectMap = true;
-			m_connectMapCV.notify_all();
-		}
 
 		{
 			std::unique_lock<std::mutex> lock(m_removeDeadEndsCVMutex);
@@ -97,6 +84,24 @@ void GridManager::RandomizeMap()
 
 		MazeConnectorSingleton::Instance().TerminateGeneration();
 		DeadEndRemoverSingleton::Instance().TerminateGeneration();
+}
+
+void GridManager::Draw(sf::RenderWindow& rw)
+{
+	for (int i = 0; i < m_rowCount; ++i)
+	{
+		for (int j = 0; j < m_columnCount; ++j)
+		{
+			m_tiles[i][j].Draw(rw);
+		}
+	}
+}
+
+void GridManager::RandomizeMap()
+{
+	if (m_prevMazeGenType == Step)
+	{
+		Terminate();
 	}
 
 	m_prevMazeGenType = m_mazeGenerateType;
@@ -200,7 +205,8 @@ void GridManager::GenerateMazeWorkerByStep()
 	auto finish = std::chrono::high_resolution_clock::now();
 	std::chrono::duration<double> elapsed = finish - start;
 	std::cout << "Maze generation elapsed time: " << elapsed.count() << std::endl;
-
+	if (m_terminated)
+		return;
 	{
 		std::unique_lock<std::mutex> lock(m_connectMapCVMutex);
 		m_connectMap = true;
@@ -240,6 +246,7 @@ void GridManager::ConnectMapWorkerByStep(std::vector<sf::IntRect> rooms)
 		auto not_paused = [this](){return m_connectMap == true; };
 		m_connectMapCV.wait(lock, not_paused);
 	}
+
 	if (m_terminated)
 		return;
 
@@ -249,6 +256,8 @@ void GridManager::ConnectMapWorkerByStep(std::vector<sf::IntRect> rooms)
 	auto finish = std::chrono::high_resolution_clock::now();
 	std::chrono::duration<double> elapsed = finish - start;
 	std::cout << "Maze connection elapsed time: " << elapsed.count() << std::endl;
+	if (m_terminated)
+		return;
 	{
 		std::unique_lock<std::mutex> lock(m_removeDeadEndsCVMutex);
 		m_removeDeadEnds = true;

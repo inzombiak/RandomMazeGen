@@ -19,6 +19,7 @@ class GridManager
 
 public:
 	GridManager() {}
+	~GridManager() { Terminate(); }
 	enum SimulationPhase
 	{
 		GeneratingRooms,
@@ -42,6 +43,8 @@ public:
 	void Draw(sf::RenderWindow& rw);
 
 private:
+	void Terminate();
+
 	GridManager(const GridManager&obj) {}
 
 	//Step 1: Generates rooms
@@ -75,7 +78,7 @@ private:
 
 	const sf::Color BORDER_COLOR = sf::Color::Black;
 
-	std::atomic<bool> m_terminated;
+	volatile std::atomic<bool> m_terminated;
 
 	SimulationPhase m_simPhase;
 	MazeGenerator m_mazeGenerator = RecursiveBacktracker;
