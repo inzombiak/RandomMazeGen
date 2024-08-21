@@ -21,8 +21,8 @@ void MGEllers::GenerateMaze(std::vector<std::vector<Tile>>& tiles, const Generat
 	m_seed = seed;
 	m_randomNumGen.seed(m_seed);
 	m_tiles = &tiles;
-	m_rowCount = (*m_tiles).size();
-	m_columnCount = (*m_tiles)[0].size();
+	m_rowCount = (int)(*m_tiles).size();
+	m_columnCount = (int)(*m_tiles)[0].size();
 	m_rowSets.resize(m_columnCount, std::make_pair(std::make_pair(-1, -1), -1));
 
 
@@ -120,7 +120,6 @@ void MGEllers::InitalizeRow(int row)
 void MGEllers::MergeColumns(int row)
 {
 	std::pair<int, int> current, next;
-	int id;
 	if (row == m_rowCount - 1)
 	{
 		if (m_rowSets[0].second != m_rowSets[1].second)
@@ -213,7 +212,7 @@ void MGEllers::MakeVerticalCuts(int row)
 	std::uniform_int_distribution<int> distributionVertical(0, 1);
 	std::set<int> verticalSet;
 	verticalSet.clear();
-	int setIndex, id;
+	int setIndex;
 	std::pair<int, int> current;
 
 	for (int j = 0; j < m_columnCount; ++j)
@@ -290,7 +289,6 @@ void MGEllers::InitalizeRowByStep(int row)
 void MGEllers::MergeColumnsByStep(int row)
 {
 	std::pair<int, int> current, next;
-	int id;
 	if (row == m_rowCount - 1)
 	{
 		if (m_rowSets[0].second != m_rowSets[1].second)
@@ -390,7 +388,7 @@ void MGEllers::MakeVerticalCutsByStep(int row)
 	std::uniform_int_distribution<int> distributionVertical(0, 1);
 	std::set<int> verticalSet;
 	verticalSet.clear();
-	int setIndex, id;
+	int setIndex;
 	std::pair<int, int> current;
 
 	for (int j = 0; j < m_columnCount; ++j)

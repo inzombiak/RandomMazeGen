@@ -4,7 +4,7 @@ using namespace GameDefs;
 
 void DeadEndRemover::RemoveDeadEnds(std::vector<std::vector<Tile>>& tiles, const GameDefs::GenerateType& genType, int removalPercentage, unsigned seed, int sleepDuration)
 {
-	m_rowCount = tiles.size();
+	m_rowCount = (int)tiles.size();
 	if (m_rowCount < 1)
 		return;
 	{
@@ -16,7 +16,7 @@ void DeadEndRemover::RemoveDeadEnds(std::vector<std::vector<Tile>>& tiles, const
 	m_randomNumGen.seed(seed);
 	m_tiles = &tiles;
 	m_seed = seed;
-	m_columnCount = (*m_tiles)[0].size();
+	m_columnCount = (int)(*m_tiles)[0].size();
 	m_removalPercentage = removalPercentage;
 	if (genType == Step)
 	{
