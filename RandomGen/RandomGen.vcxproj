@@ -163,7 +163,6 @@
     <ClCompile Include="DeadEndRemover.cpp" />
     <ClCompile Include="App.cpp" />
     <ClCompile Include="MazeConnector.cpp" />
-    <ClCompile Include="MazeGenApp.cpp" />
     <ClCompile Include="MGEllers.cpp" />
     <ClCompile Include="GridManager.cpp" />
     <ClCompile Include="main.cpp" />
@@ -183,7 +182,6 @@
     <ClInclude Include="IThreadedSolver.h" />
     <ClInclude Include="KeyCodes.h" />
     <ClInclude Include="MazeConnector.h" />
-    <ClInclude Include="MazeGenApp.h" />
     <ClInclude Include="MGEllers.h" />
     <ClInclude Include="GridManager.h" />
     <ClInclude Include="IMazeGenerator.h" />

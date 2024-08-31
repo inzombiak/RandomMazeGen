@@ -20,6 +20,7 @@ App::~App()
 
 std::shared_ptr<Window> GAME_WINDOW;
 std::shared_ptr<Renderer_D12> RENDERER;
+Globals::InputState Globals::INPUT_STATE;
 bool App::Initialize()
 {
     // Check for DirectX Math library support.
@@ -37,8 +38,17 @@ bool App::Initialize()
     return true;
 }
 
+bool App::LoadContent() {
+    return true;
+}
+
+void App::UnloadContent() {
+
+}
+
 void App::Destroy()
 {
+
 }
 
 void App::OnUpdate(UpdateEventArgs& e)
@@ -48,7 +58,8 @@ void App::OnUpdate(UpdateEventArgs& e)
 
 void App::OnRender(RenderEventArgs& e)
 {
-
+    if (RENDERER && RENDERER->IsInitialized())
+        RENDERER->Render();
 }
 
 void App::OnKeyPressed(KeyEventArgs& e)
@@ -63,17 +74,30 @@ void App::OnKeyReleased(KeyEventArgs& e)
 
 void App::OnMouseMoved(class MouseMotionEventArgs& e)
 {
-    // By default, do nothing.
+    Globals::INPUT_STATE.mousePos = sf::Vector2i(e.X, e.Y);
+
+    if (Globals::INPUT_STATE.mouseBtnState & MK_LBUTTON) {
+        Globals::INPUT_STATE.lastMouseDownPos = Globals::INPUT_STATE.mousePos;
+    }
 }
 
-void App::OnMouseButtonPressed(MouseButtonEventArgs& e)
-{
-    // By default, do nothing.
+void App::OnMouseButtonPressed(MouseButtonEventArgs& e){
+    if(e.LeftButton)
+        Globals::INPUT_STATE.mouseBtnState |= MK_LBUTTON;
+    if (e.MiddleButton)
+        Globals::INPUT_STATE.mouseBtnState |= MK_MBUTTON;
+    if (e.RightButton)
+        Globals::INPUT_STATE.mouseBtnState |= MK_RBUTTON;
 }
 
 void App::OnMouseButtonReleased(MouseButtonEventArgs& e)
 {
-    // By default, do nothing.
+    if (e.LeftButton)
+        Globals::INPUT_STATE.mouseBtnState ^= MK_LBUTTON;
+    if (e.MiddleButton)
+        Globals::INPUT_STATE.mouseBtnState ^= MK_MBUTTON;
+    if (e.RightButton)
+        Globals::INPUT_STATE.mouseBtnState ^= MK_RBUTTON;
 }
 
 void App::OnMouseWheel(MouseWheelEventArgs& e)
@@ -83,6 +107,8 @@ void App::OnMouseWheel(MouseWheelEventArgs& e)
 
 void App::OnResize(ResizeEventArgs& e)
 {
+    if (RENDERER && RENDERER->IsInitialized())
+        RENDERER->ResizeTargets();
     m_width = e.Width;
     m_height = e.Height;
 }

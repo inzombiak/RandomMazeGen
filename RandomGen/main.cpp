@@ -82,7 +82,9 @@ void ParseCommandLineArguments()
 	::LocalFree(argv);
 }
 
-#include "MazeGenApp.h"
+#include "App.h"
+Globals::StartupValues Globals::STARTUP_VALS;
+bool Globals::VSYNC_ENABLED;
 int CALLBACK wWinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, PWSTR lpCmdLine, int nCmdShow)
 {
 	// Windows 10 Creators update adds Per Monitor V2 DPI awareness context.
@@ -94,7 +96,7 @@ int CALLBACK wWinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, PWSTR lpCmdL
 	// Window class name. Used for registering / creating the window.
 	ParseCommandLineArguments();
 	
-	std::shared_ptr<MazeGenApp> mazeGen = std::make_shared<MazeGenApp>(L"MazeGen", Globals::STARTUP_VALS.window_width, Globals::STARTUP_VALS.window_height, Globals::VSYNC_ENABLED, hInstance);
+	std::shared_ptr<App> mazeGen = std::make_shared<App>(L"MazeGen", Globals::STARTUP_VALS.window_width, Globals::STARTUP_VALS.window_height, Globals::VSYNC_ENABLED, hInstance);
 	mazeGen->Initialize();
 	mazeGen->Destroy();
 	return 0;

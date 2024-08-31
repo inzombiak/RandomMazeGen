@@ -10,6 +10,7 @@
 
 #include "Singleton.h"
 #include <SFML/Graphics/Color.hpp>
+#include "Math.h"
 
 namespace GameDefs
 {
@@ -156,9 +157,18 @@ namespace Globals {
 		bool use_warp = false;
 	};
 
-	static bool VSYNC_ENABLED = true;
+	extern bool VSYNC_ENABLED;
 
-	static StartupValues STARTUP_VALS;
+	extern StartupValues STARTUP_VALS;
+	
+	struct InputState {
+		sf::Vector2i mousePos;
+		int mouseBtnState = 0;
+
+		sf::Vector2i lastMouseDownPos = sf::Vector2i(0, 0);
+	};
+
+	extern InputState INPUT_STATE;
 }
 
 extern std::shared_ptr<Window>		 GAME_WINDOW;

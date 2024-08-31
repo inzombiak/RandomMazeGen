@@ -382,23 +382,29 @@ void Window::OnRender(RenderEventArgs& e) {
 }
 
 void Window::OnKeyPressed(KeyEventArgs& e) {
-
+    if (m_app)
+        m_app->OnKeyPressed(e);
 }
 void Window::OnKeyReleased(KeyEventArgs& e) {
-
+    if (m_app)
+        m_app->OnKeyReleased(e);
 }
 
 void Window::OnMouseMoved(MouseMotionEventArgs& e) {
-
+    if (m_app)
+        m_app->OnMouseMoved(e);
 }
 void Window::OnMouseButtonPressed(MouseButtonEventArgs& e) {
-
+    if (m_app)
+        m_app->OnMouseButtonPressed(e);
 }
 void Window::OnMouseButtonReleased(MouseButtonEventArgs& e) {
-
+    if (m_app)
+        m_app->OnMouseButtonReleased(e);
 }
 void Window::OnMouseWheel(MouseWheelEventArgs& e) {
-
+    if (m_app)
+        m_app->OnMouseWheel(e);
 }
 
 void Window::OnResize(ResizeEventArgs& e) {

@@ -32,22 +32,22 @@ public:
     /**
      *  Initialize the DirectX Runtime.
      */
-    virtual bool Initialize();
+    bool Initialize();
 
     /**
      *  Load content required for the demo.
      */
-    virtual bool LoadContent() = 0;
+    bool LoadContent();
 
     /**
      *  Unload demo specific content that was loaded in LoadContent.
      */
-    virtual void UnloadContent() = 0;
+    void UnloadContent();
 
     /**
      * Destroy any resource that are used by the game.
      */
-    virtual void Destroy();
+    void Destroy();
 
 protected:
     friend class Window;
@@ -55,53 +55,53 @@ protected:
     /**
      *  Update the game logic.
      */
-    virtual void OnUpdate(UpdateEventArgs& e);
+    void OnUpdate(UpdateEventArgs& e);
 
     /**
      *  Render stuff.
      */
-    virtual void OnRender(RenderEventArgs& e);
+    void OnRender(RenderEventArgs& e);
 
     /**
      * Invoked by the registered window when a key is pressed
      * while the window has focus.
      */
-    virtual void OnKeyPressed(KeyEventArgs& e);
+    void OnKeyPressed(KeyEventArgs& e);
 
     /**
      * Invoked when a key on the keyboard is released.
      */
-    virtual void OnKeyReleased(KeyEventArgs& e);
+    void OnKeyReleased(KeyEventArgs& e);
 
     /**
      * Invoked when the mouse is moved over the registered window.
      */
-    virtual void OnMouseMoved(MouseMotionEventArgs& e);
+    void OnMouseMoved(MouseMotionEventArgs& e);
 
     /**
      * Invoked when a mouse button is pressed over the registered window.
      */
-    virtual void OnMouseButtonPressed(MouseButtonEventArgs& e);
+    void OnMouseButtonPressed(MouseButtonEventArgs& e);
 
     /**
      * Invoked when a mouse button is released over the registered window.
      */
-    virtual void OnMouseButtonReleased(MouseButtonEventArgs& e);
+    void OnMouseButtonReleased(MouseButtonEventArgs& e);
 
     /**
      * Invoked when the mouse wheel is scrolled while the registered window has focus.
      */
-    virtual void OnMouseWheel(MouseWheelEventArgs& e);
+    void OnMouseWheel(MouseWheelEventArgs& e);
 
     /**
      * Invoked when the attached window is resized.
      */
-    virtual void OnResize(ResizeEventArgs& e);
+    void OnResize(ResizeEventArgs& e);
 
     /**
      * Invoked when the registered window instance is destroyed.
      */
-    virtual void OnWindowDestroy();
+    void OnWindowDestroy();
 private:
     HINSTANCE m_hInstance;
     std::wstring m_name;
