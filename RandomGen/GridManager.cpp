@@ -132,7 +132,7 @@ void GridManager::RandomizeMap()
 
 	m_terminated = false;
 	m_simPhase = GeneratingRooms;
-	m_seed = std::chrono::system_clock::now().time_since_epoch().count();
+	m_seed = (int)std::chrono::system_clock::now().time_since_epoch().count();
 
 	auto start = std::chrono::high_resolution_clock::now();
 	std::vector<sf::IntRect> rooms = GenerateRooms();

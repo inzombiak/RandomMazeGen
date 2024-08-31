@@ -25,6 +25,15 @@
     <Filter Include="Source Files\Utilities">
       <UniqueIdentifier>{f5683648-e498-467f-a97d-5f4fac7ff9d1}</UniqueIdentifier>
     </Filter>
+    <Filter Include="Header Files\Rendering">
+      <UniqueIdentifier>{66567349-7abe-4aa1-818d-9860e9fb324b}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Header Files\Rendering\d3dx12">
+      <UniqueIdentifier>{3d2e0ec8-71ca-455e-a94d-d1faa9a26dc8}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source Files\Rendering">
+      <UniqueIdentifier>{8aed748e-1967-4073-8725-552dda119c64}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="main.cpp">
@@ -52,6 +61,21 @@
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="DeadEndRemover.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="Rendering\Window.cpp">
+      <Filter>Source Files\Rendering</Filter>
+    </ClCompile>
+    <ClCompile Include="Rendering\Renderer_D12.cpp">
+      <Filter>Source Files\Rendering</Filter>
+    </ClCompile>
+    <ClCompile Include="Rendering\CommandQueue.cpp">
+      <Filter>Source Files\Rendering</Filter>
+    </ClCompile>
+    <ClCompile Include="App.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="MazeGenApp.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>
@@ -90,6 +114,99 @@
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="IThreadedSolver.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="Rendering\DX12_Helpers.h">
+      <Filter>Header Files\Rendering</Filter>
+    </ClInclude>
+    <ClInclude Include="Rendering\d3dx12\d3d12.h">
+      <Filter>Header Files\Rendering\d3dx12</Filter>
+    </ClInclude>
+    <ClInclude Include="Rendering\d3dx12\d3d12compatibility.h">
+      <Filter>Header Files\Rendering\d3dx12</Filter>
+    </ClInclude>
+    <ClInclude Include="Rendering\d3dx12\d3d12sdklayers.h">
+      <Filter>Header Files\Rendering\d3dx12</Filter>
+    </ClInclude>
+    <ClInclude Include="Rendering\d3dx12\d3d12shader.h">
+      <Filter>Header Files\Rendering\d3dx12</Filter>
+    </ClInclude>
+    <ClInclude Include="Rendering\d3dx12\D3D12TokenizedProgramFormat.hpp">
+      <Filter>Header Files\Rendering\d3dx12</Filter>
+    </ClInclude>
+    <ClInclude Include="Rendering\d3dx12\d3d12video.h">
+      <Filter>Header Files\Rendering\d3dx12</Filter>
+    </ClInclude>
+    <ClInclude Include="Rendering\d3dx12\d3dcommon.h">
+      <Filter>Header Files\Rendering\d3dx12</Filter>
+    </ClInclude>
+    <ClInclude Include="Rendering\d3dx12\d3dx12.h">
+      <Filter>Header Files\Rendering\d3dx12</Filter>
+    </ClInclude>
+    <ClInclude Include="Rendering\d3dx12\d3dx12_barriers.h">
+      <Filter>Header Files\Rendering\d3dx12</Filter>
+    </ClInclude>
+    <ClInclude Include="Rendering\d3dx12\d3dx12_check_feature_support.h">
+      <Filter>Header Files\Rendering\d3dx12</Filter>
+    </ClInclude>
+    <ClInclude Include="Rendering\d3dx12\d3dx12_core.h">
+      <Filter>Header Files\Rendering\d3dx12</Filter>
+    </ClInclude>
+    <ClInclude Include="Rendering\d3dx12\d3dx12_default.h">
+      <Filter>Header Files\Rendering\d3dx12</Filter>
+    </ClInclude>
+    <ClInclude Include="Rendering\d3dx12\d3dx12_pipeline_state_stream.h">
+      <Filter>Header Files\Rendering\d3dx12</Filter>
+    </ClInclude>
+    <ClInclude Include="Rendering\d3dx12\d3dx12_property_format_table.h">
+      <Filter>Header Files\Rendering\d3dx12</Filter>
+    </ClInclude>
+    <ClInclude Include="Rendering\d3dx12\d3dx12_render_pass.h">
+      <Filter>Header Files\Rendering\d3dx12</Filter>
+    </ClInclude>
+    <ClInclude Include="Rendering\d3dx12\d3dx12_resource_helpers.h">
+      <Filter>Header Files\Rendering\d3dx12</Filter>
+    </ClInclude>
+    <ClInclude Include="Rendering\d3dx12\d3dx12_root_signature.h">
+      <Filter>Header Files\Rendering\d3dx12</Filter>
+    </ClInclude>
+    <ClInclude Include="Rendering\d3dx12\d3dx12_state_object.h">
+      <Filter>Header Files\Rendering\d3dx12</Filter>
+    </ClInclude>
+    <ClInclude Include="Rendering\d3dx12\DirectML.h">
+      <Filter>Header Files\Rendering\d3dx12</Filter>
+    </ClInclude>
+    <ClInclude Include="Rendering\d3dx12\dxcore.h">
+      <Filter>Header Files\Rendering\d3dx12</Filter>
+    </ClInclude>
+    <ClInclude Include="Rendering\d3dx12\dxcore_interface.h">
+      <Filter>Header Files\Rendering\d3dx12</Filter>
+    </ClInclude>
+    <ClInclude Include="Rendering\d3dx12\dxgicommon.h">
+      <Filter>Header Files\Rendering\d3dx12</Filter>
+    </ClInclude>
+    <ClInclude Include="Rendering\d3dx12\dxgiformat.h">
+      <Filter>Header Files\Rendering\d3dx12</Filter>
+    </ClInclude>
+    <ClInclude Include="Rendering\Renderer_D12.h">
+      <Filter>Header Files\Rendering</Filter>
+    </ClInclude>
+    <ClInclude Include="Rendering\Window.h">
+      <Filter>Header Files\Rendering</Filter>
+    </ClInclude>
+    <ClInclude Include="Rendering\CommandQueue.h">
+      <Filter>Header Files\Rendering</Filter>
+    </ClInclude>
+    <ClInclude Include="App.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="Events.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="KeyCodes.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="MazeGenApp.h">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>

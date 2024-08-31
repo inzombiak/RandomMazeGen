@@ -107,10 +107,12 @@
       <RuntimeLibrary>MultiThreadedDebugDLL</RuntimeLibrary>
     </ClCompile>
     <Link>
-      <SubSystem>Console</SubSystem>
+      <SubSystem>Windows</SubSystem>
       <GenerateDebugInformation>true</GenerateDebugInformation>
-      <AdditionalDependencies>sfml-graphics-s-d.lib;sfml-system-s-d.lib;sfml-window-s-d.lib;opengl32.lib;freetype.lib;winmm.lib;gdi32.lib;kernel32.lib;user32.lib;winspool.lib;comdlg32.lib;advapi32.lib;shell32.lib;ole32.lib;oleaut32.lib;uuid.lib;odbc32.lib;odbccp32.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalDependencies>sfml-graphics-s-d.lib;sfml-system-s-d.lib;sfml-window-s-d.lib;opengl32.lib;freetype.lib;winmm.lib;gdi32.lib;kernel32.lib;user32.lib;winspool.lib;comdlg32.lib;advapi32.lib;shell32.lib;ole32.lib;oleaut32.lib;uuid.lib;odbc32.lib;odbccp32.lib;%(AdditionalDependencies);DXGI.lib;d3d12.lib</AdditionalDependencies>
       <AdditionalLibraryDirectories>C:\DevLibs\SFML-2.6.1\lib;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
+      <EntryPointSymbol>
+      </EntryPointSymbol>
     </Link>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
@@ -147,35 +149,73 @@
       <RuntimeLibrary>MultiThreaded</RuntimeLibrary>
     </ClCompile>
     <Link>
-      <SubSystem>Console</SubSystem>
+      <SubSystem>Windows</SubSystem>
       <GenerateDebugInformation>true</GenerateDebugInformation>
       <EnableCOMDATFolding>true</EnableCOMDATFolding>
       <OptimizeReferences>true</OptimizeReferences>
       <AdditionalLibraryDirectories>C:\DevLibs\SFML-2.6.1\lib\Release;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
-      <AdditionalDependencies>sfml-graphics-s.lib;sfml-system-s.lib;sfml-window-s.lib;opengl32.lib;glu32.lib;glew32s.lib;winmm.lib;gdi32.lib;jpeg.lib;freetype.lib;kernel32.lib;user32.lib;winspool.lib;comdlg32.lib;advapi32.lib;shell32.lib;ole32.lib;oleaut32.lib;uuid.lib;odbc32.lib;odbccp32.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalDependencies>sfml-graphics-s.lib;sfml-system-s.lib;sfml-window-s.lib;opengl32.lib;glu32.lib;glew32s.lib;winmm.lib;gdi32.lib;jpeg.lib;freetype.lib;kernel32.lib;user32.lib;winspool.lib;comdlg32.lib;advapi32.lib;shell32.lib;ole32.lib;oleaut32.lib;uuid.lib;odbc32.lib;odbccp32.lib;%(AdditionalDependencies);DXGI.lib;d3d12.lib</AdditionalDependencies>
+      <EntryPointSymbol>
+      </EntryPointSymbol>
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
     <ClCompile Include="DeadEndRemover.cpp" />
+    <ClCompile Include="App.cpp" />
     <ClCompile Include="MazeConnector.cpp" />
+    <ClCompile Include="MazeGenApp.cpp" />
     <ClCompile Include="MGEllers.cpp" />
     <ClCompile Include="GridManager.cpp" />
     <ClCompile Include="main.cpp" />
     <ClCompile Include="Math.cpp" />
     <ClCompile Include="MGRecursiveBacktracker.cpp" />
+    <ClCompile Include="Rendering\CommandQueue.cpp" />
+    <ClCompile Include="Rendering\Renderer_D12.cpp" />
+    <ClCompile Include="Rendering\Window.cpp" />
     <ClCompile Include="RoomGenerator.cpp" />
     <ClCompile Include="Tile.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="DeadEndRemover.h" />
+    <ClInclude Include="App.h" />
+    <ClInclude Include="Events.h" />
     <ClInclude Include="GameDefs.h" />
     <ClInclude Include="IThreadedSolver.h" />
+    <ClInclude Include="KeyCodes.h" />
     <ClInclude Include="MazeConnector.h" />
+    <ClInclude Include="MazeGenApp.h" />
     <ClInclude Include="MGEllers.h" />
     <ClInclude Include="GridManager.h" />
     <ClInclude Include="IMazeGenerator.h" />
     <ClInclude Include="Math.h" />
     <ClInclude Include="MGRecursiveBacktracker.h" />
+    <ClInclude Include="Rendering\CommandQueue.h" />
+    <ClInclude Include="Rendering\d3dx12\d3d12.h" />
+    <ClInclude Include="Rendering\d3dx12\d3d12compatibility.h" />
+    <ClInclude Include="Rendering\d3dx12\d3d12sdklayers.h" />
+    <ClInclude Include="Rendering\d3dx12\d3d12shader.h" />
+    <ClInclude Include="Rendering\d3dx12\D3D12TokenizedProgramFormat.hpp" />
+    <ClInclude Include="Rendering\d3dx12\d3d12video.h" />
+    <ClInclude Include="Rendering\d3dx12\d3dcommon.h" />
+    <ClInclude Include="Rendering\d3dx12\d3dx12.h" />
+    <ClInclude Include="Rendering\d3dx12\d3dx12_barriers.h" />
+    <ClInclude Include="Rendering\d3dx12\d3dx12_check_feature_support.h" />
+    <ClInclude Include="Rendering\d3dx12\d3dx12_core.h" />
+    <ClInclude Include="Rendering\d3dx12\d3dx12_default.h" />
+    <ClInclude Include="Rendering\d3dx12\d3dx12_pipeline_state_stream.h" />
+    <ClInclude Include="Rendering\d3dx12\d3dx12_property_format_table.h" />
+    <ClInclude Include="Rendering\d3dx12\d3dx12_render_pass.h" />
+    <ClInclude Include="Rendering\d3dx12\d3dx12_resource_helpers.h" />
+    <ClInclude Include="Rendering\d3dx12\d3dx12_root_signature.h" />
+    <ClInclude Include="Rendering\d3dx12\d3dx12_state_object.h" />
+    <ClInclude Include="Rendering\d3dx12\DirectML.h" />
+    <ClInclude Include="Rendering\d3dx12\dxcore.h" />
+    <ClInclude Include="Rendering\d3dx12\dxcore_interface.h" />
+    <ClInclude Include="Rendering\d3dx12\dxgicommon.h" />
+    <ClInclude Include="Rendering\d3dx12\dxgiformat.h" />
+    <ClInclude Include="Rendering\DX12_Helpers.h" />
+    <ClInclude Include="Rendering\Renderer_D12.h" />
+    <ClInclude Include="Rendering\Window.h" />
     <ClInclude Include="RoomGenerator.h" />
     <ClInclude Include="Singleton.h" />
     <ClInclude Include="Tile.h" />

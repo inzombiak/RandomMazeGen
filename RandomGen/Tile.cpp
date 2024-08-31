@@ -108,21 +108,21 @@ void Tile::Draw(sf::RenderWindow& rw)
 		
 		if (DIRECTIONS[i] == PassageDirection::North)
 		{
-			border.setSize(sf::Vector2f(m_tile.getSize().x, m_borderInfo[DIRECTIONS[i]].first));
+			border.setSize(sf::Vector2f(m_tile.getSize().x, (float)m_borderInfo[DIRECTIONS[i]].first));
 		}
 		else if (DIRECTIONS[i] == PassageDirection::South)
 		{
 			borderPos.y += m_tile.getSize().y - m_borderInfo[DIRECTIONS[i]].first;
-			border.setSize(sf::Vector2f(m_tile.getSize().x, m_borderInfo[DIRECTIONS[i]].first));
+			border.setSize(sf::Vector2f(m_tile.getSize().x, (float)m_borderInfo[DIRECTIONS[i]].first));
 		}
 		else if (DIRECTIONS[i] == PassageDirection::East)
 		{
 			borderPos.x += m_tile.getSize().x - m_borderInfo[DIRECTIONS[i]].first;
-			border.setSize(sf::Vector2f(m_borderInfo[DIRECTIONS[i]].first, m_tile.getSize().y));
+			border.setSize(sf::Vector2f((float)m_borderInfo[DIRECTIONS[i]].first, m_tile.getSize().y));
 		}
 		else if (DIRECTIONS[i] == PassageDirection::West)
 		{
-			border.setSize(sf::Vector2f(m_borderInfo[DIRECTIONS[i]].first, m_tile.getSize().y));
+			border.setSize(sf::Vector2f((float)m_borderInfo[DIRECTIONS[i]].first, m_tile.getSize().y));
 		}
 			
 		border.setPosition(borderPos);

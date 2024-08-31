@@ -14,8 +14,8 @@ void MGRecursiveBacktracker::GenerateMaze(std::vector<std::vector<Tile>>& tiles,
 	m_randomNumGen.seed(seed);
 	m_tiles = &tiles;
 	m_seed = seed;
-	m_rowCount = (*m_tiles).size();
-	m_columnCount = (*m_tiles)[0].size();
+	m_rowCount = (int)(*m_tiles).size();
+	m_columnCount = (int)(*m_tiles)[0].size();
 
 	if (genType == Step)
 		GenerateByStep();
@@ -126,12 +126,6 @@ void MGRecursiveBacktracker::GenerateByStep()
 
 void MGRecursiveBacktracker::CarvePassageByStep(int startI, int startJ)
 {
-	if (!CanGenerate())
-	{
-		ClearGenerate();
-		return;
-	}
-
 	std::array<int, 4> directionIndices = { 0, 1, 2, 3 };
 	shuffle(directionIndices.begin(), directionIndices.end(), m_randomNumGen);
 	int nextI, nextJ, index, id;
@@ -154,12 +148,6 @@ void MGRecursiveBacktracker::CarvePassageByStep(int startI, int startJ)
 			nextJ >= 0 && nextJ < (*m_tiles)[0].size() && 
 			(*m_tiles)[nextI][nextJ].GetType() == TileType::Empty)
 		{
-			if (!CanGenerate())
-			{
-				ClearGenerate();
-				return;
-			}
-
 			(*m_tiles)[nextI][nextJ].AddDirection(GameDefs::OPPOSITE_DIRECTIONS[index]);
 			(*m_tiles)[startI][startJ].AddDirection(GameDefs::DIRECTIONS[index]);
 			id = SetIDManagerSingleton::Instance().GetCurrentSetID();

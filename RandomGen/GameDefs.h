@@ -1,15 +1,18 @@
 #ifndef GAME_DEFS_H
 #define GAME_DEFS_H
 
+#define USE_SFML 0
+
 #include <chrono>
 #include <random> 
 #include <array>
+#include <map>
 
 #include "Singleton.h"
+#include <SFML/Graphics/Color.hpp>
 
 namespace GameDefs
 {
-
 	enum GenerateType
 	{
 		Step,
@@ -142,5 +145,23 @@ namespace GameDefs
 	static std::array<std::pair<int, int>, 4>		DIRECTION_CHANGES = { std::make_pair(0, 1), std::make_pair(0, -1), std::make_pair(-1, 0), std::make_pair(1, 0) };
 }
 
+class Renderer_D12;
+class Window;
+namespace Globals {
+
+	struct StartupValues {
+		int window_width = 1200;
+		int window_height = 800;
+		const wchar_t* window_className = L"DX12WindowClass";
+		bool use_warp = false;
+	};
+
+	static bool VSYNC_ENABLED = true;
+
+	static StartupValues STARTUP_VALS;
+}
+
+extern std::shared_ptr<Window>		 GAME_WINDOW;
+extern std::shared_ptr<Renderer_D12> RENDERER;
 
 #endif

@@ -5,7 +5,7 @@ using namespace GameDefs;
 const std::vector<sf::IntRect>& RoomGenerator::GenerateRoom(std::vector<std::vector<Tile>>& tiles, const GenerateType& genType, unsigned seed, int sleepDuration)
 {
 	m_rooms.clear();
-	m_rowCount = tiles.size();
+	m_rowCount = (int)tiles.size();
 	if (m_rowCount < 1)
 		return m_rooms;
 
@@ -19,7 +19,7 @@ const std::vector<sf::IntRect>& RoomGenerator::GenerateRoom(std::vector<std::vec
 	m_randomNumGen.seed(seed);
 	m_tiles = &tiles;
 	m_seed = seed;
-	m_columnCount = (*m_tiles)[0].size();
+	m_columnCount = (int)(*m_tiles)[0].size();
 
 	if (genType == Step)
 		GenerateByStep();
