@@ -33,7 +33,7 @@ void Tile::RemoveDirection(const GameDefs::PassageDirection& dir)
 {
 	m_direction = m_direction & ~dir;
 }
-bool Tile::HasDirection(const GameDefs::PassageDirection& dir)
+bool Tile::HasDirection(const GameDefs::PassageDirection& dir) const
 {
 	return (m_direction & dir) == dir;
 }

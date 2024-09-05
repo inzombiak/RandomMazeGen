@@ -385,29 +385,34 @@ void Renderer_D12::CreateSRVForBoxes(const std::vector<std::vector<Tile>>& tiles
 			if (tiles[i][j].GetType() == GameDefs::TileType::Empty) {
 				x += 2;
 				continue;
-				for (int d = 0; d < 4; ++d)
-				{
-					int nextI = i + GameDefs::DIRECTION_CHANGES[d].first;
-					int nextJ = j + GameDefs::DIRECTION_CHANGES[d].second;
-					if (nextI >= 0 && nextI < tiles.size() &&
-						nextJ >= 0 && nextJ < tiles[0].size() &&
-						(tiles)[nextI][nextJ].GetType() != GameDefs::TileType::Empty)
-					{
-						height = 3;
-						break;
-					}
-
-				}
-				if (height < 3) {
-					continue;
-				}
 			}
-
+			
 			for (int h = 0; h < height; ++h) {
 				XMMATRIX modelMat = XMMatrixTranslation(x, y, z);
 				mvpMatrices.push_back(modelMat);
 				y += 2;
 			}
+
+			for (int p = 0; p < 4; ++p) {
+				if (!tiles[i][j].HasDirection(GameDefs::DIRECTIONS[p])) {
+					float wallX = x;
+					float wallZ = z;
+					float scaleX = 1;
+					float scaleZ = 1;
+					
+					auto delta = GameDefs::DIRECTION_CHANGES[p];
+					wallX += delta.second;
+					wallZ += delta.first;
+
+					scaleX -= abs(delta.second)  * 0.9;
+					scaleZ -= abs(delta.first) * 0.9;
+
+					XMMATRIX modelMat = XMMatrixTranslation(wallX, y, wallZ);
+					modelMat = XMMatrixScaling(scaleX, 1, scaleZ) * modelMat;
+					mvpMatrices.push_back(modelMat);
+				}
+			}
+
 			x += 2;
 		}
 		z += 2;

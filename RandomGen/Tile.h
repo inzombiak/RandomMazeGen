@@ -18,7 +18,7 @@ public:
 	void SetDirection(const GameDefs::PassageDirection& dir);
 	void AddDirection(const GameDefs::PassageDirection& dir);
 	void RemoveDirection(const GameDefs::PassageDirection& dir);
-	bool HasDirection(const GameDefs::PassageDirection& dir);
+	bool HasDirection(const GameDefs::PassageDirection& dir) const;
 	std::vector<int> GetPassageDirectionIndices();
 	GameDefs::TileType GetType() const;
 	void SetType(const GameDefs::TileType& type);
