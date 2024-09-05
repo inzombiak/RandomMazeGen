@@ -42,6 +42,8 @@ public:
 	void Close();
 	void Draw(sf::RenderWindow& rw);
 
+	const std::vector<std::vector<Tile>>& GetTiles() const;
+
 private:
 	void Terminate();
 

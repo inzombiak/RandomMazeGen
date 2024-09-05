@@ -34,6 +34,9 @@
     <Filter Include="Source Files\Rendering">
       <UniqueIdentifier>{8aed748e-1967-4073-8725-552dda119c64}</UniqueIdentifier>
     </Filter>
+    <Filter Include="Resource Files\Shaders">
+      <UniqueIdentifier>{1b3a0698-c991-406d-ae11-a85c0f9e2c53}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="main.cpp">
@@ -72,8 +75,11 @@
     <ClCompile Include="Rendering\CommandQueue.cpp">
       <Filter>Source Files\Rendering</Filter>
     </ClCompile>
+    <ClCompile Include="HighResolutionClock.cpp">
+      <Filter>Source Files\Utilities</Filter>
+    </ClCompile>
     <ClCompile Include="App.cpp">
-      <Filter>Source Files</Filter>
+      <Filter>Source Files\Utilities</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
@@ -203,5 +209,16 @@
     <ClInclude Include="KeyCodes.h">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="HighResolutionClock.h">
+      <Filter>Header Files\Utilities</Filter>
+    </ClInclude>
+  </ItemGroup>
+  <ItemGroup>
+    <FxCompile Include="Resources\Shaders\vertex_basic.hlsl">
+      <Filter>Resource Files\Shaders</Filter>
+    </FxCompile>
+    <FxCompile Include="Resources\Shaders\pixel_basic.hlsl">
+      <Filter>Resource Files\Shaders</Filter>
+    </FxCompile>
   </ItemGroup>
 </Project>

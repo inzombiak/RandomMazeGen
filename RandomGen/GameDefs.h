@@ -164,11 +164,15 @@ namespace Globals {
 	struct InputState {
 		sf::Vector2i mousePos;
 		int mouseBtnState = 0;
+		bool keyStates[256] = { false };
 
 		sf::Vector2i lastMouseDownPos = sf::Vector2i(0, 0);
 	};
 
 	extern InputState INPUT_STATE;
+
+	static const float CAM_PAN_SPEED = 0.008f;
+	static const float CAM_ROT_SPEED = 0.005f;
 }
 
 extern std::shared_ptr<Window>		 GAME_WINDOW;

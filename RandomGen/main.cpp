@@ -1,19 +1,14 @@
 #include "GameDefs.h"
+#include "GridManager.h"
+
 
 #if USE_SFML
 #include <iostream>
-
-#include "GridManager.h"
 
 #include <iostream>
 
 int main()
 {
-	sf::RenderWindow window(sf::VideoMode(800, 800), "Random Gen");
-
-	GridManager gm;
-	gm.GenerateMap(800, 800, 40, 40);
-
 	std::cout << "R - Generate New Map" << std::endl;
 	std::cout << "G - Toggle Maze Generator(Recursive Backtacker(default) and Eller's Algortihm)" << std::endl;
 	std::cout << "T - Toggle between watch and instant (instant is default)" << std::endl;

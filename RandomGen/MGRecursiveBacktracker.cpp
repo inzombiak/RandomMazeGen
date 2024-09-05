@@ -79,9 +79,7 @@ void MGRecursiveBacktracker::CarvePassageFull(int startI, int startJ)
 			CarvePassageFull(nextI, nextJ);
 		}
 
-	}
-
-	
+	}	
 }
 
 

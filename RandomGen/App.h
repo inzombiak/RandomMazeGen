@@ -1,6 +1,8 @@
 #pragma once
 
 #include "Events.h"
+#include "HighResolutionClock.h"
+#include <DirectXMath.h>
 
 #include <memory>
 #include <string>
@@ -9,7 +11,7 @@
 #include <Windows.h>
 #include <shellapi.h>
 
-class Window;
+class GridManager;
 class App : public std::enable_shared_from_this<App>
 {
 public:
@@ -103,9 +105,21 @@ protected:
      */
     void OnWindowDestroy();
 private:
+    std::shared_ptr<GridManager> m_gridManager;
+
     HINSTANCE m_hInstance;
+
+
+    HighResolutionClock m_updateClock;
+    HighResolutionClock m_renderClock;
+
+    float m_fov = 45.0;
+    DirectX::XMVECTOR m_cameraPos;
+    float m_camAngles[3];
+
     std::wstring m_name;
     int m_width;
     int m_height;
     bool m_vSync;
+    bool m_contentLoaded;
 };

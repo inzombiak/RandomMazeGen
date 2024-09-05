@@ -97,6 +97,10 @@ void GridManager::Draw(sf::RenderWindow& rw)
 	}
 }
 
+const std::vector<std::vector<Tile>>& GridManager::GetTiles() const {
+	return m_tiles;
+}
+
 void GridManager::RandomizeMap()
 {
 	if (m_prevMazeGenType == Step)
@@ -135,14 +139,14 @@ void GridManager::RandomizeMap()
 	m_seed = (int)std::chrono::system_clock::now().time_since_epoch().count();
 
 	auto start = std::chrono::high_resolution_clock::now();
-	std::vector<sf::IntRect> rooms = GenerateRooms();
+//	std::vector<sf::IntRect> rooms = GenerateRooms();
 	auto finish = std::chrono::high_resolution_clock::now();
 	std::chrono::duration<double> elapsed = finish - start;
 	std::cout << "Room generation elapsed time: " << elapsed.count() << std::endl;
 	
 	m_simPhase = GeneratingMaze;
 	GenerateMaze();
-	ConnectMap(rooms);
+	//ConnectMap(rooms);
 	RemoveDeadEnds();
 	m_simPhase = Done;
 }
