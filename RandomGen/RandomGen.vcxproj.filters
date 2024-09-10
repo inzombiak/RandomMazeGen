@@ -37,6 +37,12 @@
     <Filter Include="Resource Files\Shaders">
       <UniqueIdentifier>{1b3a0698-c991-406d-ae11-a85c0f9e2c53}</UniqueIdentifier>
     </Filter>
+    <Filter Include="Header Files\Rendering\D12">
+      <UniqueIdentifier>{c1b1e61f-78d7-4c7d-a2a1-5df61dacaf51}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source Files\Rendering\D12">
+      <UniqueIdentifier>{c3bc71bb-8e21-4aac-9280-2e27afd5e852}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="main.cpp">
@@ -69,9 +75,6 @@
     <ClCompile Include="Rendering\Window.cpp">
       <Filter>Source Files\Rendering</Filter>
     </ClCompile>
-    <ClCompile Include="Rendering\Renderer_D12.cpp">
-      <Filter>Source Files\Rendering</Filter>
-    </ClCompile>
     <ClCompile Include="Rendering\CommandQueue.cpp">
       <Filter>Source Files\Rendering</Filter>
     </ClCompile>
@@ -80,6 +83,21 @@
     </ClCompile>
     <ClCompile Include="App.cpp">
       <Filter>Source Files\Utilities</Filter>
+    </ClCompile>
+    <ClCompile Include="Rendering\Renderer_D12.cpp">
+      <Filter>Source Files\Rendering\D12</Filter>
+    </ClCompile>
+    <ClCompile Include="Rendering\UploadBuffer_D12.cpp">
+      <Filter>Source Files\Rendering\D12</Filter>
+    </ClCompile>
+    <ClCompile Include="Rendering\DescriptorAllocator_D12.cpp">
+      <Filter>Source Files\Rendering\D12</Filter>
+    </ClCompile>
+    <ClCompile Include="Rendering\DescriptorAllocatorPage_D12.cpp">
+      <Filter>Source Files\Rendering\D12</Filter>
+    </ClCompile>
+    <ClCompile Include="Rendering\DescriptorAllocation_D12.cpp">
+      <Filter>Source Files\Rendering\D12</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
@@ -191,9 +209,6 @@
     <ClInclude Include="Rendering\d3dx12\dxgiformat.h">
       <Filter>Header Files\Rendering\d3dx12</Filter>
     </ClInclude>
-    <ClInclude Include="Rendering\Renderer_D12.h">
-      <Filter>Header Files\Rendering</Filter>
-    </ClInclude>
     <ClInclude Include="Rendering\Window.h">
       <Filter>Header Files\Rendering</Filter>
     </ClInclude>
@@ -211,6 +226,24 @@
     </ClInclude>
     <ClInclude Include="HighResolutionClock.h">
       <Filter>Header Files\Utilities</Filter>
+    </ClInclude>
+    <ClInclude Include="Rendering\Renderer_D12.h">
+      <Filter>Header Files\Rendering\D12</Filter>
+    </ClInclude>
+    <ClInclude Include="Rendering\UploadBuffer_D12.h">
+      <Filter>Header Files\Rendering\D12</Filter>
+    </ClInclude>
+    <ClInclude Include="Rendering\RenderDefs.h">
+      <Filter>Header Files\Rendering\D12</Filter>
+    </ClInclude>
+    <ClInclude Include="Rendering\DescriptorAllocator_D12.h">
+      <Filter>Header Files\Rendering\D12</Filter>
+    </ClInclude>
+    <ClInclude Include="Rendering\DescriptorAllocatorPage_D12.h">
+      <Filter>Header Files\Rendering\D12</Filter>
+    </ClInclude>
+    <ClInclude Include="Rendering\DescriptorAllocation_D12.h">
+      <Filter>Header Files\Rendering\D12</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>

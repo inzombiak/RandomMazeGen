@@ -1,4 +1,7 @@
 #include "Renderer_D12.h"
+
+#include "UploadBuffer_D12.h"
+
 #include "Window.h"
 #include "../Tile.h"
 
@@ -176,26 +179,14 @@ ComPtr<ID3D12Device2> CreateDevice(ComPtr<IDXGIAdapter4> adapter)
 	return d3d12Device2;
 }
 
-
-ComPtr<ID3D12DescriptorHeap> CreateDescriptorHeap(ComPtr<ID3D12Device2> device,
-	D3D12_DESCRIPTOR_HEAP_TYPE type, uint32_t numDescriptors)
-{
-	ComPtr<ID3D12DescriptorHeap> descriptorHeap;
-
-	D3D12_DESCRIPTOR_HEAP_DESC desc = {};
-	desc.NumDescriptors = numDescriptors;
-	desc.Type = type;
-
-	ThrowIfFailed(device->CreateDescriptorHeap(&desc, IID_PPV_ARGS(&descriptorHeap)));
-
-	return descriptorHeap;
-}
-
 Renderer_D12::Renderer_D12() {
 	EnableDebugLayer();
 	m_tearingSupported = CheckTearingSupport();
+	m_currentFrame = 0;
 
 	ComPtr<IDXGIAdapter4> dxgiAdapter4 = GetAdapter(Globals::STARTUP_VALS.use_warp);
+
+	m_uploadBuffer = std::make_shared<UploadBuffer_D12>();
 
 	int windowWidth   = GAME_WINDOW->GetWidth();
 	int windowHeight = GAME_WINDOW->GetHeight();
@@ -228,6 +219,7 @@ Renderer_D12::Renderer_D12() {
 	ThrowIfFailed(m_device->CreateDescriptorHeap(&dsvHeapDesc, IID_PPV_ARGS(&m_dsvHeap)));
 
 	UpdateRenderTargetViews();
+
 
 	m_initalized = true;
 }
@@ -276,8 +268,6 @@ void Renderer_D12::UpdateRenderTargetViews()
 	}
 }
 
-
-
 void Renderer_D12::Render() {
 	auto commandList = m_commQueue->GetCommandList();
 
@@ -325,6 +315,7 @@ void Renderer_D12::Render() {
 
 		m_commQueue->WaitForFenceValue(m_perFrameFenceValues[m_currentBufferIdx]);
 	}
+	++m_currentFrame;
 }
 
 void Renderer_D12::Shutdown() {
@@ -573,6 +564,14 @@ void Renderer_D12::UpdateMVP(float fov, DirectX::XMVECTOR camPos, DirectX::XMVEC
 	// Update the projection matrix.
 	float aspectRatio = GAME_WINDOW->GetWidth() / static_cast<float>(GAME_WINDOW->GetHeight());
 	m_projectionMatrix = XMMatrixPerspectiveFovLH(XMConvertToRadians(fov), aspectRatio, 0.1f, 100.0f);
+}
+
+ComPtr<ID3D12Device2> Renderer_D12::GetDevice() const {
+	return m_device;
+}
+
+uint64_t  Renderer_D12::GetCurrentFrameCount() const {
+	return m_currentFrame;
 }
 
 // Helper functions

@@ -22,6 +22,8 @@ struct VertexInput
 };
 
 class Tile;
+class UploadBuffer_D12;
+class DescriptorAllocator_D12;
 class Renderer_D12 {
 
 	public:
@@ -43,24 +45,27 @@ class Renderer_D12 {
 
 		void UpdateMVP(float fov, DirectX::XMVECTOR camPos, DirectX::XMVECTOR camFwd, DirectX::XMVECTOR camRight, DirectX::XMVECTOR camUp);
 
+		ComPtr<ID3D12Device2> GetDevice() const;
+		uint64_t GetCurrentFrameCount() const;
+
 	private:
 
 		// Helper functions
 		// Transition a resource
-		void TransitionResource(Microsoft::WRL::ComPtr<ID3D12GraphicsCommandList2> commandList,
-			Microsoft::WRL::ComPtr<ID3D12Resource> resource,
+		void TransitionResource(ComPtr<ID3D12GraphicsCommandList2> commandList,
+			ComPtr<ID3D12Resource> resource,
 			D3D12_RESOURCE_STATES beforeState, D3D12_RESOURCE_STATES afterState);
 
 		// Clear a render target view.
-		void ClearRTV(Microsoft::WRL::ComPtr<ID3D12GraphicsCommandList2> commandList,
+		void ClearRTV(ComPtr<ID3D12GraphicsCommandList2> commandList,
 			D3D12_CPU_DESCRIPTOR_HANDLE rtv, FLOAT* clearColor);
 
 		// Clear the depth of a depth-stencil view.
-		void ClearDepth(Microsoft::WRL::ComPtr<ID3D12GraphicsCommandList2> commandList,
+		void ClearDepth(ComPtr<ID3D12GraphicsCommandList2> commandList,
 			D3D12_CPU_DESCRIPTOR_HANDLE dsv, FLOAT depth = 1.0f);
 
 		// Create a GPU buffer.
-		void UpdateBufferResource(Microsoft::WRL::ComPtr<ID3D12GraphicsCommandList2> commandList,
+		void UpdateBufferResource(ComPtr<ID3D12GraphicsCommandList2> commandList,
 			ID3D12Resource** pDestinationResource, ID3D12Resource** pIntermediateResource,
 			size_t numElements, size_t elementSize, const void* bufferData,
 			D3D12_RESOURCE_FLAGS flags = D3D12_RESOURCE_FLAG_NONE);
@@ -82,6 +87,8 @@ class Renderer_D12 {
 		ComPtr<ID3D12DescriptorHeap>		m_rtvHeap;
 
 		ComPtr<ID3D12DescriptorHeap>		m_cbvSrvUavHeap;
+
+		std::shared_ptr<UploadBuffer_D12>			m_uploadBuffer;
 
 		ComPtr<ID3D12Resource> m_vertexBuffer;
 		D3D12_VERTEX_BUFFER_VIEW m_vertexBufferView;
@@ -114,6 +121,8 @@ class Renderer_D12 {
 		//Fencing
 		uint64_t			m_fenceValue = 0;
 		uint64_t			m_perFrameFenceValues[NUM_BACKBUFFER_FRAMES] = {};
+
+		uint64_t			m_currentFrame = 0;
 
 		bool m_tearingSupported = false;
 		bool m_initalized = false;
