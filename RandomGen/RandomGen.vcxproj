@@ -171,12 +171,14 @@
     <ClCompile Include="main.cpp" />
     <ClCompile Include="Math.cpp" />
     <ClCompile Include="MGRecursiveBacktracker.cpp" />
-    <ClCompile Include="Rendering\CommandQueue.cpp" />
+    <ClCompile Include="Rendering\CommandList_D12.cpp" />
+    <ClCompile Include="Rendering\CommandQueue_D12.cpp" />
     <ClCompile Include="Rendering\DescriptorAllocation_D12.cpp" />
     <ClCompile Include="Rendering\DescriptorAllocatorPage_D12.cpp" />
     <ClCompile Include="Rendering\DescriptorAllocator_D12.cpp" />
     <ClCompile Include="Rendering\DynamicDescriptorHeap_D12.cpp" />
     <ClCompile Include="Rendering\Renderer_D12.cpp" />
+    <ClCompile Include="Rendering\RootSignature_D12.cpp" />
     <ClCompile Include="Rendering\UploadBuffer_D12.cpp" />
     <ClCompile Include="Rendering\Window.cpp" />
     <ClCompile Include="RoomGenerator.cpp" />
@@ -196,7 +198,8 @@
     <ClInclude Include="IMazeGenerator.h" />
     <ClInclude Include="Math.h" />
     <ClInclude Include="MGRecursiveBacktracker.h" />
-    <ClInclude Include="Rendering\CommandQueue.h" />
+    <ClInclude Include="Rendering\CommandList_D12.h" />
+    <ClInclude Include="Rendering\CommandQueue_D12.h" />
     <ClInclude Include="Rendering\d3dx12\d3d12.h" />
     <ClInclude Include="Rendering\d3dx12\d3d12compatibility.h" />
     <ClInclude Include="Rendering\d3dx12\d3d12sdklayers.h" />
@@ -227,6 +230,7 @@
     <ClInclude Include="Rendering\DynamicDescriptorHeap_D12.h" />
     <ClInclude Include="Rendering\RenderDefs.h" />
     <ClInclude Include="Rendering\Renderer_D12.h" />
+    <ClInclude Include="Rendering\RootSignature_D12.h" />
     <ClInclude Include="Rendering\UploadBuffer_D12.h" />
     <ClInclude Include="Rendering\Window.h" />
     <ClInclude Include="RoomGenerator.h" />

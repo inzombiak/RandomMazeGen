@@ -75,9 +75,6 @@
     <ClCompile Include="Rendering\Window.cpp">
       <Filter>Source Files\Rendering</Filter>
     </ClCompile>
-    <ClCompile Include="Rendering\CommandQueue.cpp">
-      <Filter>Source Files\Rendering</Filter>
-    </ClCompile>
     <ClCompile Include="HighResolutionClock.cpp">
       <Filter>Source Files\Utilities</Filter>
     </ClCompile>
@@ -100,6 +97,15 @@
       <Filter>Source Files\Rendering\D12</Filter>
     </ClCompile>
     <ClCompile Include="Rendering\DynamicDescriptorHeap_D12.cpp">
+      <Filter>Source Files\Rendering\D12</Filter>
+    </ClCompile>
+    <ClCompile Include="Rendering\RootSignature_D12.cpp">
+      <Filter>Source Files\Rendering\D12</Filter>
+    </ClCompile>
+    <ClCompile Include="Rendering\CommandList_D12.cpp">
+      <Filter>Source Files\Rendering\D12</Filter>
+    </ClCompile>
+    <ClCompile Include="Rendering\CommandQueue_D12.cpp">
       <Filter>Source Files\Rendering\D12</Filter>
     </ClCompile>
   </ItemGroup>
@@ -139,9 +145,6 @@
     </ClInclude>
     <ClInclude Include="IThreadedSolver.h">
       <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="Rendering\DX12_Helpers.h">
-      <Filter>Header Files\Rendering</Filter>
     </ClInclude>
     <ClInclude Include="Rendering\d3dx12\d3d12.h">
       <Filter>Header Files\Rendering\d3dx12</Filter>
@@ -215,9 +218,6 @@
     <ClInclude Include="Rendering\Window.h">
       <Filter>Header Files\Rendering</Filter>
     </ClInclude>
-    <ClInclude Include="Rendering\CommandQueue.h">
-      <Filter>Header Files\Rendering</Filter>
-    </ClInclude>
     <ClInclude Include="App.h">
       <Filter>Header Files</Filter>
     </ClInclude>
@@ -249,6 +249,18 @@
       <Filter>Header Files\Rendering\D12</Filter>
     </ClInclude>
     <ClInclude Include="Rendering\DynamicDescriptorHeap_D12.h">
+      <Filter>Header Files\Rendering\D12</Filter>
+    </ClInclude>
+    <ClInclude Include="Rendering\RootSignature_D12.h">
+      <Filter>Header Files\Rendering\D12</Filter>
+    </ClInclude>
+    <ClInclude Include="Rendering\CommandList_D12.h">
+      <Filter>Header Files\Rendering\D12</Filter>
+    </ClInclude>
+    <ClInclude Include="Rendering\CommandQueue_D12.h">
+      <Filter>Header Files\Rendering\D12</Filter>
+    </ClInclude>
+    <ClInclude Include="Rendering\DX12_Helpers.h">
       <Filter>Header Files\Rendering\D12</Filter>
     </ClInclude>
   </ItemGroup>
