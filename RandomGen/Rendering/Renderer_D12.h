@@ -14,7 +14,7 @@
 #include <wrl.h>
 using namespace Microsoft::WRL;
 
-#include "CommandQueue.h"
+#include "CommandQueue_D12.h"
 struct VertexInput
 {
 	DirectX::XMFLOAT3 position;
@@ -49,29 +49,10 @@ class Renderer_D12 {
 
 		ComPtr<ID3D12Device2> GetDevice() const;
 		uint64_t GetCurrentFrameCount() const;
+		uint32_t GetDescriptorHandleIncrementSize(D3D12_DESCRIPTOR_HEAP_TYPE type) const;
+		D3D_ROOT_SIGNATURE_VERSION GetHighestRootSigVer() const;
 
 	private:
-
-		// Helper functions
-		// Transition a resource
-		void TransitionResource(ComPtr<ID3D12GraphicsCommandList2> commandList,
-			ComPtr<ID3D12Resource> resource,
-			D3D12_RESOURCE_STATES beforeState, D3D12_RESOURCE_STATES afterState);
-
-		// Clear a render target view.
-		void ClearRTV(ComPtr<ID3D12GraphicsCommandList2> commandList,
-			D3D12_CPU_DESCRIPTOR_HANDLE rtv, FLOAT* clearColor);
-
-		// Clear the depth of a depth-stencil view.
-		void ClearDepth(ComPtr<ID3D12GraphicsCommandList2> commandList,
-			D3D12_CPU_DESCRIPTOR_HANDLE dsv, FLOAT depth = 1.0f);
-
-		// Create a GPU buffer.
-		void UpdateBufferResource(ComPtr<ID3D12GraphicsCommandList2> commandList,
-			ID3D12Resource** pDestinationResource, ID3D12Resource** pIntermediateResource,
-			size_t numElements, size_t elementSize, const void* bufferData,
-			D3D12_RESOURCE_FLAGS flags = D3D12_RESOURCE_FLAG_NONE);
-
 		D3D12_CPU_DESCRIPTOR_HANDLE GetCurrentRenderTargetView() const;
 
 		Renderer_D12(const Renderer_D12&) = delete;
@@ -85,6 +66,9 @@ class Renderer_D12 {
 		std::shared_ptr<CommandQueue>		m_commQueue;
 		ComPtr<IDXGISwapChain4>				m_swapChain;
 		ComPtr<ID3D12Resource>				m_backbuffers[NUM_BACKBUFFER_FRAMES];
+
+		D3D_ROOT_SIGNATURE_VERSION m_highestRootSignatureVersion;
+
 		/*
 		ComPtr<ID3D12DescriptorHeap>		m_rtvHeap;
 		ComPtr<ID3D12DescriptorHeap>		m_dsvHeap;

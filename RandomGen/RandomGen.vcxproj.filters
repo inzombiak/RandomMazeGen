@@ -99,6 +99,9 @@
     <ClCompile Include="Rendering\DescriptorAllocation_D12.cpp">
       <Filter>Source Files\Rendering\D12</Filter>
     </ClCompile>
+    <ClCompile Include="Rendering\DynamicDescriptorHeap_D12.cpp">
+      <Filter>Source Files\Rendering\D12</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="GridManager.h">
@@ -243,6 +246,9 @@
       <Filter>Header Files\Rendering\D12</Filter>
     </ClInclude>
     <ClInclude Include="Rendering\DescriptorAllocation_D12.h">
+      <Filter>Header Files\Rendering\D12</Filter>
+    </ClInclude>
+    <ClInclude Include="Rendering\DynamicDescriptorHeap_D12.h">
       <Filter>Header Files\Rendering\D12</Filter>
     </ClInclude>
   </ItemGroup>

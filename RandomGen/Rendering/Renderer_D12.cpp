@@ -219,12 +219,23 @@ Renderer_D12::Renderer_D12() {
 
 	m_currentBufferIdx = m_swapChain->GetCurrentBackBufferIndex();
 
-
 	D3D12_DESCRIPTOR_HEAP_DESC cbvSrvUavHeapDesc = {};
 	cbvSrvUavHeapDesc.NumDescriptors = 1;
 	cbvSrvUavHeapDesc.Type = D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV;
 	cbvSrvUavHeapDesc.Flags = D3D12_DESCRIPTOR_HEAP_FLAG_SHADER_VISIBLE;
 	ThrowIfFailed(m_device->CreateDescriptorHeap(&cbvSrvUavHeapDesc, IID_PPV_ARGS(&m_cbvSrvUavHeap)));
+	
+	{
+		D3D12_FEATURE_DATA_ROOT_SIGNATURE featureData;
+		featureData.HighestVersion = D3D_ROOT_SIGNATURE_VERSION_1_1;
+		if (FAILED(m_device->CheckFeatureSupport(D3D12_FEATURE_ROOT_SIGNATURE, &featureData,
+			sizeof(D3D12_FEATURE_DATA_ROOT_SIGNATURE))))
+		{
+			featureData.HighestVersion = D3D_ROOT_SIGNATURE_VERSION_1_0;
+		}
+		m_highestRootSignatureVersion = featureData.HighestVersion;
+	}
+	
 	m_initalized = true;
 }
 
@@ -580,6 +591,14 @@ ComPtr<ID3D12Device2> Renderer_D12::GetDevice() const {
 
 uint64_t  Renderer_D12::GetCurrentFrameCount() const {
 	return m_currentFrame;
+}
+
+uint32_t Renderer_D12::GetDescriptorHandleIncrementSize(D3D12_DESCRIPTOR_HEAP_TYPE type) const {
+	m_device->GetDescriptorHandleIncrementSize(type);
+}
+
+D3D_ROOT_SIGNATURE_VERSION Renderer_D12::GetHighestRootSigVer() const {
+	return m_highestRootSignatureVersion;
 }
 
 // Helper functions

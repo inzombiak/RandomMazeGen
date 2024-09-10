@@ -1,27 +1,30 @@
-#ifndef COMMAND_QUEUE_H
-#define COMMAND_QUEUE_H
+#ifndef COMMAND_QUEUE_D12_H
+#define COMMAND_QUEUE_D12_H
 
 #include <d3d12.h>  // For ID3D12CommandQueue, ID3D12Device2, and ID3D12Fence
 #include <wrl.h>    // For Microsoft::WRL::ComPtr
 
 #include <cstdint>  // For uint64_t
 #include <queue>    // For std::queue
+#include <memory>
 
 using Microsoft::WRL::ComPtr;
 
 #include "DX12_Helpers.h"
-class CommandQueue
+#include "CommandList_D12.h"
+
+class CommandQueue_D12
 {
 public:
-    CommandQueue(ComPtr<ID3D12Device2> device, D3D12_COMMAND_LIST_TYPE type, DWORD fenceTimeout = DWORD_MAX);
-    virtual ~CommandQueue();
+    CommandQueue_D12(ComPtr<ID3D12Device2> device, D3D12_COMMAND_LIST_TYPE type, DWORD fenceTimeout = DWORD_MAX);
+    virtual ~CommandQueue_D12();
 
     // Get an available command list from the command queue.
-    ComPtr<ID3D12GraphicsCommandList2> GetCommandList();
+    std::shared_ptr<CommandList_D12> GetCommandList();
 
     // Execute a command list.
     // Returns the fence value to wait for for this command list.
-    uint64_t ExecuteCommandList(ComPtr<ID3D12GraphicsCommandList2> commandList);
+    uint64_t ExecuteCommandList(std::shared_ptr<CommandList_D12> commandList);
 
     uint64_t Signal();
     bool IsFenceComplete(uint64_t fenceValue);
@@ -32,7 +35,7 @@ public:
 protected:
 
     ComPtr<ID3D12CommandAllocator> CreateCommandAllocator();
-    ComPtr<ID3D12GraphicsCommandList2> CreateCommandList(ComPtr<ID3D12CommandAllocator> allocator);
+    std::shared_ptr<CommandList_D12> CreateCommandList(ComPtr<ID3D12CommandAllocator> allocator);
 
 private:
     // Keep track of command allocators that are "in-flight"
@@ -43,7 +46,7 @@ private:
     };
 
     using CommandAllocatorQueue = std::queue<CommandAllocatorEntry>;
-    using CommandListQueue = std::queue<ComPtr<ID3D12GraphicsCommandList2>>;
+    using CommandListQueue = std::queue<std::shared_ptr<CommandList_D12>>;
 
     D3D12_COMMAND_LIST_TYPE                     m_commandListType;
     ComPtr<ID3D12Device2>                       m_d3d12Device;

@@ -9,16 +9,16 @@
 #include <queue>
 #include <functional>
 
-class CommandList;
-class RootSignature;
-class DynamicDescriptorHeap
+class CommandList_D12;
+class RootSignature_D12;
+class DynamicDescriptorHeap_D12
 {
 public:
-    DynamicDescriptorHeap(
+    DynamicDescriptorHeap_D12(
         D3D12_DESCRIPTOR_HEAP_TYPE heapType,
         uint32_t numDescriptorsPerHeap = 1024);
 
-    virtual ~DynamicDescriptorHeap();
+    virtual ~DynamicDescriptorHeap_D12();
     /**
      * Stages a contiguous range of CPU visible descriptors.
      * Descriptors are not copied to the GPU visible descriptor heap until
@@ -37,9 +37,9 @@ public:
     * Since the DynamicDescriptorHeap can't know which function will be used, it must
     * be passed as an argument to the function.
     */
-    void CommitStagedDescriptors(CommandList& commandList, std::function<void(ID3D12GraphicsCommandList*, UINT, D3D12_GPU_DESCRIPTOR_HANDLE)> setFunc);
-    void CommitStagedDescriptorsForDraw(CommandList& commandList);
-    void CommitStagedDescriptorsForDispatch(CommandList& commandList);
+    void CommitStagedDescriptors(std::shared_ptr<CommandList_D12> commandList, std::function<void(ID3D12GraphicsCommandList*, UINT, D3D12_GPU_DESCRIPTOR_HANDLE)> setFunc);
+    void CommitStagedDescriptorsForDraw(std::shared_ptr<CommandList_D12> commandList);
+    void CommitStagedDescriptorsForDispatch(std::shared_ptr<CommandList_D12> commandList);
     /**
     * Copies a single CPU visible descriptor to a GPU visible descriptor heap.
     * This is useful for the
@@ -55,13 +55,13 @@ public:
     *
     * @return The GPU visible descriptor.
     */
-    D3D12_GPU_DESCRIPTOR_HANDLE CopyDescriptor(CommandList& comandList, D3D12_CPU_DESCRIPTOR_HANDLE cpuDescriptor);
+    D3D12_GPU_DESCRIPTOR_HANDLE CopyDescriptor(std::shared_ptr<CommandList_D12> comandList, D3D12_CPU_DESCRIPTOR_HANDLE cpuDescriptor);
     /**
     * Parse the root signature to determine which root parameters contain
     * descriptor tables and determine the number of descriptors needed for
     * each table.
     */
-    void ParseRootSignature(const RootSignature& rootSignature);
+    void ParseRootSignature(const RootSignature_D12& rootSignature);
     /**
     * Reset used descriptors. This should only be done if any descriptors
     * that are being referenced by a command list has finished executing on the
@@ -130,7 +130,7 @@ private:
     // in the root signature that has changed since the last time the 
     // descriptors were copied.
     uint32_t m_staleDescriptorTableBitMask;
-    using DescriptorHeapPool = std::queue< Microsoft::WRL::ComPtr<ID3D12DescriptorHeap> >;
+    using DescriptorHeapPool = std::queue<Microsoft::WRL::ComPtr<ID3D12DescriptorHeap>>;
 
     DescriptorHeapPool m_descriptorHeapPool;
     DescriptorHeapPool m_availableDescriptorHeaps;
