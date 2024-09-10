@@ -1,31 +1,30 @@
 #ifndef COMMAND_LIST_D12_H
 #define COMMAND_LIST_D12_H
 
+#include "d3dx12/d3dx12.h"
+#include "d3d12.h"
+
+#include <wrl.h>
+using namespace Microsoft::WRL;
+
 class CommandList_D12 {
 
 public:
-	CommandList_D12(D3D12_COMMAND_LIST_TYPE type, ComPtr<ID3D12CommandAllocator> allocator);
-	//ThrowIfFailed(m_d3d12Device->CreateCommandList(0, m_commandListType, allocator.Get(), nullptr, IID_PPV_ARGS(&commandList)));
-	//ThrowIfFailed(commandList->SetPrivateDataInterface(__uuidof(ID3D12CommandAllocator), commandAllocator.Get()))
-	
+	CommandList_D12(ComPtr<ID3D12Device2> device, D3D12_COMMAND_LIST_TYPE type, ComPtr<ID3D12CommandAllocator> allocator);
 	
 	// Helper functions
 	// Transition a resource
-	void TransitionResource(ComPtr<ID3D12GraphicsCommandList2> commandList,
-		ComPtr<ID3D12Resource> resource,
+	void TransitionResource(ComPtr<ID3D12Resource> resource,
 		D3D12_RESOURCE_STATES beforeState, D3D12_RESOURCE_STATES afterState);
 
 	// Clear a render target view.
-	void ClearRTV(ComPtr<ID3D12GraphicsCommandList2> commandList,
-		D3D12_CPU_DESCRIPTOR_HANDLE rtv, FLOAT* clearColor);
+	void ClearRTV(D3D12_CPU_DESCRIPTOR_HANDLE rtv, FLOAT* clearColor);
 
 	// Clear the depth of a depth-stencil view.
-	void ClearDepth(ComPtr<ID3D12GraphicsCommandList2> commandList,
-		D3D12_CPU_DESCRIPTOR_HANDLE dsv, FLOAT depth = 1.0f);
+	void ClearDepth(D3D12_CPU_DESCRIPTOR_HANDLE dsv, FLOAT depth = 1.0f);
 
 	// Create a GPU buffer.
-	void UpdateBufferResource(ComPtr<ID3D12GraphicsCommandList2> commandList,
-		ID3D12Resource** pDestinationResource, ID3D12Resource** pIntermediateResource,
+	void UpdateBufferResource(ComPtr<ID3D12Device> device, ID3D12Resource** pDestinationResource, ID3D12Resource** pIntermediateResource,
 		size_t numElements, size_t elementSize, const void* bufferData,
 		D3D12_RESOURCE_FLAGS flags = D3D12_RESOURCE_FLAG_NONE);
 
@@ -37,10 +36,12 @@ public:
 
 	void Close();
 
-	ComPtr<ID3D12CommandAllocator> GetCommandAllocator() const;
-	ComPtr<ID3D12GraphicsCommandList2> GetGraphicsCommandList() const;
+	ComPtr<ID3D12CommandAllocator>		GetCommandAllocator() const;
+	ComPtr<ID3D12GraphicsCommandList2>	GetGraphicsCommandList() const;
 
 private:
+	ComPtr<ID3D12GraphicsCommandList2>	m_graphicsCommandList;
+	ComPtr<ID3D12CommandAllocator>		m_allocator;
 
 
 };

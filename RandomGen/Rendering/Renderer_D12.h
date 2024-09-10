@@ -63,7 +63,7 @@ class Renderer_D12 {
 		UINT		m_currentBufferIdx;
 
 		ComPtr<ID3D12Device2>				m_device;
-		std::shared_ptr<CommandQueue>		m_commQueue;
+		std::shared_ptr<CommandQueue_D12>		m_commQueue;
 		ComPtr<IDXGISwapChain4>				m_swapChain;
 		ComPtr<ID3D12Resource>				m_backbuffers[NUM_BACKBUFFER_FRAMES];
 

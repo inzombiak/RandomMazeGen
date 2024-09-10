@@ -209,7 +209,7 @@ Renderer_D12::Renderer_D12() {
 	int windowHeight = GAME_WINDOW->GetHeight();
 
 	m_device = CreateDevice(dxgiAdapter4);
-	m_commQueue = std::make_shared<CommandQueue>(m_device, D3D12_COMMAND_LIST_TYPE_DIRECT);
+	m_commQueue = std::make_shared<CommandQueue_D12>(m_device, D3D12_COMMAND_LIST_TYPE_DIRECT);
 	auto windowHandle = GAME_WINDOW->GetHandle();
 	m_swapChain = CreateSwapChain(windowHandle, m_commQueue->GetD3D12CommandQueue(),
 		windowWidth, windowHeight, NUM_BACKBUFFER_FRAMES);
@@ -296,33 +296,37 @@ void Renderer_D12::Render() {
 
 	// Clear the render targets.
 	{
-		TransitionResource(commandList, backBuffer,
+		commandList->TransitionResource(backBuffer,
 			D3D12_RESOURCE_STATE_PRESENT, D3D12_RESOURCE_STATE_RENDER_TARGET);
 
 		FLOAT clearColor[] = { 0.4f, 0.6f, 0.9f, 1.0f };
 
-		ClearRTV(commandList, rtv, clearColor);
-		ClearDepth(commandList, dsv);
+		commandList->ClearRTV(rtv, clearColor);
+		commandList->ClearDepth(dsv);
 	}
-	commandList->SetPipelineState(m_pipelineState.Get());
-	commandList->SetGraphicsRootSignature(m_rootSignature.Get());
-	commandList->IASetPrimitiveTopology(D3D_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
-	commandList->IASetVertexBuffers(0, 1, &m_vertexBufferView);
-	commandList->IASetIndexBuffer(&m_indexBufferView);
-	commandList->RSSetViewports(1, &m_viewport);
-	commandList->RSSetScissorRects(1, &m_scissorRect);
 
-	commandList->OMSetRenderTargets(1, &rtv, FALSE, &dsv);
+	//@ZGTODO Mvoe to CommandList_D12
+	{
+		auto d3dCommList = commandList->GetGraphicsCommandList();
+		d3dCommList->SetPipelineState(m_pipelineState.Get());
+		d3dCommList->SetGraphicsRootSignature(m_rootSignature.Get());
+		d3dCommList->IASetPrimitiveTopology(D3D_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
+		d3dCommList->IASetVertexBuffers(0, 1, &m_vertexBufferView);
+		d3dCommList->IASetIndexBuffer(&m_indexBufferView);
+		d3dCommList->RSSetViewports(1, &m_viewport);
+		d3dCommList->RSSetScissorRects(1, &m_scissorRect);
+		
+		d3dCommList->OMSetRenderTargets(1, &rtv, FALSE, &dsv);
 
-	// Update the MVP matrix
-	XMMATRIX vpMatrix = XMMatrixMultiply(m_viewMatrix, m_projectionMatrix);
-	commandList->SetGraphicsRoot32BitConstants(0, sizeof(XMMATRIX) / 4, &vpMatrix, 0);
-	commandList->SetGraphicsRootShaderResourceView(1, m_modelBufferView.BufferLocation);
-	commandList->DrawIndexedInstanced((UINT)m_indexCount, m_numInstances, 0, 0, 0);
-
+		// Update the MVP matrix
+		XMMATRIX vpMatrix = XMMatrixMultiply(m_viewMatrix, m_projectionMatrix);
+		d3dCommList->SetGraphicsRoot32BitConstants(0, sizeof(XMMATRIX) / 4, &vpMatrix, 0);
+		d3dCommList->SetGraphicsRootShaderResourceView(1, m_modelBufferView.BufferLocation);
+		d3dCommList->DrawIndexedInstanced((UINT)m_indexCount, m_numInstances, 0, 0, 0);
+	}
 	// Present
 	{
-		TransitionResource(commandList, backBuffer,
+		commandList->TransitionResource(backBuffer,
 			D3D12_RESOURCE_STATE_RENDER_TARGET, D3D12_RESOURCE_STATE_PRESENT);
 
 		m_perFrameFenceValues[m_currentBufferIdx] = m_commQueue->ExecuteCommandList(commandList);
@@ -350,7 +354,7 @@ void Renderer_D12::PopulateVertexBuffer(const VertexInput* data, size_t count) {
 	auto commandList = m_commQueue->GetCommandList();
 	// Upload vertex buffer data.
 	ComPtr<ID3D12Resource> intermediateVertexBuffer;
-	UpdateBufferResource(commandList.Get(),
+	commandList->UpdateBufferResource(m_device,
 		&m_vertexBuffer, &intermediateVertexBuffer,
 		count, sizeof(VertexInput), data);
 	// Create the vertex buffer view.
@@ -365,8 +369,7 @@ void Renderer_D12::PopulateIndexBuffer(const WORD *data, size_t count) {
 	auto commandList = m_commQueue->GetCommandList();
 	// Upload index buffer data.
 	ComPtr<ID3D12Resource> intermediateIndexBuffer;
-	UpdateBufferResource(commandList.Get(),
-		&m_indexBuffer, &intermediateIndexBuffer,
+	commandList->UpdateBufferResource(m_device, &m_indexBuffer, &intermediateIndexBuffer,
 		count, sizeof(WORD), data);
 
 	// Create index buffer view.
@@ -437,7 +440,7 @@ void Renderer_D12::CreateSRVForBoxes(const std::vector<std::vector<Tile>>& tiles
 	auto commandList = m_commQueue->GetCommandList();
 
 	ComPtr<ID3D12Resource> intermediateBuffer;
-	UpdateBufferResource(commandList.Get(),
+	commandList->UpdateBufferResource(m_device,
 		&m_modelBuffer, &intermediateBuffer,
 		m_numInstances, sizeof(XMMATRIX), mvpMatrices.data());
 
@@ -594,75 +597,11 @@ uint64_t  Renderer_D12::GetCurrentFrameCount() const {
 }
 
 uint32_t Renderer_D12::GetDescriptorHandleIncrementSize(D3D12_DESCRIPTOR_HEAP_TYPE type) const {
-	m_device->GetDescriptorHandleIncrementSize(type);
+	return m_device->GetDescriptorHandleIncrementSize(type);
 }
 
 D3D_ROOT_SIGNATURE_VERSION Renderer_D12::GetHighestRootSigVer() const {
 	return m_highestRootSignatureVersion;
-}
-
-// Helper functions
-	// Transition a resource
-void Renderer_D12::TransitionResource(Microsoft::WRL::ComPtr<ID3D12GraphicsCommandList2> commandList,
-	Microsoft::WRL::ComPtr<ID3D12Resource> resource,
-	D3D12_RESOURCE_STATES beforeState, D3D12_RESOURCE_STATES afterState) {
-
-	CD3DX12_RESOURCE_BARRIER barrier = CD3DX12_RESOURCE_BARRIER::Transition(
-		resource.Get(),
-		beforeState, afterState);
-
-	commandList->ResourceBarrier(1, &barrier);
-}
-
-// Clear a render target view.
-void Renderer_D12::ClearRTV(Microsoft::WRL::ComPtr<ID3D12GraphicsCommandList2> commandList,
-	D3D12_CPU_DESCRIPTOR_HANDLE rtv, FLOAT* clearColor) {
-	commandList->ClearRenderTargetView(rtv, clearColor, 0, nullptr);
-}
-
-// Clear the depth of a depth-stencil view.
-void Renderer_D12::ClearDepth(Microsoft::WRL::ComPtr<ID3D12GraphicsCommandList2> commandList,
-	D3D12_CPU_DESCRIPTOR_HANDLE dsv, FLOAT depth) {
-	commandList->ClearDepthStencilView(dsv, D3D12_CLEAR_FLAG_DEPTH, depth, 0, 0, nullptr);
-}
-
-// Create a GPU buffer.
-void Renderer_D12::UpdateBufferResource(Microsoft::WRL::ComPtr<ID3D12GraphicsCommandList2> commandList,
-	ID3D12Resource** pDestinationResource, ID3D12Resource** pIntermediateResource,
-	size_t numElements, size_t elementSize, const void* bufferData,
-	D3D12_RESOURCE_FLAGS flags) {
-
-	//Create the buffer
-	size_t bufferSize = numElements * elementSize;
-	ThrowIfFailed(m_device->CreateCommittedResource(
-		&CD3DX12_HEAP_PROPERTIES(D3D12_HEAP_TYPE_DEFAULT),
-		D3D12_HEAP_FLAG_NONE,
-		&CD3DX12_RESOURCE_DESC::Buffer(bufferSize, flags),
-		D3D12_RESOURCE_STATE_COMMON,
-		nullptr,
-		IID_PPV_ARGS(pDestinationResource)));
-
-	if (bufferData)
-	{
-		//Create an intermediate buffer to upload the data
-		ThrowIfFailed(m_device->CreateCommittedResource(
-			&CD3DX12_HEAP_PROPERTIES(D3D12_HEAP_TYPE_UPLOAD),
-			D3D12_HEAP_FLAG_NONE,
-			&CD3DX12_RESOURCE_DESC::Buffer(bufferSize),
-			D3D12_RESOURCE_STATE_GENERIC_READ,
-			nullptr,
-			IID_PPV_ARGS(pIntermediateResource)));        
-		
-		D3D12_SUBRESOURCE_DATA subresourceData = {};
-		subresourceData.pData = bufferData;
-		subresourceData.RowPitch = bufferSize;
-		subresourceData.SlicePitch = subresourceData.RowPitch;
-
-		//Copy the data
-		UpdateSubresources(commandList.Get(),
-			*pDestinationResource, *pIntermediateResource,
-			0, 0, 1, &subresourceData);
-	}
 }
 
 D3D12_CPU_DESCRIPTOR_HANDLE Renderer_D12::GetCurrentRenderTargetView() const

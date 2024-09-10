@@ -30,7 +30,8 @@ ComPtr<ID3D12CommandAllocator> CommandQueue_D12::CreateCommandAllocator() {
 }
 
 std::shared_ptr<CommandList_D12> CommandQueue_D12::CreateCommandList(ComPtr<ID3D12CommandAllocator> allocator) {
-	std::shared_ptr<CommandList_D12> commandList = std::make_shared<CommandList_D12>(m_commandListType);
+	std::shared_ptr<CommandList_D12> commandList = std::make_shared<CommandList_D12>(m_d3d12Device, m_commandListType, allocator);
+	
 	return commandList;
 }
 
@@ -54,15 +55,12 @@ std::shared_ptr<CommandList_D12> CommandQueue_D12::GetCommandList() {
 	{
 		commandList = m_commandListQueue.front();
 		m_commandListQueue.pop();
-		commandList->Reset(commandAllocator);
+		commandList->GetGraphicsCommandList()->Reset(commandAllocator.Get(), nullptr);
 	}
 	else
 	{
 		commandList = CreateCommandList(commandAllocator);
 	}
-
-	// Associate the command allocator with the command list so that it can be
-	// retrieved when the command list is executed.
 
 	return commandList;
 }
