@@ -1,6 +1,8 @@
 #include "Renderer_D12.h"
 
 #include "UploadBuffer_D12.h"
+#include "DescriptorAllocator_D12.h"
+#include "DescriptorAllocation_D12.h"
 
 #include "Window.h"
 #include "../Tile.h"
@@ -179,6 +181,21 @@ ComPtr<ID3D12Device2> CreateDevice(ComPtr<IDXGIAdapter4> adapter)
 	return d3d12Device2;
 }
 
+
+ComPtr<ID3D12DescriptorHeap> CreateDescriptorHeap(ComPtr<ID3D12Device2> device,
+	D3D12_DESCRIPTOR_HEAP_TYPE type, uint32_t numDescriptors)
+{
+	ComPtr<ID3D12DescriptorHeap> descriptorHeap;
+
+	D3D12_DESCRIPTOR_HEAP_DESC desc = {};
+	desc.NumDescriptors = numDescriptors;
+	desc.Type = type;
+
+	ThrowIfFailed(device->CreateDescriptorHeap(&desc, IID_PPV_ARGS(&descriptorHeap)));
+
+	return descriptorHeap;
+}
+
 Renderer_D12::Renderer_D12() {
 	EnableDebugLayer();
 	m_tearingSupported = CheckTearingSupport();
@@ -202,26 +219,22 @@ Renderer_D12::Renderer_D12() {
 
 	m_currentBufferIdx = m_swapChain->GetCurrentBackBufferIndex();
 
-	m_rtvHeap = CreateDescriptorHeap(m_device, D3D12_DESCRIPTOR_HEAP_TYPE_RTV, NUM_BACKBUFFER_FRAMES);
-	m_rtvDescSize = m_device->GetDescriptorHandleIncrementSize(D3D12_DESCRIPTOR_HEAP_TYPE_RTV);
 
 	D3D12_DESCRIPTOR_HEAP_DESC cbvSrvUavHeapDesc = {};
 	cbvSrvUavHeapDesc.NumDescriptors = 1;
 	cbvSrvUavHeapDesc.Type = D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV;
 	cbvSrvUavHeapDesc.Flags = D3D12_DESCRIPTOR_HEAP_FLAG_SHADER_VISIBLE;
 	ThrowIfFailed(m_device->CreateDescriptorHeap(&cbvSrvUavHeapDesc, IID_PPV_ARGS(&m_cbvSrvUavHeap)));
-
-	// Create the descriptor heap for the depth-stencil view.
-	D3D12_DESCRIPTOR_HEAP_DESC dsvHeapDesc = {};
-	dsvHeapDesc.NumDescriptors = 1;
-	dsvHeapDesc.Type = D3D12_DESCRIPTOR_HEAP_TYPE_DSV;
-	dsvHeapDesc.Flags = D3D12_DESCRIPTOR_HEAP_FLAG_NONE;
-	ThrowIfFailed(m_device->CreateDescriptorHeap(&dsvHeapDesc, IID_PPV_ARGS(&m_dsvHeap)));
-
-	UpdateRenderTargetViews();
-
-
 	m_initalized = true;
+}
+
+void Renderer_D12::PostInit() {
+
+	m_rtvAllocator = std::make_shared<DescriptorAllocator_D12>(D3D12_DESCRIPTOR_HEAP_TYPE_RTV, NUM_BACKBUFFER_FRAMES);
+	m_rtvs = std::make_shared<DescriptorAllocation_D12>(m_rtvAllocator->Allocate(NUM_BACKBUFFER_FRAMES));
+	m_dsvAllocator = std::make_shared<DescriptorAllocator_D12>(D3D12_DESCRIPTOR_HEAP_TYPE_DSV, 1);
+	m_dsvs = std::make_shared<DescriptorAllocation_D12>(m_dsvAllocator->Allocate(1));
+	UpdateRenderTargetViews();
 }
 
 void Renderer_D12::ResizeTargets() {
@@ -251,20 +264,15 @@ void Renderer_D12::ResizeTargets() {
 
 void Renderer_D12::UpdateRenderTargetViews()
 {
-	auto rtvDescriptorSize = m_device->GetDescriptorHandleIncrementSize(D3D12_DESCRIPTOR_HEAP_TYPE_RTV);
-
-	CD3DX12_CPU_DESCRIPTOR_HANDLE rtvHandle(m_rtvHeap->GetCPUDescriptorHandleForHeapStart());
-
 	for (int i = 0; i < NUM_BACKBUFFER_FRAMES; ++i)
 	{
+		auto rtvHandle = m_rtvs->GetDescriptorHandle(i);
 		ComPtr<ID3D12Resource> backBuffer;
 		ThrowIfFailed(m_swapChain->GetBuffer(i, IID_PPV_ARGS(&backBuffer)));
 
 		m_device->CreateRenderTargetView(backBuffer.Get(), nullptr, rtvHandle);
 
 		m_backbuffers[i] = backBuffer;
-
-		rtvHandle.Offset(rtvDescriptorSize);
 	}
 }
 
@@ -273,7 +281,7 @@ void Renderer_D12::Render() {
 
 	auto backBuffer = m_backbuffers[m_currentBufferIdx];
 	auto rtv = GetCurrentRenderTargetView();
-	auto dsv = m_dsvHeap->GetCPUDescriptorHandleForHeapStart();
+	auto dsv = m_dsvs->GetDescriptorHandle(0);
 
 	// Clear the render targets.
 	{
@@ -553,7 +561,7 @@ void Renderer_D12::ResizeDepthBuffer(int width, int height) {
 	dsv.Flags = D3D12_DSV_FLAG_NONE;
 
 	m_device->CreateDepthStencilView(m_depthBuffer.Get(), &dsv,
-		m_dsvHeap->GetCPUDescriptorHandleForHeapStart());
+		m_dsvs->GetDescriptorHandle(0));
 }
 
 void Renderer_D12::UpdateMVP(float fov, DirectX::XMVECTOR camPos, DirectX::XMVECTOR camFwd, DirectX::XMVECTOR camRight, DirectX::XMVECTOR camUp) {
@@ -640,6 +648,5 @@ void Renderer_D12::UpdateBufferResource(Microsoft::WRL::ComPtr<ID3D12GraphicsCom
 
 D3D12_CPU_DESCRIPTOR_HANDLE Renderer_D12::GetCurrentRenderTargetView() const
 {
-	return CD3DX12_CPU_DESCRIPTOR_HANDLE(m_rtvHeap->GetCPUDescriptorHandleForHeapStart(),
-		m_currentBufferIdx, m_rtvDescSize);
+	return m_rtvs->GetDescriptorHandle(m_currentBufferIdx);
 }

@@ -62,6 +62,7 @@ bool App::Initialize()
     GAME_WINDOW = std::make_shared<Window>(m_hInstance);
     GAME_WINDOW->RegisterCallbacks(shared_from_this());
     RENDERER = std::make_shared<Renderer_D12>();
+    RENDERER->PostInit();
     LoadContent();
     GAME_WINDOW->Show();
 

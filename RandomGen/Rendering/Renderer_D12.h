@@ -24,10 +24,12 @@ struct VertexInput
 class Tile;
 class UploadBuffer_D12;
 class DescriptorAllocator_D12;
+class DescriptorAllocation_D12;
 class Renderer_D12 {
 
 	public:
 		Renderer_D12();
+		void PostInit();
 		void ResizeTargets();
 		void UpdateRenderTargetViews();
 		void Render();
@@ -77,16 +79,24 @@ class Renderer_D12 {
 
 		static const uint8_t NUM_BACKBUFFER_FRAMES = 3;
 
-		UINT		m_rtvDescSize;
 		UINT		m_currentBufferIdx;
 
 		ComPtr<ID3D12Device2>				m_device;
 		std::shared_ptr<CommandQueue>		m_commQueue;
 		ComPtr<IDXGISwapChain4>				m_swapChain;
 		ComPtr<ID3D12Resource>				m_backbuffers[NUM_BACKBUFFER_FRAMES];
+		/*
 		ComPtr<ID3D12DescriptorHeap>		m_rtvHeap;
+		ComPtr<ID3D12DescriptorHeap>		m_dsvHeap;
+		*/
+
+		std::shared_ptr<DescriptorAllocator_D12>  m_rtvAllocator;
+		std::shared_ptr<DescriptorAllocation_D12> m_rtvs;
+		std::shared_ptr<DescriptorAllocator_D12> m_dsvAllocator;
+		std::shared_ptr<DescriptorAllocation_D12> m_dsvs;
 
 		ComPtr<ID3D12DescriptorHeap>		m_cbvSrvUavHeap;
+		std::shared_ptr<DescriptorAllocator_D12> m_cbvSrvUavAllocator;
 
 		std::shared_ptr<UploadBuffer_D12>			m_uploadBuffer;
 
@@ -104,8 +114,6 @@ class Renderer_D12 {
 		D3D12_VERTEX_BUFFER_VIEW m_colorBufferView;
 
 		ComPtr<ID3D12Resource> m_depthBuffer;
-		// Descriptor heap for depth buffer.
-		ComPtr<ID3D12DescriptorHeap> m_dsvHeap;
 		// Root signature
 		ComPtr<ID3D12RootSignature> m_rootSignature;
 		// Pipeline state object.
