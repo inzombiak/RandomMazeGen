@@ -2,10 +2,10 @@
 
 #include "DX12_Helpers.h"
 
-CommandList_D12::CommandList_D12(ComPtr<ID3D12Device2> device, D3D12_COMMAND_LIST_TYPE type, ComPtr<ID3D12CommandAllocator> allocator)
+CommandList_D12::CommandList_D12(ComPtr<ID3D12Device2> device, D3D12_COMMAND_LIST_TYPE type)
 {
-	ThrowIfFailed(device->CreateCommandList(0, type, allocator.Get(), nullptr, IID_PPV_ARGS(&m_graphicsCommandList)));
-	m_allocator = allocator;
+	ThrowIfFailed(device->CreateCommandAllocator(type, IID_PPV_ARGS(&m_allocator)));
+	ThrowIfFailed(device->CreateCommandList(0, type, m_allocator.Get(), nullptr, IID_PPV_ARGS(&m_graphicsCommandList)));
 }
 // Helper functions
 	// Transition a resource
@@ -71,9 +71,14 @@ void CommandList_D12::SetDescriptorHeap(D3D12_DESCRIPTOR_HEAP_TYPE type, ID3D12D
 
 }
 
-void CommandList_D12::Reset(ComPtr<ID3D12CommandAllocator> allocator) {
-	m_graphicsCommandList->Reset(allocator.Get(), nullptr);
-	//m_allocator = allocator;
+void CommandList_D12::Reset() {
+	m_allocator->Reset();
+	m_graphicsCommandList->Reset(m_allocator.Get(), nullptr);
+	m_trackedResources.clear();
+}
+
+void CommandList_D12::TrackResource(ComPtr<ID3D12Resource> resource) {
+	m_trackedResources.push_back(resource);
 }
 
 void CommandList_D12::Close() {

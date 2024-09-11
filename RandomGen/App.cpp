@@ -36,9 +36,9 @@ App::App(const std::wstring& name, int width, int height, bool vSync, HINSTANCE 
     , m_contentLoaded(false)
     , m_gridManager(std::make_shared<GridManager>())
 {
-    m_cameraPos    = XMVectorSet(0, 0, -10, 1);
-    m_camAngles[0] = 0;
-    m_camAngles[1] = 0;
+    m_cameraPos    = XMVectorSet(-17, 26.7, 16, 1);
+    m_camAngles[0] = 0.66;
+    m_camAngles[1] = 1.57;
     m_camAngles[2] = 0;
 }
 
@@ -74,7 +74,7 @@ bool App::LoadContent() {
     if (!RENDERER || !RENDERER->IsInitialized())
         return false;
 
-    m_gridManager->GenerateMap(m_width, m_height, 8, 8 );
+    m_gridManager->GenerateMap(m_width, m_height, 16, 16);
 
     RENDERER->PopulateVertexBuffer(BOX_VERTICES, _countof(BOX_VERTICES));
     RENDERER->PopulateIndexBuffer(BOX_INDICES, _countof(BOX_INDICES));

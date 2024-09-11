@@ -22,54 +22,40 @@ CommandQueue_D12::~CommandQueue_D12() {
 	::CloseHandle(m_fenceEvent);
 }
 
-ComPtr<ID3D12CommandAllocator> CommandQueue_D12::CreateCommandAllocator() {
-	ComPtr<ID3D12CommandAllocator> commandAllocator;
-	ThrowIfFailed(m_d3d12Device->CreateCommandAllocator(m_commandListType, IID_PPV_ARGS(&commandAllocator)));
-
-	return commandAllocator;
-}
-
-std::shared_ptr<CommandList_D12> CommandQueue_D12::CreateCommandList(ComPtr<ID3D12CommandAllocator> allocator) {
-	std::shared_ptr<CommandList_D12> commandList = std::make_shared<CommandList_D12>(m_d3d12Device, m_commandListType, allocator);
+std::shared_ptr<CommandList_D12> CommandQueue_D12::CreateCommandList() {
+	std::shared_ptr<CommandList_D12> commandList = std::make_shared<CommandList_D12>(m_d3d12Device, m_commandListType);
 	
 	return commandList;
 }
 
 std::shared_ptr<CommandList_D12> CommandQueue_D12::GetCommandList() {
-	ComPtr<ID3D12CommandAllocator> commandAllocator;
+	if (m_activeCommandList)
+		return m_activeCommandList;
+
 	std::shared_ptr<CommandList_D12> commandList;
-
-	if (!m_commandAllocatorQueue.empty() && IsFenceComplete(m_commandAllocatorQueue.front().fenceValue))
-	{
-		commandAllocator = m_commandAllocatorQueue.front().commandAllocator;
-		m_commandAllocatorQueue.pop();
-
-		ThrowIfFailed(commandAllocator->Reset());
-	}
-	else
-	{
-		commandAllocator = CreateCommandAllocator();
-	}
 
 	if (!m_commandListQueue.empty())
 	{
 		commandList = m_commandListQueue.front();
 		m_commandListQueue.pop();
-		commandList->GetGraphicsCommandList()->Reset(commandAllocator.Get(), nullptr);
+		commandList->Reset();
 	}
 	else
 	{
-		commandList = CreateCommandList(commandAllocator);
+		commandList = CreateCommandList();
 	}
 
+	m_activeCommandList = commandList;
 	return commandList;
+}
+
+uint64_t CommandQueue_D12::ExecuteActiveCommandList() {
+	return ExecuteCommandList(m_activeCommandList);
 }
 
 uint64_t CommandQueue_D12::ExecuteCommandList(std::shared_ptr<CommandList_D12> commandList) {
 	commandList->Close();
 
-	auto commandAllocator = commandList->GetCommandAllocator();
-	UINT dataSize = sizeof(commandAllocator);
 
 	ID3D12CommandList* const ppCommandLists[] = {
 		commandList->GetGraphicsCommandList().Get()
@@ -77,14 +63,10 @@ uint64_t CommandQueue_D12::ExecuteCommandList(std::shared_ptr<CommandList_D12> c
 
 	m_d3d12CommandQueue->ExecuteCommandLists(1, ppCommandLists);
 	uint64_t fenceValue = Signal();
-
-	m_commandAllocatorQueue.emplace(CommandAllocatorEntry{ fenceValue, commandAllocator.Get()});
 	m_commandListQueue.push(commandList);
 
-	// The ownership of the command allocator has been transferred to the ComPtr
-	// in the command allocator queue. It is safe to release the reference 
-	// in this temporary COM pointer here.
-	commandAllocator->Release();
+	if (commandList == m_activeCommandList)
+		m_activeCommandList = nullptr;
 
 	return fenceValue;
 }

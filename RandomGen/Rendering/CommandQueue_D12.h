@@ -25,6 +25,7 @@ public:
     // Execute a command list.
     // Returns the fence value to wait for for this command list.
     uint64_t ExecuteCommandList(std::shared_ptr<CommandList_D12> commandList);
+    uint64_t ExecuteActiveCommandList();
 
     uint64_t Signal();
     bool IsFenceComplete(uint64_t fenceValue);
@@ -33,20 +34,12 @@ public:
 
     ComPtr<ID3D12CommandQueue> GetD3D12CommandQueue() const;
 protected:
-
-    ComPtr<ID3D12CommandAllocator> CreateCommandAllocator();
-    std::shared_ptr<CommandList_D12> CreateCommandList(ComPtr<ID3D12CommandAllocator> allocator);
+    std::shared_ptr<CommandList_D12> CreateCommandList();
 
 private:
-    // Keep track of command allocators that are "in-flight"
-    struct CommandAllocatorEntry
-    {
-        uint64_t fenceValue;
-        ComPtr<ID3D12CommandAllocator> commandAllocator;
-    };
-
-    using CommandAllocatorQueue = std::queue<CommandAllocatorEntry>;
     using CommandListQueue = std::queue<std::shared_ptr<CommandList_D12>>;
+
+    std::shared_ptr<CommandList_D12> m_activeCommandList;
 
     D3D12_COMMAND_LIST_TYPE                     m_commandListType;
     ComPtr<ID3D12Device2>                       m_d3d12Device;
@@ -55,7 +48,6 @@ private:
     HANDLE                                      m_fenceEvent;
     uint64_t                                    m_fenceValue;
 
-    CommandAllocatorQueue                       m_commandAllocatorQueue;
     CommandListQueue                            m_commandListQueue;
 
     DWORD                                       m_fenceTimeout;

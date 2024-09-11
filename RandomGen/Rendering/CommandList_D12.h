@@ -10,7 +10,7 @@ using namespace Microsoft::WRL;
 class CommandList_D12 {
 
 public:
-	CommandList_D12(ComPtr<ID3D12Device2> device, D3D12_COMMAND_LIST_TYPE type, ComPtr<ID3D12CommandAllocator> allocator);
+	CommandList_D12(ComPtr<ID3D12Device2> device, D3D12_COMMAND_LIST_TYPE type);
 	
 	// Helper functions
 	// Transition a resource
@@ -30,7 +30,7 @@ public:
 
 	void SetDescriptorHeap(D3D12_DESCRIPTOR_HEAP_TYPE type, ID3D12DescriptorHeap* heap);
 
-	void Reset(ComPtr<ID3D12CommandAllocator> allocator);
+	void Reset();
 	//commandList->Reset(commandAllocator.Get(), nullptr));
 	//ThrowIfFailed(commandList->SetPrivateDataInterface(__uuidof(ID3D12CommandAllocator), commandAllocator.Get()));
 
@@ -39,10 +39,12 @@ public:
 	ComPtr<ID3D12CommandAllocator>		GetCommandAllocator() const;
 	ComPtr<ID3D12GraphicsCommandList2>	GetGraphicsCommandList() const;
 
+	void TrackResource(ComPtr<ID3D12Resource> resource);
+
 private:
 	ComPtr<ID3D12GraphicsCommandList2>	m_graphicsCommandList;
 	ComPtr<ID3D12CommandAllocator>		m_allocator;
 
-
+	std::vector<ComPtr<ID3D12Resource>> m_trackedResources;
 };
 #endif

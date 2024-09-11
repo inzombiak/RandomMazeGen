@@ -334,9 +334,9 @@ void Renderer_D12::Render() {
 		UINT syncInterval = Globals::VSYNC_ENABLED ? 1 : 0;
 		UINT presentFlags = m_tearingSupported && !Globals::VSYNC_ENABLED ? DXGI_PRESENT_ALLOW_TEARING : 0;
 		ThrowIfFailed(m_swapChain->Present(syncInterval, presentFlags));
+		m_commQueue->WaitForFenceValue(m_perFrameFenceValues[m_currentBufferIdx]);
 		m_currentBufferIdx = m_swapChain->GetCurrentBackBufferIndex();
 
-		m_commQueue->WaitForFenceValue(m_perFrameFenceValues[m_currentBufferIdx]);
 	}
 	++m_currentFrame;
 }
@@ -361,8 +361,7 @@ void Renderer_D12::PopulateVertexBuffer(const VertexInput* data, size_t count) {
 	m_vertexBufferView.BufferLocation = m_vertexBuffer->GetGPUVirtualAddress();
 	m_vertexBufferView.SizeInBytes = (UINT)(sizeof(VertexInput) * count);
 	m_vertexBufferView.StrideInBytes = sizeof(VertexInput);
-	auto fenceValue = m_commQueue->ExecuteCommandList(commandList);
-	m_commQueue->WaitForFenceValue(fenceValue);
+	commandList->TrackResource(intermediateVertexBuffer);
 }
 
 void Renderer_D12::PopulateIndexBuffer(const WORD *data, size_t count) {
@@ -378,8 +377,7 @@ void Renderer_D12::PopulateIndexBuffer(const WORD *data, size_t count) {
 	m_indexBufferView.SizeInBytes = (UINT)(sizeof(WORD) * count);
 
 	m_indexCount = count;
-	auto fenceValue = m_commQueue->ExecuteCommandList(commandList);
-	m_commQueue->WaitForFenceValue(fenceValue);
+	commandList->TrackResource(intermediateIndexBuffer);
 }
 
 void Renderer_D12::CreateSRVForBoxes(const std::vector<std::vector<Tile>>& tiles, double t) {
@@ -447,8 +445,7 @@ void Renderer_D12::CreateSRVForBoxes(const std::vector<std::vector<Tile>>& tiles
 	m_modelBufferView.BufferLocation = m_modelBuffer->GetGPUVirtualAddress();
 	m_modelBufferView.SizeInBytes = (UINT)(sizeof(XMMATRIX) * m_numInstances);
 	m_modelBufferView.StrideInBytes = sizeof(XMMATRIX);
-	auto fenceValue = m_commQueue->ExecuteCommandList(commandList);
-	m_commQueue->WaitForFenceValue(fenceValue);
+	commandList->TrackResource(intermediateBuffer);
 
 	D3D12_SHADER_RESOURCE_VIEW_DESC srvDesc = {};
 	srvDesc.ViewDimension = D3D12_SRV_DIMENSION_BUFFER;
@@ -539,8 +536,7 @@ void Renderer_D12::BuildPipelineState(const std::wstring& vertexShaderName, cons
 	};
 	ThrowIfFailed(m_device->CreatePipelineState(&pipelineStateStreamDesc, IID_PPV_ARGS(&m_pipelineState)));
 
-	auto commandList = m_commQueue->GetCommandList();
-	auto fenceValue = m_commQueue->ExecuteCommandList(commandList);
+	auto fenceValue = m_commQueue->ExecuteActiveCommandList();
 	m_commQueue->WaitForFenceValue(fenceValue);
 }
 
