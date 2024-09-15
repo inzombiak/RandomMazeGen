@@ -164,6 +164,28 @@
   <ItemGroup>
     <ClCompile Include="DeadEndRemover.cpp" />
     <ClCompile Include="App.cpp" />
+    <ClCompile Include="Extern\DDSTextureLoader\DDSTextureLoader11.cpp" />
+    <ClCompile Include="Extern\DDSTextureLoader\DDSTextureLoader12.cpp" />
+    <ClCompile Include="Extern\DDSTextureLoader\DDSTextureLoader9.cpp" />
+    <ClCompile Include="Extern\DirectXTex\BC.cpp" />
+    <ClCompile Include="Extern\DirectXTex\BC4BC5.cpp" />
+    <ClCompile Include="Extern\DirectXTex\BC6HBC7.cpp" />
+    <ClCompile Include="Extern\DirectXTex\DirectXTexCompress.cpp" />
+    <ClCompile Include="Extern\DirectXTex\DirectXTexConvert.cpp" />
+    <ClCompile Include="Extern\DirectXTex\DirectXTexD3D11.cpp" />
+    <ClCompile Include="Extern\DirectXTex\DirectXTexD3D12.cpp" />
+    <ClCompile Include="Extern\DirectXTex\DirectXTexDDS.cpp" />
+    <ClCompile Include="Extern\DirectXTex\DirectXTexFlipRotate.cpp" />
+    <ClCompile Include="Extern\DirectXTex\DirectXTexHDR.cpp" />
+    <ClCompile Include="Extern\DirectXTex\DirectXTexImage.cpp" />
+    <ClCompile Include="Extern\DirectXTex\DirectXTexMipmaps.cpp" />
+    <ClCompile Include="Extern\DirectXTex\DirectXTexMisc.cpp" />
+    <ClCompile Include="Extern\DirectXTex\DirectXTexNormalMaps.cpp" />
+    <ClCompile Include="Extern\DirectXTex\DirectXTexPMAlpha.cpp" />
+    <ClCompile Include="Extern\DirectXTex\DirectXTexResize.cpp" />
+    <ClCompile Include="Extern\DirectXTex\DirectXTexTGA.cpp" />
+    <ClCompile Include="Extern\DirectXTex\DirectXTexUtil.cpp" />
+    <ClCompile Include="Extern\DirectXTex\DirectXTexWIC.cpp" />
     <ClCompile Include="HighResolutionClock.cpp" />
     <ClCompile Include="MazeConnector.cpp" />
     <ClCompile Include="MGEllers.cpp" />
@@ -188,6 +210,16 @@
     <ClInclude Include="DeadEndRemover.h" />
     <ClInclude Include="App.h" />
     <ClInclude Include="Events.h" />
+    <ClInclude Include="Extern\DDSTextureLoader\DDSTextureLoader11.h" />
+    <ClInclude Include="Extern\DDSTextureLoader\DDSTextureLoader12.h" />
+    <ClInclude Include="Extern\DDSTextureLoader\DDSTextureLoader9.h" />
+    <ClInclude Include="Extern\DirectXTex\BC.h" />
+    <ClInclude Include="Extern\DirectXTex\d3dx12.h" />
+    <ClInclude Include="Extern\DirectXTex\DDS.h" />
+    <ClInclude Include="Extern\DirectXTex\DirectXTex.h" />
+    <ClInclude Include="Extern\DirectXTex\DirectXTexP.h" />
+    <ClInclude Include="Extern\DirectXTex\filters.h" />
+    <ClInclude Include="Extern\DirectXTex\scoped.h" />
     <ClInclude Include="GameDefs.h" />
     <ClInclude Include="HighResolutionClock.h" />
     <ClInclude Include="IThreadedSolver.h" />
@@ -218,6 +250,7 @@
     <ClInclude Include="Rendering\d3dx12\d3dx12_resource_helpers.h" />
     <ClInclude Include="Rendering\d3dx12\d3dx12_root_signature.h" />
     <ClInclude Include="Rendering\d3dx12\d3dx12_state_object.h" />
+    <ClInclude Include="Rendering\d3dx12\DDSTextureLoader12.h" />
     <ClInclude Include="Rendering\d3dx12\DirectML.h" />
     <ClInclude Include="Rendering\d3dx12\dxcore.h" />
     <ClInclude Include="Rendering\d3dx12\dxcore_interface.h" />
@@ -250,6 +283,9 @@
       <ShaderType Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">Vertex</ShaderType>
       <ShaderType Condition="'$(Configuration)|$(Platform)'=='Release|x64'">Vertex</ShaderType>
     </FxCompile>
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="Extern\DirectXTex\DirectXTex.inl" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

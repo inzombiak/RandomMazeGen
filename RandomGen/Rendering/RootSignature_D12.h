@@ -42,7 +42,6 @@
 class RootSignature_D12
 {
 public:
-
     RootSignature_D12(const D3D12_ROOT_SIGNATURE_DESC1& rootSignatureDesc);
 
     virtual ~RootSignature_D12();

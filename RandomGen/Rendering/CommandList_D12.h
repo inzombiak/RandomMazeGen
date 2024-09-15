@@ -7,6 +7,7 @@
 #include <wrl.h>
 using namespace Microsoft::WRL;
 
+class UploadBuffer_D12;
 class CommandList_D12 {
 
 public:
@@ -17,19 +18,14 @@ public:
 	void TransitionResource(ComPtr<ID3D12Resource> resource,
 		D3D12_RESOURCE_STATES beforeState, D3D12_RESOURCE_STATES afterState);
 
-	// Clear a render target view.
 	void ClearRTV(D3D12_CPU_DESCRIPTOR_HANDLE rtv, FLOAT* clearColor);
-
-	// Clear the depth of a depth-stencil view.
 	void ClearDepth(D3D12_CPU_DESCRIPTOR_HANDLE dsv, FLOAT depth = 1.0f);
-
-	// Create a GPU buffer.
 	void UpdateBufferResource(ComPtr<ID3D12Device> device, ID3D12Resource** pDestinationResource, ID3D12Resource** pIntermediateResource,
 		size_t numElements, size_t elementSize, const void* bufferData,
 		D3D12_RESOURCE_FLAGS flags = D3D12_RESOURCE_FLAG_NONE);
+	void LoadTexture(std::wstring fileName, ComPtr<ID3D12Resource>& tex, CD3DX12_CPU_DESCRIPTOR_HANDLE cpuHandle);
 
 	void SetDescriptorHeap(D3D12_DESCRIPTOR_HEAP_TYPE type, ID3D12DescriptorHeap* heap);
-
 	void Reset();
 	//commandList->Reset(commandAllocator.Get(), nullptr));
 	//ThrowIfFailed(commandList->SetPrivateDataInterface(__uuidof(ID3D12CommandAllocator), commandAllocator.Get()));
@@ -44,7 +40,9 @@ public:
 private:
 	ComPtr<ID3D12GraphicsCommandList2>	m_graphicsCommandList;
 	ComPtr<ID3D12CommandAllocator>		m_allocator;
+	ComPtr<ID3D12Device2>		m_device;
 
+	std::shared_ptr<UploadBuffer_D12>	m_uploadBuffer;
 	std::vector<ComPtr<ID3D12Resource>> m_trackedResources;
 };
 #endif

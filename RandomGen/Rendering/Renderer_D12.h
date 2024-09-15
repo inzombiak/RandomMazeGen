@@ -25,6 +25,8 @@ class Tile;
 class UploadBuffer_D12;
 class DescriptorAllocator_D12;
 class DescriptorAllocation_D12;
+class DynamicDecriptorHeap_D12;
+class RootSignature_D12;
 class Renderer_D12 {
 
 	public:
@@ -63,26 +65,21 @@ class Renderer_D12 {
 		UINT		m_currentBufferIdx;
 
 		ComPtr<ID3D12Device2>				m_device;
-		std::shared_ptr<CommandQueue_D12>		m_commQueue;
+		std::shared_ptr<CommandQueue_D12>	m_commQueue;
 		ComPtr<IDXGISwapChain4>				m_swapChain;
 		ComPtr<ID3D12Resource>				m_backbuffers[NUM_BACKBUFFER_FRAMES];
 
 		D3D_ROOT_SIGNATURE_VERSION m_highestRootSignatureVersion;
-
-		/*
-		ComPtr<ID3D12DescriptorHeap>		m_rtvHeap;
-		ComPtr<ID3D12DescriptorHeap>		m_dsvHeap;
-		*/
+		
+		std::shared_ptr<RootSignature_D12>		  m_rootSignature;
 
 		std::shared_ptr<DescriptorAllocator_D12>  m_rtvAllocator;
 		std::shared_ptr<DescriptorAllocation_D12> m_rtvs;
-		std::shared_ptr<DescriptorAllocator_D12> m_dsvAllocator;
+		std::shared_ptr<DescriptorAllocator_D12>  m_dsvAllocator;
 		std::shared_ptr<DescriptorAllocation_D12> m_dsvs;
 
-		ComPtr<ID3D12DescriptorHeap>		m_cbvSrvUavHeap;
-		std::shared_ptr<DescriptorAllocator_D12> m_cbvSrvUavAllocator;
-
-		std::shared_ptr<UploadBuffer_D12>			m_uploadBuffer;
+		ComPtr<ID3D12DescriptorHeap>			 m_cbvSrvUavHeap;
+		std::shared_ptr<DynamicDecriptorHeap_D12> m_cbvSrvUavDynHeap;
 
 		ComPtr<ID3D12Resource> m_vertexBuffer;
 		D3D12_VERTEX_BUFFER_VIEW m_vertexBufferView;
@@ -93,15 +90,19 @@ class Renderer_D12 {
 		int m_numInstances = 0;
 		ComPtr<ID3D12Resource> m_modelBuffer;
 		D3D12_VERTEX_BUFFER_VIEW m_modelBufferView;
-		
+		CD3DX12_CPU_DESCRIPTOR_HANDLE m_modelCPUHandle;
+		CD3DX12_GPU_DESCRIPTOR_HANDLE m_modelGPUHandle;
+
 		ComPtr<ID3D12Resource> m_colorBuffer;
 		D3D12_VERTEX_BUFFER_VIEW m_colorBufferView;
 
 		ComPtr<ID3D12Resource> m_depthBuffer;
-		// Root signature
-		ComPtr<ID3D12RootSignature> m_rootSignature;
 		// Pipeline state object.
 		ComPtr<ID3D12PipelineState> m_pipelineState;
+
+		ComPtr<ID3D12Resource> m_wallTexture;
+		CD3DX12_CPU_DESCRIPTOR_HANDLE m_wallTexCPUHandle;
+		CD3DX12_GPU_DESCRIPTOR_HANDLE m_wallTexGPUHandle;
 
 		D3D12_VIEWPORT m_viewport;
 		D3D12_RECT m_scissorRect;

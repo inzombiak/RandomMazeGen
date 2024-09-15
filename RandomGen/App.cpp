@@ -75,7 +75,6 @@ bool App::LoadContent() {
         return false;
 
     m_gridManager->GenerateMap(m_width, m_height, 16, 16);
-
     RENDERER->PopulateVertexBuffer(BOX_VERTICES, _countof(BOX_VERTICES));
     RENDERER->PopulateIndexBuffer(BOX_INDICES, _countof(BOX_INDICES));
     RENDERER->CreateSRVForBoxes(m_gridManager->GetTiles(), 0);

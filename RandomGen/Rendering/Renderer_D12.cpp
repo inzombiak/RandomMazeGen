@@ -3,6 +3,7 @@
 #include "UploadBuffer_D12.h"
 #include "DescriptorAllocator_D12.h"
 #include "DescriptorAllocation_D12.h"
+#include "RootSignature_D12.h"
 
 #include "Window.h"
 #include "../Tile.h"
@@ -91,7 +92,6 @@ ComPtr<IDXGISwapChain4> CreateSwapChain(HWND hWnd,
 	return dxgiSwapChain4;
 }
 
-
 ComPtr<IDXGIAdapter4> GetAdapter(bool useWarp)
 {
 	ComPtr<IDXGIFactory4> dxgiFactory;
@@ -138,7 +138,6 @@ ComPtr<IDXGIAdapter4> GetAdapter(bool useWarp)
 	return dxgiAdapter4;
 }
 
-
 ComPtr<ID3D12Device2> CreateDevice(ComPtr<IDXGIAdapter4> adapter)
 {
 	ComPtr<ID3D12Device2> d3d12Device2;
@@ -181,30 +180,12 @@ ComPtr<ID3D12Device2> CreateDevice(ComPtr<IDXGIAdapter4> adapter)
 	return d3d12Device2;
 }
 
-
-ComPtr<ID3D12DescriptorHeap> CreateDescriptorHeap(ComPtr<ID3D12Device2> device,
-	D3D12_DESCRIPTOR_HEAP_TYPE type, uint32_t numDescriptors)
-{
-	ComPtr<ID3D12DescriptorHeap> descriptorHeap;
-
-	D3D12_DESCRIPTOR_HEAP_DESC desc = {};
-	desc.NumDescriptors = numDescriptors;
-	desc.Type = type;
-
-	ThrowIfFailed(device->CreateDescriptorHeap(&desc, IID_PPV_ARGS(&descriptorHeap)));
-
-	return descriptorHeap;
-}
-
 Renderer_D12::Renderer_D12() {
 	EnableDebugLayer();
 	m_tearingSupported = CheckTearingSupport();
 	m_currentFrame = 0;
 
 	ComPtr<IDXGIAdapter4> dxgiAdapter4 = GetAdapter(Globals::STARTUP_VALS.use_warp);
-
-	m_uploadBuffer = std::make_shared<UploadBuffer_D12>();
-
 	int windowWidth   = GAME_WINDOW->GetWidth();
 	int windowHeight = GAME_WINDOW->GetHeight();
 
@@ -217,14 +198,7 @@ Renderer_D12::Renderer_D12() {
 	m_scissorRect = CD3DX12_RECT(0, 0, LONG_MAX, LONG_MAX);
 	m_viewport = CD3DX12_VIEWPORT(0.f, 0.f, (float)windowWidth, (float)windowHeight);
 
-	m_currentBufferIdx = m_swapChain->GetCurrentBackBufferIndex();
-
-	D3D12_DESCRIPTOR_HEAP_DESC cbvSrvUavHeapDesc = {};
-	cbvSrvUavHeapDesc.NumDescriptors = 1;
-	cbvSrvUavHeapDesc.Type = D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV;
-	cbvSrvUavHeapDesc.Flags = D3D12_DESCRIPTOR_HEAP_FLAG_SHADER_VISIBLE;
-	ThrowIfFailed(m_device->CreateDescriptorHeap(&cbvSrvUavHeapDesc, IID_PPV_ARGS(&m_cbvSrvUavHeap)));
-	
+	m_currentBufferIdx = m_swapChain->GetCurrentBackBufferIndex();	
 	{
 		D3D12_FEATURE_DATA_ROOT_SIGNATURE featureData;
 		featureData.HighestVersion = D3D_ROOT_SIGNATURE_VERSION_1_1;
@@ -245,6 +219,12 @@ void Renderer_D12::PostInit() {
 	m_rtvs = std::make_shared<DescriptorAllocation_D12>(m_rtvAllocator->Allocate(NUM_BACKBUFFER_FRAMES));
 	m_dsvAllocator = std::make_shared<DescriptorAllocator_D12>(D3D12_DESCRIPTOR_HEAP_TYPE_DSV, 1);
 	m_dsvs = std::make_shared<DescriptorAllocation_D12>(m_dsvAllocator->Allocate(1));
+
+	D3D12_DESCRIPTOR_HEAP_DESC cbvSrvUavHeapDesc = {};
+	cbvSrvUavHeapDesc.NumDescriptors = 2;
+	cbvSrvUavHeapDesc.Type = D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV;
+	cbvSrvUavHeapDesc.Flags = D3D12_DESCRIPTOR_HEAP_FLAG_SHADER_VISIBLE;
+	ThrowIfFailed(m_device->CreateDescriptorHeap(&cbvSrvUavHeapDesc, IID_PPV_ARGS(&m_cbvSrvUavHeap)));
 	UpdateRenderTargetViews();
 }
 
@@ -305,23 +285,27 @@ void Renderer_D12::Render() {
 		commandList->ClearDepth(dsv);
 	}
 
-	//@ZGTODO Mvoe to CommandList_D12
+	//@ZGTODO Move to CommandList_D12
 	{
 		auto d3dCommList = commandList->GetGraphicsCommandList();
 		d3dCommList->SetPipelineState(m_pipelineState.Get());
-		d3dCommList->SetGraphicsRootSignature(m_rootSignature.Get());
+		d3dCommList->SetGraphicsRootSignature(m_rootSignature->GetD3D12RootSignature().Get());
 		d3dCommList->IASetPrimitiveTopology(D3D_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
 		d3dCommList->IASetVertexBuffers(0, 1, &m_vertexBufferView);
 		d3dCommList->IASetIndexBuffer(&m_indexBufferView);
+
+		ID3D12DescriptorHeap* ppHeaps[] = { m_cbvSrvUavHeap.Get() };
+		d3dCommList->SetDescriptorHeaps(1, ppHeaps);
 		d3dCommList->RSSetViewports(1, &m_viewport);
 		d3dCommList->RSSetScissorRects(1, &m_scissorRect);
 		
 		d3dCommList->OMSetRenderTargets(1, &rtv, FALSE, &dsv);
 
-		// Update the MVP matrix
+		// Update the MVP matrixb
 		XMMATRIX vpMatrix = XMMatrixMultiply(m_viewMatrix, m_projectionMatrix);
 		d3dCommList->SetGraphicsRoot32BitConstants(0, sizeof(XMMATRIX) / 4, &vpMatrix, 0);
 		d3dCommList->SetGraphicsRootShaderResourceView(1, m_modelBufferView.BufferLocation);
+		d3dCommList->SetGraphicsRootDescriptorTable(2, m_wallTexGPUHandle);
 		d3dCommList->DrawIndexedInstanced((UINT)m_indexCount, m_numInstances, 0, 0, 0);
 	}
 	// Present
@@ -456,7 +440,15 @@ void Renderer_D12::CreateSRVForBoxes(const std::vector<std::vector<Tile>>& tiles
 	srvDesc.Buffer.StructureByteStride = sizeof(XMMATRIX);
 	srvDesc.Buffer.Flags = D3D12_BUFFER_SRV_FLAG_NONE;
 
-	m_device->CreateShaderResourceView(m_modelBuffer.Get(), &srvDesc, m_cbvSrvUavHeap->GetCPUDescriptorHandleForHeapStart());
+	auto descStep = GetDescriptorHandleIncrementSize(D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV);
+	m_modelCPUHandle = m_cbvSrvUavHeap->GetCPUDescriptorHandleForHeapStart();
+	m_modelGPUHandle = m_cbvSrvUavHeap->GetGPUDescriptorHandleForHeapStart();
+	m_device->CreateShaderResourceView(m_modelBuffer.Get(), &srvDesc, m_modelCPUHandle);
+
+
+	m_wallTexCPUHandle = CD3DX12_CPU_DESCRIPTOR_HANDLE(m_modelCPUHandle, 1, descStep);
+	m_wallTexGPUHandle = CD3DX12_GPU_DESCRIPTOR_HANDLE(m_modelGPUHandle, 1, descStep);
+	commandList->LoadTexture(L"cat.dds", m_wallTexture, m_wallTexCPUHandle);
 }
 
 
@@ -488,25 +480,40 @@ void Renderer_D12::BuildPipelineState(const std::wstring& vertexShaderName, cons
 		D3D12_ROOT_SIGNATURE_FLAG_ALLOW_INPUT_ASSEMBLER_INPUT_LAYOUT |
 		D3D12_ROOT_SIGNATURE_FLAG_DENY_HULL_SHADER_ROOT_ACCESS |
 		D3D12_ROOT_SIGNATURE_FLAG_DENY_DOMAIN_SHADER_ROOT_ACCESS |
-		D3D12_ROOT_SIGNATURE_FLAG_DENY_GEOMETRY_SHADER_ROOT_ACCESS |
-		D3D12_ROOT_SIGNATURE_FLAG_DENY_PIXEL_SHADER_ROOT_ACCESS;
+		D3D12_ROOT_SIGNATURE_FLAG_DENY_GEOMETRY_SHADER_ROOT_ACCESS;
 
 	// For MVP
-	CD3DX12_ROOT_PARAMETER1 rootParameters[2];
+	CD3DX12_ROOT_PARAMETER1 rootParameters[3];
 	rootParameters[0].InitAsConstants(sizeof(DirectX::XMMATRIX) / 4, 0, 0, D3D12_SHADER_VISIBILITY_VERTEX);
 	rootParameters[1].InitAsShaderResourceView(0, 0, D3D12_ROOT_DESCRIPTOR_FLAG_NONE, D3D12_SHADER_VISIBILITY_VERTEX);
+	CD3DX12_DESCRIPTOR_RANGE1 texture1Range(D3D12_DESCRIPTOR_RANGE_TYPE_SRV, 1, 1, 0, D3D12_DESCRIPTOR_RANGE_FLAG_DATA_STATIC);
+	rootParameters[2].InitAsDescriptorTable(1, &texture1Range, D3D12_SHADER_VISIBILITY_PIXEL);
+
+	D3D12_STATIC_SAMPLER_DESC sampler = {};
+	sampler.Filter = D3D12_FILTER_MIN_MAG_MIP_POINT;
+	sampler.AddressU = D3D12_TEXTURE_ADDRESS_MODE_BORDER;
+	sampler.AddressV = D3D12_TEXTURE_ADDRESS_MODE_BORDER;
+	sampler.AddressW = D3D12_TEXTURE_ADDRESS_MODE_BORDER;
+	sampler.MipLODBias = 0;
+	sampler.MaxAnisotropy = 0;
+	sampler.ComparisonFunc = D3D12_COMPARISON_FUNC_NEVER;
+	sampler.BorderColor = D3D12_STATIC_BORDER_COLOR_TRANSPARENT_BLACK;
+	sampler.MinLOD = 0.0f;
+	sampler.MaxLOD = D3D12_FLOAT32_MAX;
+	sampler.ShaderRegister = 0;
+	sampler.RegisterSpace = 0;
+	sampler.ShaderVisibility = D3D12_SHADER_VISIBILITY_PIXEL;
 
 	CD3DX12_VERSIONED_ROOT_SIGNATURE_DESC rootSignatureDescription;
-	rootSignatureDescription.Init_1_1(_countof(rootParameters), rootParameters, 0, nullptr, rootSignatureFlags);
+	rootSignatureDescription.Init_1_1(_countof(rootParameters), rootParameters, 1, &sampler, rootSignatureFlags);
 
 	// Serialize the root signature.
 	ComPtr<ID3DBlob> rootSignatureBlob;
 	ComPtr<ID3DBlob> errorBlob;
 	ThrowIfFailed(D3DX12SerializeVersionedRootSignature(&rootSignatureDescription,
 		featureData.HighestVersion, &rootSignatureBlob, &errorBlob));
-	// Create the root signature.
-	ThrowIfFailed(m_device->CreateRootSignature(0, rootSignatureBlob->GetBufferPointer(),
-		rootSignatureBlob->GetBufferSize(), IID_PPV_ARGS(&m_rootSignature)));
+
+	m_rootSignature = std::make_shared<RootSignature_D12>(rootSignatureDescription.Desc_1_1);
 
 	struct PipelineStateStream
 	{
@@ -523,7 +530,7 @@ void Renderer_D12::BuildPipelineState(const std::wstring& vertexShaderName, cons
 	rtvFormats.NumRenderTargets = 1;
 	rtvFormats.RTFormats[0] = DXGI_FORMAT_R8G8B8A8_UNORM;
 
-	pipelineStateStream.pRootSignature = m_rootSignature.Get();
+	pipelineStateStream.pRootSignature = m_rootSignature->GetD3D12RootSignature().Get();
 	pipelineStateStream.InputLayout = { inputLayout, _countof(inputLayout) };
 	pipelineStateStream.PrimitiveTopologyType = D3D12_PRIMITIVE_TOPOLOGY_TYPE_TRIANGLE;
 	pipelineStateStream.VS = CD3DX12_SHADER_BYTECODE(vertexShaderBlob.Get());
@@ -538,6 +545,7 @@ void Renderer_D12::BuildPipelineState(const std::wstring& vertexShaderName, cons
 
 	auto fenceValue = m_commQueue->ExecuteActiveCommandList();
 	m_commQueue->WaitForFenceValue(fenceValue);
+
 }
 
 // Resize the depth buffer to match the size of the client area.

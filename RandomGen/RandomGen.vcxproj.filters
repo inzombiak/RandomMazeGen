@@ -43,6 +43,12 @@
     <Filter Include="Source Files\Rendering\D12">
       <UniqueIdentifier>{c3bc71bb-8e21-4aac-9280-2e27afd5e852}</UniqueIdentifier>
     </Filter>
+    <Filter Include="Source Files\Rendering\d3dx12">
+      <UniqueIdentifier>{f6685508-1146-4364-994b-fe36a737859d}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Header Files\Extern">
+      <UniqueIdentifier>{f9a26f26-e746-48cf-adf5-a09c7a2a0c4f}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="main.cpp">
@@ -107,6 +113,72 @@
     </ClCompile>
     <ClCompile Include="Rendering\CommandQueue_D12.cpp">
       <Filter>Source Files\Rendering\D12</Filter>
+    </ClCompile>
+    <ClCompile Include="Extern\DirectXTex\DirectXTexWIC.cpp">
+      <Filter>Header Files\Extern</Filter>
+    </ClCompile>
+    <ClCompile Include="Extern\DirectXTex\BC.cpp">
+      <Filter>Header Files\Extern</Filter>
+    </ClCompile>
+    <ClCompile Include="Extern\DirectXTex\BC4BC5.cpp">
+      <Filter>Header Files\Extern</Filter>
+    </ClCompile>
+    <ClCompile Include="Extern\DirectXTex\BC6HBC7.cpp">
+      <Filter>Header Files\Extern</Filter>
+    </ClCompile>
+    <ClCompile Include="Extern\DDSTextureLoader\DDSTextureLoader9.cpp">
+      <Filter>Header Files\Extern</Filter>
+    </ClCompile>
+    <ClCompile Include="Extern\DDSTextureLoader\DDSTextureLoader11.cpp">
+      <Filter>Header Files\Extern</Filter>
+    </ClCompile>
+    <ClCompile Include="Extern\DDSTextureLoader\DDSTextureLoader12.cpp">
+      <Filter>Header Files\Extern</Filter>
+    </ClCompile>
+    <ClCompile Include="Extern\DirectXTex\DirectXTexCompress.cpp">
+      <Filter>Header Files\Extern</Filter>
+    </ClCompile>
+    <ClCompile Include="Extern\DirectXTex\DirectXTexConvert.cpp">
+      <Filter>Header Files\Extern</Filter>
+    </ClCompile>
+    <ClCompile Include="Extern\DirectXTex\DirectXTexD3D11.cpp">
+      <Filter>Header Files\Extern</Filter>
+    </ClCompile>
+    <ClCompile Include="Extern\DirectXTex\DirectXTexD3D12.cpp">
+      <Filter>Header Files\Extern</Filter>
+    </ClCompile>
+    <ClCompile Include="Extern\DirectXTex\DirectXTexDDS.cpp">
+      <Filter>Header Files\Extern</Filter>
+    </ClCompile>
+    <ClCompile Include="Extern\DirectXTex\DirectXTexFlipRotate.cpp">
+      <Filter>Header Files\Extern</Filter>
+    </ClCompile>
+    <ClCompile Include="Extern\DirectXTex\DirectXTexHDR.cpp">
+      <Filter>Header Files\Extern</Filter>
+    </ClCompile>
+    <ClCompile Include="Extern\DirectXTex\DirectXTexImage.cpp">
+      <Filter>Header Files\Extern</Filter>
+    </ClCompile>
+    <ClCompile Include="Extern\DirectXTex\DirectXTexMipmaps.cpp">
+      <Filter>Header Files\Extern</Filter>
+    </ClCompile>
+    <ClCompile Include="Extern\DirectXTex\DirectXTexMisc.cpp">
+      <Filter>Header Files\Extern</Filter>
+    </ClCompile>
+    <ClCompile Include="Extern\DirectXTex\DirectXTexNormalMaps.cpp">
+      <Filter>Header Files\Extern</Filter>
+    </ClCompile>
+    <ClCompile Include="Extern\DirectXTex\DirectXTexPMAlpha.cpp">
+      <Filter>Header Files\Extern</Filter>
+    </ClCompile>
+    <ClCompile Include="Extern\DirectXTex\DirectXTexResize.cpp">
+      <Filter>Header Files\Extern</Filter>
+    </ClCompile>
+    <ClCompile Include="Extern\DirectXTex\DirectXTexTGA.cpp">
+      <Filter>Header Files\Extern</Filter>
+    </ClCompile>
+    <ClCompile Include="Extern\DirectXTex\DirectXTexUtil.cpp">
+      <Filter>Header Files\Extern</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
@@ -263,6 +335,39 @@
     <ClInclude Include="Rendering\DX12_Helpers.h">
       <Filter>Header Files\Rendering\D12</Filter>
     </ClInclude>
+    <ClInclude Include="Rendering\d3dx12\DDSTextureLoader12.h">
+      <Filter>Header Files\Rendering\d3dx12</Filter>
+    </ClInclude>
+    <ClInclude Include="Extern\DirectXTex\BC.h">
+      <Filter>Header Files\Extern</Filter>
+    </ClInclude>
+    <ClInclude Include="Extern\DirectXTex\d3dx12.h">
+      <Filter>Header Files\Extern</Filter>
+    </ClInclude>
+    <ClInclude Include="Extern\DirectXTex\DDS.h">
+      <Filter>Header Files\Extern</Filter>
+    </ClInclude>
+    <ClInclude Include="Extern\DDSTextureLoader\DDSTextureLoader9.h">
+      <Filter>Header Files\Extern</Filter>
+    </ClInclude>
+    <ClInclude Include="Extern\DDSTextureLoader\DDSTextureLoader11.h">
+      <Filter>Header Files\Extern</Filter>
+    </ClInclude>
+    <ClInclude Include="Extern\DDSTextureLoader\DDSTextureLoader12.h">
+      <Filter>Header Files\Extern</Filter>
+    </ClInclude>
+    <ClInclude Include="Extern\DirectXTex\DirectXTex.h">
+      <Filter>Header Files\Extern</Filter>
+    </ClInclude>
+    <ClInclude Include="Extern\DirectXTex\DirectXTexP.h">
+      <Filter>Header Files\Extern</Filter>
+    </ClInclude>
+    <ClInclude Include="Extern\DirectXTex\filters.h">
+      <Filter>Header Files\Extern</Filter>
+    </ClInclude>
+    <ClInclude Include="Extern\DirectXTex\scoped.h">
+      <Filter>Header Files\Extern</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <FxCompile Include="Resources\Shaders\vertex_basic.hlsl">
@@ -271,5 +376,10 @@
     <FxCompile Include="Resources\Shaders\pixel_basic.hlsl">
       <Filter>Resource Files\Shaders</Filter>
     </FxCompile>
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="Extern\DirectXTex\DirectXTex.inl">
+      <Filter>Header Files\Extern</Filter>
+    </None>
   </ItemGroup>
 </Project>
