@@ -180,6 +180,9 @@
     <ClCompile Include="Extern\DirectXTex\DirectXTexUtil.cpp">
       <Filter>Header Files\Extern</Filter>
     </ClCompile>
+    <ClCompile Include="Rendering\Texture_D12.cpp">
+      <Filter>Source Files\Rendering</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="GridManager.h">
@@ -367,6 +370,9 @@
     </ClInclude>
     <ClInclude Include="Extern\DirectXTex\scoped.h">
       <Filter>Header Files\Extern</Filter>
+    </ClInclude>
+    <ClInclude Include="Rendering\Texture_D12.h">
+      <Filter>Header Files\Rendering</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>

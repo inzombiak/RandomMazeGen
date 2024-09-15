@@ -7,6 +7,7 @@
 #include <wrl.h>
 using namespace Microsoft::WRL;
 
+class Texture_D12;
 class UploadBuffer_D12;
 class CommandList_D12 {
 
@@ -23,11 +24,10 @@ public:
 	void UpdateBufferResource(ComPtr<ID3D12Device> device, ID3D12Resource** pDestinationResource, ID3D12Resource** pIntermediateResource,
 		size_t numElements, size_t elementSize, const void* bufferData,
 		D3D12_RESOURCE_FLAGS flags = D3D12_RESOURCE_FLAG_NONE);
-	void LoadTexture(std::wstring fileName, ComPtr<ID3D12Resource>& tex, CD3DX12_CPU_DESCRIPTOR_HANDLE cpuHandle);
+	void LoadTexture(std::wstring fileName, std::shared_ptr<Texture_D12> tex);
 
 	void SetDescriptorHeap(D3D12_DESCRIPTOR_HEAP_TYPE type, ID3D12DescriptorHeap* heap);
 	void Reset();
-	//commandList->Reset(commandAllocator.Get(), nullptr));
 	//ThrowIfFailed(commandList->SetPrivateDataInterface(__uuidof(ID3D12CommandAllocator), commandAllocator.Get()));
 
 	void Close();

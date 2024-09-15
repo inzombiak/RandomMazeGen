@@ -19,6 +19,7 @@ struct VertexInput
 {
 	DirectX::XMFLOAT3 position;
 	DirectX::XMFLOAT3 color;
+	DirectX::XMFLOAT3 uv;
 };
 
 class Tile;
@@ -27,6 +28,7 @@ class DescriptorAllocator_D12;
 class DescriptorAllocation_D12;
 class DynamicDecriptorHeap_D12;
 class RootSignature_D12;
+class Texture_D12;
 class Renderer_D12 {
 
 	public:
@@ -100,9 +102,9 @@ class Renderer_D12 {
 		// Pipeline state object.
 		ComPtr<ID3D12PipelineState> m_pipelineState;
 
-		ComPtr<ID3D12Resource> m_wallTexture;
-		CD3DX12_CPU_DESCRIPTOR_HANDLE m_wallTexCPUHandle;
-		CD3DX12_GPU_DESCRIPTOR_HANDLE m_wallTexGPUHandle;
+		std::shared_ptr<Texture_D12> m_wallTexture;
+		std::shared_ptr<Texture_D12> m_grassTexture;
+		std::shared_ptr<Texture_D12> m_dirtTexture;
 
 		D3D12_VIEWPORT m_viewport;
 		D3D12_RECT m_scissorRect;

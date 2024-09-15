@@ -1,5 +1,6 @@
 #include "CommandList_D12.h"
 #include "UploadBuffer_D12.h"
+#include "Texture_D12.h"
 
 #include "../Extern/DirectXTex/DirectXTex.h"
 
@@ -75,7 +76,7 @@ void CommandList_D12::UpdateBufferResource(ComPtr<ID3D12Device> device, ID3D12Re
 #include <filesystem>
 using namespace std;
 using namespace DirectX;
-void CommandList_D12::LoadTexture(std::wstring filename, ComPtr<ID3D12Resource>& tex, CD3DX12_CPU_DESCRIPTOR_HANDLE cpuHandle) {
+void CommandList_D12::LoadTexture(std::wstring filename, shared_ptr<Texture_D12> tex) {
 
     std::filesystem::path filePath(filename);
     if (!std::filesystem::exists(filePath))
@@ -122,12 +123,13 @@ void CommandList_D12::LoadTexture(std::wstring filename, ComPtr<ID3D12Resource>&
         break;
     }
 
+    ComPtr<ID3D12Resource> texResource;
     ThrowIfFailed(m_device->CreateCommittedResource(&CD3DX12_HEAP_PROPERTIES(D3D12_HEAP_TYPE_DEFAULT),
         D3D12_HEAP_FLAG_NONE,
         &textureDesc,
         D3D12_RESOURCE_STATE_COMMON,
         nullptr,
-        IID_PPV_ARGS(&tex)));
+        IID_PPV_ARGS(&texResource)));
 
     std::vector<D3D12_SUBRESOURCE_DATA> subresources(scratchImage.GetImageCount());
     const Image* pImages = scratchImage.GetImages();
@@ -140,9 +142,9 @@ void CommandList_D12::LoadTexture(std::wstring filename, ComPtr<ID3D12Resource>&
     }
 
     // Resource must be in the copy-destination state.
-    TransitionResource(tex, D3D12_RESOURCE_STATE_COMMON, D3D12_RESOURCE_STATE_COPY_DEST);
+    TransitionResource(texResource, D3D12_RESOURCE_STATE_COMMON, D3D12_RESOURCE_STATE_COPY_DEST);
 
-    UINT64 requiredSize = GetRequiredIntermediateSize(tex.Get(), 0, subresources.size());
+    UINT64 requiredSize = GetRequiredIntermediateSize(texResource.Get(), 0, subresources.size());
 
     // Create a temporary (intermediate) resource for uploading the subresources
     ComPtr<ID3D12Resource> intermediateResource;
@@ -155,19 +157,22 @@ void CommandList_D12::LoadTexture(std::wstring filename, ComPtr<ID3D12Resource>&
         IID_PPV_ARGS(&intermediateResource)
     ));
 
-    UpdateSubresources(m_graphicsCommandList.Get(), tex.Get(), intermediateResource.Get(), 0, 0, subresources.size(), subresources.data());
+    UpdateSubresources(m_graphicsCommandList.Get(), texResource.Get(), intermediateResource.Get(), 0, 0, subresources.size(), subresources.data());
 
     D3D12_SHADER_RESOURCE_VIEW_DESC srvDesc = {};
     srvDesc.Shader4ComponentMapping = D3D12_DEFAULT_SHADER_4_COMPONENT_MAPPING;
     srvDesc.Format = textureDesc.Format;
     srvDesc.ViewDimension = D3D12_SRV_DIMENSION_TEXTURE2D;
     srvDesc.Texture2D.MipLevels = 1;
-    m_device->CreateShaderResourceView(tex.Get(), &srvDesc, cpuHandle);
+    m_device->CreateShaderResourceView(texResource.Get(), &srvDesc, tex->getCPUHandle());
+
+    tex->setResource(texResource);
+    tex->setReady(true);
 
     // Resource must be in the copy- state.
-    TransitionResource(tex, D3D12_RESOURCE_STATE_COPY_DEST, D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE);
+    TransitionResource(texResource, D3D12_RESOURCE_STATE_COPY_DEST, D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE);
     TrackResource(intermediateResource);
-    TrackResource(tex); 
+    TrackResource(texResource);
 }
 void CommandList_D12::SetDescriptorHeap(D3D12_DESCRIPTOR_HEAP_TYPE type, ID3D12DescriptorHeap* heap) {
 

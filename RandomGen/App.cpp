@@ -5,15 +5,20 @@
 #include "GridManager.h"
 
 using namespace DirectX;
-static VertexInput BOX_VERTICES[8] = {
-    { XMFLOAT3(-1.0f, -1.0f, -1.0f), XMFLOAT3(0.0f, 0.0f, 0.0f) }, // 0
-    { XMFLOAT3(-1.0f,  1.0f, -1.0f), XMFLOAT3(0.0f, 1.0f, 0.0f) }, // 1
-    { XMFLOAT3(1.0f,  1.0f, -1.0f), XMFLOAT3(1.0f, 1.0f, 0.0f) }, // 2
-    { XMFLOAT3(1.0f, -1.0f, -1.0f), XMFLOAT3(1.0f, 0.0f, 0.0f) }, // 3
-    { XMFLOAT3(-1.0f, -1.0f,  1.0f), XMFLOAT3(0.0f, 0.0f, 1.0f) }, // 4
-    { XMFLOAT3(-1.0f,  1.0f,  1.0f), XMFLOAT3(0.0f, 1.0f, 1.0f) }, // 5
-    { XMFLOAT3(1.0f,  1.0f,  1.0f), XMFLOAT3(1.0f, 1.0f, 1.0f) }, // 6
-    { XMFLOAT3(1.0f, -1.0f,  1.0f), XMFLOAT3(1.0f, 0.0f, 1.0f) }  // 7
+static VertexInput BOX_VERTICES[12] = {
+    { XMFLOAT3(-1.0f, -1.0f, -1.0f), XMFLOAT3(0.0f, 0.0f, 0.0f), XMFLOAT3(0.0f, 0.0f, 0.0f) }, // 0
+    { XMFLOAT3(-1.0f,  1.0f, -1.0f), XMFLOAT3(0.0f, 1.0f, 0.0f), XMFLOAT3(0.0f, 1.0f, 0.0f) }, // 1
+    { XMFLOAT3(1.0f,  1.0f, -1.0f),  XMFLOAT3(1.0f, 1.0f, 0.0f), XMFLOAT3(1.0f, 1.0f, 0.0f) }, // 2
+    { XMFLOAT3(1.0f, -1.0f, -1.0f),  XMFLOAT3(1.0f, 0.0f, 0.0f), XMFLOAT3(1.0f, 0.0f, 0.0f) }, // 3
+    { XMFLOAT3(-1.0f, -1.0f,  1.0f), XMFLOAT3(0.0f, 0.0f, 1.0f), XMFLOAT3(1.0f, 0.0f, 0.0f) }, // 4
+    { XMFLOAT3(-1.0f,  1.0f,  1.0f), XMFLOAT3(0.0f, 1.0f, 1.0f), XMFLOAT3(1.0f, 1.0f, 0.0f) }, // 5
+    { XMFLOAT3(1.0f,  1.0f,  1.0f),  XMFLOAT3(1.0f, 1.0f, 1.0f), XMFLOAT3(0.0f, 1.0f, 0.0f) }, // 6
+    { XMFLOAT3(1.0f, -1.0f,  1.0f),  XMFLOAT3(1.0f, 0.0f, 1.0f), XMFLOAT3(0.0f, 0.0f, 0.0f)},  // 7
+    //Top
+    { XMFLOAT3(-1.0f,  1.0f, -1.0f), XMFLOAT3(0.6f, 1.0f, 0.0f), XMFLOAT3(0.0f, 0.0f, 1.0f) }, // 8
+    { XMFLOAT3(1.0f,  1.0f, -1.0f),  XMFLOAT3(0.6f, 1.0f, 0.0f), XMFLOAT3(1.0f, 0.0f, 1.0f) }, // 9
+    { XMFLOAT3(-1.0f,  1.0f,  1.0f), XMFLOAT3(0.6f, 1.0f, 0.0f), XMFLOAT3(0.0f, 1.0f, 1.0f) }, // 10
+    { XMFLOAT3(1.0f,  1.0f,  1.0f),  XMFLOAT3(0.6f, 1.0f, 0.0f), XMFLOAT3(1.0f, 1.0f, 1.0f) }, // 11
 };
 
 static WORD BOX_INDICES[36] =
@@ -22,8 +27,9 @@ static WORD BOX_INDICES[36] =
     4, 6, 5, 4, 7, 6,
     4, 5, 1, 4, 1, 0,
     3, 2, 6, 3, 6, 7,
-    1, 5, 6, 1, 6, 2,
-    4, 0, 3, 4, 3, 7
+    4, 0, 3, 4, 3, 7,
+    //Top
+    8, 10, 11, 8, 11, 9
 };
 
 

@@ -4,6 +4,7 @@
 #include "DescriptorAllocator_D12.h"
 #include "DescriptorAllocation_D12.h"
 #include "RootSignature_D12.h"
+#include "Texture_D12.h"
 
 #include "Window.h"
 #include "../Tile.h"
@@ -221,7 +222,7 @@ void Renderer_D12::PostInit() {
 	m_dsvs = std::make_shared<DescriptorAllocation_D12>(m_dsvAllocator->Allocate(1));
 
 	D3D12_DESCRIPTOR_HEAP_DESC cbvSrvUavHeapDesc = {};
-	cbvSrvUavHeapDesc.NumDescriptors = 2;
+	cbvSrvUavHeapDesc.NumDescriptors = 4;
 	cbvSrvUavHeapDesc.Type = D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV;
 	cbvSrvUavHeapDesc.Flags = D3D12_DESCRIPTOR_HEAP_FLAG_SHADER_VISIBLE;
 	ThrowIfFailed(m_device->CreateDescriptorHeap(&cbvSrvUavHeapDesc, IID_PPV_ARGS(&m_cbvSrvUavHeap)));
@@ -305,7 +306,7 @@ void Renderer_D12::Render() {
 		XMMATRIX vpMatrix = XMMatrixMultiply(m_viewMatrix, m_projectionMatrix);
 		d3dCommList->SetGraphicsRoot32BitConstants(0, sizeof(XMMATRIX) / 4, &vpMatrix, 0);
 		d3dCommList->SetGraphicsRootShaderResourceView(1, m_modelBufferView.BufferLocation);
-		d3dCommList->SetGraphicsRootDescriptorTable(2, m_wallTexGPUHandle);
+		d3dCommList->SetGraphicsRootDescriptorTable(2, m_wallTexture->getGPUHandle());
 		d3dCommList->DrawIndexedInstanced((UINT)m_indexCount, m_numInstances, 0, 0, 0);
 	}
 	// Present
@@ -446,9 +447,17 @@ void Renderer_D12::CreateSRVForBoxes(const std::vector<std::vector<Tile>>& tiles
 	m_device->CreateShaderResourceView(m_modelBuffer.Get(), &srvDesc, m_modelCPUHandle);
 
 
-	m_wallTexCPUHandle = CD3DX12_CPU_DESCRIPTOR_HANDLE(m_modelCPUHandle, 1, descStep);
-	m_wallTexGPUHandle = CD3DX12_GPU_DESCRIPTOR_HANDLE(m_modelGPUHandle, 1, descStep);
-	commandList->LoadTexture(L"cat.dds", m_wallTexture, m_wallTexCPUHandle);
+	m_wallTexture = std::make_shared<Texture_D12>(); 
+	m_wallTexture->setHandles(CD3DX12_CPU_DESCRIPTOR_HANDLE(m_modelCPUHandle, 1, descStep), CD3DX12_GPU_DESCRIPTOR_HANDLE(m_modelGPUHandle, 1, descStep));
+	commandList->LoadTexture(L"Clay.dds", m_wallTexture);
+
+	m_grassTexture = std::make_shared<Texture_D12>();
+	m_grassTexture->setHandles(CD3DX12_CPU_DESCRIPTOR_HANDLE(m_modelCPUHandle, 2, descStep), CD3DX12_GPU_DESCRIPTOR_HANDLE(m_modelGPUHandle, 2, descStep));
+	commandList->LoadTexture(L"Grass.dds", m_grassTexture);
+
+	m_dirtTexture = std::make_shared<Texture_D12>();
+	m_dirtTexture->setHandles(CD3DX12_CPU_DESCRIPTOR_HANDLE(m_modelCPUHandle, 3, descStep), CD3DX12_GPU_DESCRIPTOR_HANDLE(m_modelGPUHandle, 3, descStep));
+	commandList->LoadTexture(L"Dirt.dds", m_dirtTexture);
 }
 
 
@@ -465,6 +474,7 @@ void Renderer_D12::BuildPipelineState(const std::wstring& vertexShaderName, cons
 	D3D12_INPUT_ELEMENT_DESC inputLayout[] = {
 		{ "POSITION", 0, DXGI_FORMAT_R32G32B32_FLOAT, 0, D3D12_APPEND_ALIGNED_ELEMENT, D3D12_INPUT_CLASSIFICATION_PER_VERTEX_DATA, 0 },
 		{ "COLOR", 0, DXGI_FORMAT_R32G32B32_FLOAT, 0, D3D12_APPEND_ALIGNED_ELEMENT, D3D12_INPUT_CLASSIFICATION_PER_VERTEX_DATA, 0 },
+		{ "TEXCOORD", 0, DXGI_FORMAT_R32G32B32_FLOAT, 0, D3D12_APPEND_ALIGNED_ELEMENT, D3D12_INPUT_CLASSIFICATION_PER_VERTEX_DATA, 0 },
 	};
 
 	// Create a root signature.
@@ -486,7 +496,7 @@ void Renderer_D12::BuildPipelineState(const std::wstring& vertexShaderName, cons
 	CD3DX12_ROOT_PARAMETER1 rootParameters[3];
 	rootParameters[0].InitAsConstants(sizeof(DirectX::XMMATRIX) / 4, 0, 0, D3D12_SHADER_VISIBILITY_VERTEX);
 	rootParameters[1].InitAsShaderResourceView(0, 0, D3D12_ROOT_DESCRIPTOR_FLAG_NONE, D3D12_SHADER_VISIBILITY_VERTEX);
-	CD3DX12_DESCRIPTOR_RANGE1 texture1Range(D3D12_DESCRIPTOR_RANGE_TYPE_SRV, 1, 1, 0, D3D12_DESCRIPTOR_RANGE_FLAG_DATA_STATIC);
+	CD3DX12_DESCRIPTOR_RANGE1 texture1Range(D3D12_DESCRIPTOR_RANGE_TYPE_SRV, 3, 1);
 	rootParameters[2].InitAsDescriptorTable(1, &texture1Range, D3D12_SHADER_VISIBILITY_PIXEL);
 
 	D3D12_STATIC_SAMPLER_DESC sampler = {};
