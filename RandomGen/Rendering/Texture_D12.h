@@ -8,15 +8,15 @@ class Texture_D12 {
 public:
 	Texture_D12();
 
-	void setResource(Microsoft::WRL::ComPtr<ID3D12Resource> resource);
-	Microsoft::WRL::ComPtr<ID3D12Resource> getResource() const;
+	void SetResource(Microsoft::WRL::ComPtr<ID3D12Resource> resource);
+	Microsoft::WRL::ComPtr<ID3D12Resource> GetResource() const;
 
-	void setHandles(CD3DX12_CPU_DESCRIPTOR_HANDLE& cpu, CD3DX12_GPU_DESCRIPTOR_HANDLE& gpu);
-	CD3DX12_CPU_DESCRIPTOR_HANDLE getCPUHandle() const;
-	CD3DX12_GPU_DESCRIPTOR_HANDLE getGPUHandle() const;
+	void SetHandles(CD3DX12_CPU_DESCRIPTOR_HANDLE& cpu, CD3DX12_GPU_DESCRIPTOR_HANDLE& gpu);
+	CD3DX12_CPU_DESCRIPTOR_HANDLE GetCPUHandle() const;
+	CD3DX12_GPU_DESCRIPTOR_HANDLE GetGPUHandle() const;
 
-	void setReady(bool ready);
-	bool isReady() const;
+	void SetReady(bool ready);
+	bool IsReady() const;
 private:
 	bool m_ready;
 

@@ -116,6 +116,7 @@ private:
     float m_fov = 45.0;
     DirectX::XMVECTOR m_cameraPos;
     float m_camAngles[3];
+    DirectX::XMVECTOR m_sunPos;
 
     std::wstring m_name;
     int m_width;

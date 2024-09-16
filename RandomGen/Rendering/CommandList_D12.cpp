@@ -144,7 +144,7 @@ void CommandList_D12::LoadTexture(std::wstring filename, shared_ptr<Texture_D12>
     // Resource must be in the copy-destination state.
     TransitionResource(texResource, D3D12_RESOURCE_STATE_COMMON, D3D12_RESOURCE_STATE_COPY_DEST);
 
-    UINT64 requiredSize = GetRequiredIntermediateSize(texResource.Get(), 0, subresources.size());
+    UINT64 requiredSize = GetRequiredIntermediateSize(texResource.Get(), 0, (UINT)subresources.size());
 
     // Create a temporary (intermediate) resource for uploading the subresources
     ComPtr<ID3D12Resource> intermediateResource;
@@ -157,17 +157,17 @@ void CommandList_D12::LoadTexture(std::wstring filename, shared_ptr<Texture_D12>
         IID_PPV_ARGS(&intermediateResource)
     ));
 
-    UpdateSubresources(m_graphicsCommandList.Get(), texResource.Get(), intermediateResource.Get(), 0, 0, subresources.size(), subresources.data());
+    UpdateSubresources(m_graphicsCommandList.Get(), texResource.Get(), intermediateResource.Get(), 0, 0, (UINT)subresources.size(), subresources.data());
 
     D3D12_SHADER_RESOURCE_VIEW_DESC srvDesc = {};
     srvDesc.Shader4ComponentMapping = D3D12_DEFAULT_SHADER_4_COMPONENT_MAPPING;
     srvDesc.Format = textureDesc.Format;
     srvDesc.ViewDimension = D3D12_SRV_DIMENSION_TEXTURE2D;
     srvDesc.Texture2D.MipLevels = 1;
-    m_device->CreateShaderResourceView(texResource.Get(), &srvDesc, tex->getCPUHandle());
+    m_device->CreateShaderResourceView(texResource.Get(), &srvDesc, tex->GetCPUHandle());
 
-    tex->setResource(texResource);
-    tex->setReady(true);
+    tex->SetResource(texResource);
+    tex->SetReady(true);
 
     // Resource must be in the copy- state.
     TransitionResource(texResource, D3D12_RESOURCE_STATE_COPY_DEST, D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE);

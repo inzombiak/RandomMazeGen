@@ -42,9 +42,10 @@ App::App(const std::wstring& name, int width, int height, bool vSync, HINSTANCE 
     , m_contentLoaded(false)
     , m_gridManager(std::make_shared<GridManager>())
 {
-    m_cameraPos    = XMVectorSet(-17, 26.7, 16, 1);
-    m_camAngles[0] = 0.66;
-    m_camAngles[1] = 1.57;
+    m_cameraPos    = XMVectorSet(-17, 26.7f, 16, 1);
+    m_sunPos       = XMVectorSet(17, 26.7f, 16, 1);
+    m_camAngles[0] = 0.66f;
+    m_camAngles[1] = 1.57f;
     m_camAngles[2] = 0;
 }
 
@@ -85,6 +86,7 @@ bool App::LoadContent() {
     RENDERER->PopulateIndexBuffer(BOX_INDICES, _countof(BOX_INDICES));
     RENDERER->CreateSRVForBoxes(m_gridManager->GetTiles(), 0);
     RENDERER->BuildPipelineState(L"C:/Projects/RandomMazeGen/x64/Debug/vertex_basic.cso", L"C:/Projects/RandomMazeGen/x64/Debug/pixel_basic.cso");
+    RENDERER->BuildShadowPipelineState(L"C:/Projects/RandomMazeGen/x64/Debug/vertex_shadow.cso", L"C:/Projects/RandomMazeGen/x64/Debug/pixel_shadow.cso");
     RENDERER->ResizeDepthBuffer(m_width, m_height);
 
     m_contentLoaded = true;
@@ -146,8 +148,10 @@ void App::OnUpdate(UpdateEventArgs& e)
 void App::OnRender(RenderEventArgs& e)
 {
     m_renderClock.Tick();
-    if (RENDERER && RENDERER->IsInitialized())
+    if (RENDERER && RENDERER->IsInitialized()) {
+        RENDERER->Shadowmap(m_sunPos);
         RENDERER->Render();
+    }
 }
 
 void App::OnKeyPressed(KeyEventArgs& e)

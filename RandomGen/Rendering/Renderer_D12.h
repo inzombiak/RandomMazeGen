@@ -22,6 +22,11 @@ struct VertexInput
 	DirectX::XMFLOAT3 uv;
 };
 
+struct PerEntityData
+{
+	unsigned int type;
+};
+
 class Tile;
 class UploadBuffer_D12;
 class DescriptorAllocator_D12;
@@ -36,6 +41,7 @@ class Renderer_D12 {
 		void PostInit();
 		void ResizeTargets();
 		void UpdateRenderTargetViews();
+		void Shadowmap(DirectX::XMVECTOR sunPos);
 		void Render();
 		void Shutdown();
 		bool IsInitialized() const;
@@ -43,7 +49,7 @@ class Renderer_D12 {
 		void PopulateVertexBuffer(const VertexInput *data, size_t count);
 		void PopulateIndexBuffer(const WORD *data, size_t count);
 		void BuildPipelineState(const std::wstring& vertexShaderName, const std::wstring& pixelShaderName);
-
+		void BuildShadowPipelineState(const std::wstring& vertexShaderName, const std::wstring& pixelShaderName);
 		void CreateSRVForBoxes(const std::vector<std::vector<Tile>>& tiles, double t);
 
 		// Resize the depth buffer to match the size of the client area.
@@ -70,17 +76,17 @@ class Renderer_D12 {
 		std::shared_ptr<CommandQueue_D12>	m_commQueue;
 		ComPtr<IDXGISwapChain4>				m_swapChain;
 		ComPtr<ID3D12Resource>				m_backbuffers[NUM_BACKBUFFER_FRAMES];
+		ComPtr<ID3D12Resource>				m_depthBuffer;
+		std::shared_ptr<Texture_D12>		m_shadowTexture;
 
 		D3D_ROOT_SIGNATURE_VERSION m_highestRootSignatureVersion;
-		
-		std::shared_ptr<RootSignature_D12>		  m_rootSignature;
 
 		std::shared_ptr<DescriptorAllocator_D12>  m_rtvAllocator;
 		std::shared_ptr<DescriptorAllocation_D12> m_rtvs;
 		std::shared_ptr<DescriptorAllocator_D12>  m_dsvAllocator;
 		std::shared_ptr<DescriptorAllocation_D12> m_dsvs;
 
-		ComPtr<ID3D12DescriptorHeap>			 m_cbvSrvUavHeap;
+		ComPtr<ID3D12DescriptorHeap>			  m_cbvSrvUavHeap;
 		std::shared_ptr<DynamicDecriptorHeap_D12> m_cbvSrvUavDynHeap;
 
 		ComPtr<ID3D12Resource> m_vertexBuffer;
@@ -89,18 +95,26 @@ class Renderer_D12 {
 		ComPtr<ID3D12Resource> m_indexBuffer;
 		D3D12_INDEX_BUFFER_VIEW m_indexBufferView;
 
-		int m_numInstances = 0;
+		uint64_t m_numInstances = 0;
 		ComPtr<ID3D12Resource> m_modelBuffer;
 		D3D12_VERTEX_BUFFER_VIEW m_modelBufferView;
 		CD3DX12_CPU_DESCRIPTOR_HANDLE m_modelCPUHandle;
 		CD3DX12_GPU_DESCRIPTOR_HANDLE m_modelGPUHandle;
 
+		ComPtr<ID3D12Resource> m_entityDataBuffer;
+		D3D12_VERTEX_BUFFER_VIEW m_entityDataBufferView;
+		CD3DX12_CPU_DESCRIPTOR_HANDLE m_entityDataCPUHandle;
+		CD3DX12_GPU_DESCRIPTOR_HANDLE m_entityDataGPUHandle;
+
 		ComPtr<ID3D12Resource> m_colorBuffer;
 		D3D12_VERTEX_BUFFER_VIEW m_colorBufferView;
-
-		ComPtr<ID3D12Resource> m_depthBuffer;
 		// Pipeline state object.
-		ComPtr<ID3D12PipelineState> m_pipelineState;
+		
+		std::shared_ptr<RootSignature_D12>  m_rootSignature;
+		ComPtr<ID3D12PipelineState>			m_pipelineState;
+
+		std::shared_ptr<RootSignature_D12>	m_shadowRootSignature;
+		ComPtr<ID3D12PipelineState>			m_shadowPipelineState;
 
 		std::shared_ptr<Texture_D12> m_wallTexture;
 		std::shared_ptr<Texture_D12> m_grassTexture;
@@ -110,11 +124,13 @@ class Renderer_D12 {
 		D3D12_RECT m_scissorRect;
 
 		size_t m_indexCount;
+		int m_worldWidth;
 		DirectX::XMMATRIX m_viewMatrix;
 		DirectX::XMMATRIX m_projectionMatrix;
 
 		//Fencing
 		uint64_t			m_fenceValue = 0;
+		uint64_t			m_shadowMapFenceVal = 0;
 		uint64_t			m_perFrameFenceValues[NUM_BACKBUFFER_FRAMES] = {};
 
 		uint64_t			m_currentFrame = 0;
