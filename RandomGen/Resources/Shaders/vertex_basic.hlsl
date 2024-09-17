@@ -18,26 +18,29 @@ struct PerEntityData
 };
 StructuredBuffer<PerEntityData> PerEntitySB : register(t1);
 
-struct ViewProjection
+struct SceneData
 {
-    matrix VP;
+    matrix camVP;
+    matrix sunVP; 
 };
-ConstantBuffer<ViewProjection> ViewProjectionCB : register(b0);
-
+ConstantBuffer<SceneData> SceneDataCB : register(b0);
 
 struct VertexOutput
 {
-    float4 color : COLOR;
-    float3 uv    : TEXCOORD0;
+    float4 color    : COLOR;
+    float3 uv       : TEXCOORD0;
+    float4 sunPos   : TEXCOORD1;
+    float4 worldPos : TEXCOORD2;
     uint instanceid : SV_InstanceID;
-    float4 hpos  : SV_Position;
+    float4 hpos     : SV_Position;
 };
 
 VertexOutput main(VertexInput input)
 {
     VertexOutput output;
-    output.hpos = mul(ModelSB[input.instanceid].M, float4(input.position, 1.0f));
-    output.hpos = mul(ViewProjectionCB.VP, output.hpos);;
+    output.worldPos = mul(ModelSB[input.instanceid].M, float4(input.position, 1.0f));
+    output.sunPos = mul(SceneDataCB.sunVP, output.worldPos);
+    output.hpos = mul(SceneDataCB.camVP, output.worldPos);
     output.color = float4(input.color, 1.0f);
     output.uv = input.uv;
     output.instanceid = input.instanceid;

@@ -19,7 +19,7 @@ class GridManager
 
 public:
 	GridManager() {}
-	~GridManager() { Terminate(); }
+	~GridManager() { }
 	enum SimulationPhase
 	{
 		GeneratingRooms,

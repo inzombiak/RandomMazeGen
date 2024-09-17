@@ -333,7 +333,7 @@ void Window::Show() {
 void Window::Close() {
     if (m_app)
         m_app->OnWindowDestroy();
-	DestroyWindow(m_handle);
+	//DestroyWindow(m_handle);
 }
 
 HWND Window::GetHandle() const {

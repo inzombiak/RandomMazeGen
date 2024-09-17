@@ -222,7 +222,7 @@ void Renderer_D12::PostInit() {
 	m_dsvs = std::make_shared<DescriptorAllocation_D12>(m_dsvAllocator->Allocate(2));
 
 	D3D12_DESCRIPTOR_HEAP_DESC cbvSrvUavHeapDesc = {};
-	cbvSrvUavHeapDesc.NumDescriptors = 5;
+	cbvSrvUavHeapDesc.NumDescriptors = 7;
 	cbvSrvUavHeapDesc.Type = D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV;
 	cbvSrvUavHeapDesc.Flags = D3D12_DESCRIPTOR_HEAP_FLAG_SHADER_VISIBLE;
 	ThrowIfFailed(m_device->CreateDescriptorHeap(&cbvSrvUavHeapDesc, IID_PPV_ARGS(&m_cbvSrvUavHeap)));
@@ -274,11 +274,16 @@ void Renderer_D12::Render() {
 	auto backBuffer = m_backbuffers[m_currentBufferIdx];
 	auto rtv = GetCurrentRenderTargetView();
 	auto dsv = m_dsvs->GetDescriptorHandle(0);
+	auto shadow = m_dsvs->GetDescriptorHandle(1);
 
 	// Clear the render targets.
 	{
 		commandList->TransitionResource(backBuffer,
 			D3D12_RESOURCE_STATE_PRESENT, D3D12_RESOURCE_STATE_RENDER_TARGET);
+
+		commandList->TransitionResource(m_shadowTexture->GetResource(),
+			D3D12_RESOURCE_STATE_DEPTH_WRITE, D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE);
+
 
 		FLOAT clearColor[] = { 0.4f, 0.6f, 0.9f, 1.0f };
 
@@ -303,17 +308,20 @@ void Renderer_D12::Render() {
 		d3dCommList->OMSetRenderTargets(1, &rtv, FALSE, &dsv);
 
 		// Update the MVP matrixb
-		XMMATRIX vpMatrix = XMMatrixMultiply(m_viewMatrix, m_projectionMatrix);
-		d3dCommList->SetGraphicsRoot32BitConstants(0, sizeof(XMMATRIX) / 4, &vpMatrix, 0);
+		d3dCommList->SetGraphicsRootConstantBufferView(0, m_vpBufferView.BufferLocation);
 		d3dCommList->SetGraphicsRootShaderResourceView(1, m_modelBufferView.BufferLocation);
 		d3dCommList->SetGraphicsRootShaderResourceView(2, m_entityDataBufferView.BufferLocation);
 		d3dCommList->SetGraphicsRootDescriptorTable(3, m_wallTexture->GetGPUHandle());
+		d3dCommList->SetGraphicsRoot32BitConstants(4, sizeof(XMFLOAT4), &m_sunPos, 0);
 		d3dCommList->DrawIndexedInstanced((UINT)m_indexCount, m_numInstances, 0, 0, 0);
 	}
 	// Present
 	{
 		commandList->TransitionResource(backBuffer,
 			D3D12_RESOURCE_STATE_RENDER_TARGET, D3D12_RESOURCE_STATE_PRESENT);
+
+		commandList->TransitionResource(m_shadowTexture->GetResource(),
+			D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE, D3D12_RESOURCE_STATE_DEPTH_WRITE);
 
 		m_perFrameFenceValues[m_currentBufferIdx] = m_commQueue->ExecuteCommandList(commandList);
 
@@ -340,8 +348,8 @@ void Renderer_D12::Shadowmap(XMVECTOR sunPos) {
 	//@ZGTODO Move to CommandList_D12
 	{
 		auto d3dCommList = commandList->GetGraphicsCommandList();
-		d3dCommList->SetPipelineState(m_pipelineState.Get());
-		d3dCommList->SetGraphicsRootSignature(m_rootSignature->GetD3D12RootSignature().Get());
+		d3dCommList->SetPipelineState(m_shadowPipelineState.Get());
+		d3dCommList->SetGraphicsRootSignature(m_shadowRootSignature->GetD3D12RootSignature().Get());
 		d3dCommList->IASetPrimitiveTopology(D3D_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
 		d3dCommList->IASetVertexBuffers(0, 1, &m_vertexBufferView);
 		d3dCommList->IASetIndexBuffer(&m_indexBufferView);
@@ -354,17 +362,16 @@ void Renderer_D12::Shadowmap(XMVECTOR sunPos) {
 		d3dCommList->OMSetRenderTargets(0, NULL, FALSE, &dsv);
 
 		// Update the MVP matrix
-		XMVECTOR lookAtPos = XMVectorSet(m_worldWidth, 0, m_worldWidth, 1.f);
+		XMStoreFloat4(&m_sunPos, sunPos);
+		XMVECTOR lookAtPos = XMVectorSet(m_worldWidth/2.f - m_worldWidth / 4.f, 0, m_worldWidth / 2.f, 1.f);
 		const XMVECTOR upDirection = XMVector3Cross(lookAtPos-sunPos, XMVectorSet(1.f, 0.f, 0.f, 0.f));
 		auto viewMat = XMMatrixLookAtLH(sunPos, lookAtPos, upDirection);
 
 		// Update the projection matrix.
-		auto projMat = XMMatrixOrthographicLH(m_worldWidth, m_worldWidth, 0.1f, 100.0f);
-		XMMATRIX vpMatrix = XMMatrixMultiply(viewMat, projMat);
-		d3dCommList->SetGraphicsRoot32BitConstants(0, sizeof(XMMATRIX) / 4, &vpMatrix, 0);
+		auto projMat = XMMatrixOrthographicLH(m_worldWidth * 1.5, m_worldWidth * 1.5, 0.1f, 100.0f);
+		m_sceneData.sunVP = XMMatrixMultiply(viewMat, projMat);
+		d3dCommList->SetGraphicsRoot32BitConstants(0, sizeof(XMMATRIX) / 4, &m_sceneData.sunVP, 0);
 		d3dCommList->SetGraphicsRootShaderResourceView(1, m_modelBufferView.BufferLocation);
-		d3dCommList->SetGraphicsRootShaderResourceView(2, m_entityDataBufferView.BufferLocation);
-		d3dCommList->SetGraphicsRootDescriptorTable(3, m_wallTexture->GetGPUHandle());
 		d3dCommList->DrawIndexedInstanced((UINT)m_indexCount, m_numInstances, 0, 0, 0);
 	}
 	// Present
@@ -500,6 +507,32 @@ void Renderer_D12::CreateSRVForBoxes(const std::vector<std::vector<Tile>>& tiles
 	m_device->CreateShaderResourceView(m_modelBuffer.Get(), &srvDesc, m_modelCPUHandle);
 }
 
+	ThrowIfFailed(m_device->CreateCommittedResource(
+		&CD3DX12_HEAP_PROPERTIES(D3D12_HEAP_TYPE_UPLOAD),
+		D3D12_HEAP_FLAG_NONE,
+		&CD3DX12_RESOURCE_DESC::Buffer(sizeof(m_sceneData)),
+		D3D12_RESOURCE_STATE_GENERIC_READ,
+		nullptr,
+		IID_PPV_ARGS(&m_vpBuffer)));
+
+	// Describe and create a constant buffer view.
+	D3D12_CONSTANT_BUFFER_VIEW_DESC cbvDesc = {};
+	cbvDesc.BufferLocation = m_vpBuffer->GetGPUVirtualAddress();
+	cbvDesc.SizeInBytes = sizeof(m_sceneData);
+	m_vpCPUHandle = CD3DX12_CPU_DESCRIPTOR_HANDLE(m_modelCPUHandle, 1, descStep);
+	m_vpGPUHandle = CD3DX12_GPU_DESCRIPTOR_HANDLE(m_modelGPUHandle, 1, descStep);
+	m_device->CreateConstantBufferView(&cbvDesc, m_vpCPUHandle);
+
+	m_vpBufferView.BufferLocation = m_vpBuffer->GetGPUVirtualAddress();
+	m_vpBufferView.SizeInBytes = (UINT)(sizeof(XMMATRIX) * m_numInstances);
+	m_vpBufferView.StrideInBytes = sizeof(XMMATRIX);
+
+	// Map and initialize the constant buffer. We don't unmap this until the
+	// app closes. Keeping things mapped for the lifetime of the resource is okay.
+	CD3DX12_RANGE readRange(0, 0);        // We do not intend to read from this resource on the CPU.
+	ThrowIfFailed(m_vpBuffer->Map(0, &readRange, reinterpret_cast<void**>(&m_sceneDataBegin)));
+	memcpy(m_sceneDataBegin, &m_sceneData, sizeof(m_sceneData));
+
 {
 	D3D12_SUBRESOURCE_DATA pedData = {};
 	pedData.pData = peds.data();
@@ -525,25 +558,21 @@ void Renderer_D12::CreateSRVForBoxes(const std::vector<std::vector<Tile>>& tiles
 	srvDesc.Buffer.StructureByteStride = sizeof(PerEntityData);
 	srvDesc.Buffer.Flags = D3D12_BUFFER_SRV_FLAG_NONE;
 
-	m_entityDataCPUHandle = CD3DX12_CPU_DESCRIPTOR_HANDLE(m_modelCPUHandle, 1, descStep);
-	m_entityDataGPUHandle = CD3DX12_GPU_DESCRIPTOR_HANDLE(m_modelGPUHandle, 1, descStep);
+	m_entityDataCPUHandle = CD3DX12_CPU_DESCRIPTOR_HANDLE(m_modelCPUHandle, 2, descStep);
+	m_entityDataGPUHandle = CD3DX12_GPU_DESCRIPTOR_HANDLE(m_modelGPUHandle, 2, descStep);
 	m_device->CreateShaderResourceView(m_entityDataBuffer.Get(), &srvDesc, m_entityDataCPUHandle);
 }
-
 	m_wallTexture = std::make_shared<Texture_D12>(); 
-	m_wallTexture->SetHandles(CD3DX12_CPU_DESCRIPTOR_HANDLE(m_modelCPUHandle, 2, descStep), CD3DX12_GPU_DESCRIPTOR_HANDLE(m_modelGPUHandle, 2, descStep));
+	m_wallTexture->SetHandles(CD3DX12_CPU_DESCRIPTOR_HANDLE(m_modelCPUHandle, 3, descStep), CD3DX12_GPU_DESCRIPTOR_HANDLE(m_modelGPUHandle, 3, descStep));
 	commandList->LoadTexture(L"Clay.dds", m_wallTexture);
 
 	m_grassTexture = std::make_shared<Texture_D12>();
-	m_grassTexture->SetHandles(CD3DX12_CPU_DESCRIPTOR_HANDLE(m_modelCPUHandle, 3, descStep), CD3DX12_GPU_DESCRIPTOR_HANDLE(m_modelGPUHandle, 3, descStep));
+	m_grassTexture->SetHandles(CD3DX12_CPU_DESCRIPTOR_HANDLE(m_modelCPUHandle, 4, descStep), CD3DX12_GPU_DESCRIPTOR_HANDLE(m_modelGPUHandle, 4, descStep));
 	commandList->LoadTexture(L"Grass.dds", m_grassTexture);
 
 	m_dirtTexture = std::make_shared<Texture_D12>();
-	m_dirtTexture->SetHandles(CD3DX12_CPU_DESCRIPTOR_HANDLE(m_modelCPUHandle, 4, descStep), CD3DX12_GPU_DESCRIPTOR_HANDLE(m_modelGPUHandle, 4, descStep));
+	m_dirtTexture->SetHandles(CD3DX12_CPU_DESCRIPTOR_HANDLE(m_modelCPUHandle, 5, descStep), CD3DX12_GPU_DESCRIPTOR_HANDLE(m_modelGPUHandle, 6, descStep));
 	commandList->LoadTexture(L"Dirt.dds", m_dirtTexture);
-
-	m_shadowTexture = std::make_shared<Texture_D12>();
-	m_shadowTexture->SetHandles(CD3DX12_CPU_DESCRIPTOR_HANDLE(m_modelCPUHandle, 5, descStep), CD3DX12_GPU_DESCRIPTOR_HANDLE(m_modelGPUHandle, 5, descStep));
 }
 
 
@@ -579,12 +608,15 @@ void Renderer_D12::BuildPipelineState(const std::wstring& vertexShaderName, cons
 		D3D12_ROOT_SIGNATURE_FLAG_DENY_GEOMETRY_SHADER_ROOT_ACCESS;
 
 	// For MVP
-	CD3DX12_ROOT_PARAMETER1 rootParameters[4];
-	rootParameters[0].InitAsConstants(sizeof(DirectX::XMMATRIX) / 4, 0, 0, D3D12_SHADER_VISIBILITY_VERTEX);
+	CD3DX12_DESCRIPTOR_RANGE1 ranges[1];
+	ranges[0].Init(D3D12_DESCRIPTOR_RANGE_TYPE_CBV, 2, 0, 0, D3D12_DESCRIPTOR_RANGE_FLAG_DATA_STATIC);
+	CD3DX12_ROOT_PARAMETER1 rootParameters[5];
+	rootParameters[0].InitAsConstantBufferView(0, 0, D3D12_ROOT_DESCRIPTOR_FLAG_NONE, D3D12_SHADER_VISIBILITY_VERTEX);
 	rootParameters[1].InitAsShaderResourceView(0, 0, D3D12_ROOT_DESCRIPTOR_FLAG_NONE, D3D12_SHADER_VISIBILITY_VERTEX);
 	rootParameters[2].InitAsShaderResourceView(1, 0, D3D12_ROOT_DESCRIPTOR_FLAG_NONE, D3D12_SHADER_VISIBILITY_PIXEL);
-	CD3DX12_DESCRIPTOR_RANGE1 texture1Range(D3D12_DESCRIPTOR_RANGE_TYPE_SRV, 3, 2);
+	CD3DX12_DESCRIPTOR_RANGE1 texture1Range(D3D12_DESCRIPTOR_RANGE_TYPE_SRV, 4, 2);
 	rootParameters[3].InitAsDescriptorTable(1, &texture1Range, D3D12_SHADER_VISIBILITY_PIXEL);
+	rootParameters[4].InitAsConstants(sizeof(DirectX::XMFLOAT4), 0, 0, D3D12_SHADER_VISIBILITY_PIXEL);
 
 	D3D12_STATIC_SAMPLER_DESC sampler = {};
 	sampler.Filter = D3D12_FILTER_MIN_MAG_MIP_POINT;
@@ -640,8 +672,8 @@ void Renderer_D12::BuildPipelineState(const std::wstring& vertexShaderName, cons
 	};
 	ThrowIfFailed(m_device->CreatePipelineState(&pipelineStateStreamDesc, IID_PPV_ARGS(&m_pipelineState)));
 
-	//auto fenceValue = m_commQueue->ExecuteActiveCommandList();
-	//m_commQueue->WaitForFenceValue(fenceValue);
+	auto fenceValue = m_commQueue->ExecuteActiveCommandList();
+	m_commQueue->WaitForFenceValue(fenceValue);
 
 }
 
@@ -734,10 +766,6 @@ void Renderer_D12::BuildShadowPipelineState(const std::wstring& vertexShaderName
 	sizeof(PipelineStateStream), &pipelineStateStream
 	};
 	ThrowIfFailed(m_device->CreatePipelineState(&pipelineStateStreamDesc, IID_PPV_ARGS(&m_shadowPipelineState)));
-
-	auto fenceValue = m_commQueue->ExecuteActiveCommandList();
-	m_commQueue->WaitForFenceValue(fenceValue);
-
 }
 
 // Resize the depth buffer to match the size of the client area.
@@ -785,19 +813,34 @@ void Renderer_D12::ResizeDepthBuffer(int width, int height) {
 		IID_PPV_ARGS(&resource)
 	));
 
+	auto descStep = GetDescriptorHandleIncrementSize(D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV);
 	m_device->CreateDepthStencilView(resource.Get(), &dsv,
 		m_dsvs->GetDescriptorHandle(1));
+	m_shadowTexture = std::make_shared<Texture_D12>();
 	m_shadowTexture->SetResource(resource);
+	m_shadowTexture->SetHandles(CD3DX12_CPU_DESCRIPTOR_HANDLE(m_modelCPUHandle, 6, descStep), CD3DX12_GPU_DESCRIPTOR_HANDLE(m_modelGPUHandle, 6, descStep));
+	D3D12_SHADER_RESOURCE_VIEW_DESC srvDesc = {};
+	srvDesc.Shader4ComponentMapping = D3D12_DEFAULT_SHADER_4_COMPONENT_MAPPING;
+	srvDesc.Format = DXGI_FORMAT_R32_FLOAT;
+	srvDesc.ViewDimension = D3D12_SRV_DIMENSION_TEXTURE2D;
+	srvDesc.Texture2D.MipLevels = 1;
+	m_device->CreateShaderResourceView(m_shadowTexture->GetResource().Get(), &srvDesc,
+		m_shadowTexture->GetCPUHandle());
 }
 
 void Renderer_D12::UpdateMVP(float fov, DirectX::XMVECTOR camPos, DirectX::XMVECTOR camFwd, DirectX::XMVECTOR camRight, DirectX::XMVECTOR camUp) {
 	// Update the view matrix.
+	XMStoreFloat4(&m_camPos, camPos);
 	const XMVECTOR upDirection = XMVector3Cross(camFwd, camRight);
-	m_viewMatrix = XMMatrixLookAtLH(camPos, camPos + camFwd, upDirection);
+	auto view = XMMatrixLookAtLH(camPos, camPos + camFwd, upDirection);
 
 	// Update the projection matrix.
 	float aspectRatio = GAME_WINDOW->GetWidth() / static_cast<float>(GAME_WINDOW->GetHeight());
-	m_projectionMatrix = XMMatrixPerspectiveFovLH(XMConvertToRadians(fov), aspectRatio, 0.1f, 100.0f);
+	auto proj = XMMatrixPerspectiveFovLH(XMConvertToRadians(fov), aspectRatio, 0.1f, 100.0f);
+
+	m_sceneData.camVP = XMMatrixMultiply(view, proj);
+
+	memcpy(m_sceneDataBegin, &m_sceneData, sizeof(m_sceneData));
 }
 
 ComPtr<ID3D12Device2> Renderer_D12::GetDevice() const {

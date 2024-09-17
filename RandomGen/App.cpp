@@ -43,7 +43,7 @@ App::App(const std::wstring& name, int width, int height, bool vSync, HINSTANCE 
     , m_gridManager(std::make_shared<GridManager>())
 {
     m_cameraPos    = XMVectorSet(-17, 26.7f, 16, 1);
-    m_sunPos       = XMVectorSet(17, 26.7f, 16, 1);
+    m_sunPos       = XMVectorSet(24, 55.7f, 16, 1);
     m_camAngles[0] = 0.66f;
     m_camAngles[1] = 1.57f;
     m_camAngles[2] = 0;
@@ -51,7 +51,6 @@ App::App(const std::wstring& name, int width, int height, bool vSync, HINSTANCE 
 
 App::~App()
 {
-    Destroy();
 }
 
 std::shared_ptr<Window> GAME_WINDOW;
@@ -99,7 +98,8 @@ void App::UnloadContent() {
 
 void App::Destroy()
 {
-
+    if (RENDERER && RENDERER->IsInitialized())
+        RENDERER->Shutdown();
 }
 
 void App::OnUpdate(UpdateEventArgs& e)

@@ -19,6 +19,7 @@ CommandQueue_D12::CommandQueue_D12(ComPtr<ID3D12Device2> device, D3D12_COMMAND_L
 }
 
 CommandQueue_D12::~CommandQueue_D12() {
+	Flush();
 	::CloseHandle(m_fenceEvent);
 }
 

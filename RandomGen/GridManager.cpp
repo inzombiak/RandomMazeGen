@@ -70,20 +70,20 @@ void GridManager::Terminate()
 		m_connectMapCV.notify_all();
 	}
 
-		{
-			std::unique_lock<std::mutex> lock(m_removeDeadEndsCVMutex);
-			m_removeDeadEnds = true;
-			m_removeDeadEndsCV.notify_all();
-		}
+	{
+		std::unique_lock<std::mutex> lock(m_removeDeadEndsCVMutex);
+		m_removeDeadEnds = true;
+		m_removeDeadEndsCV.notify_all();
+	}
 
 
-		if (m_prevMazeGen == MazeGenerator::RecursiveBacktracker)
-			MGRecursiveBacktrackerSingleton::Instance().TerminateGeneration();
-		else
-			MGEllersSingleton::Instance().TerminateGeneration();
+	if (m_prevMazeGen == MazeGenerator::RecursiveBacktracker)
+		MGRecursiveBacktrackerSingleton::Instance().TerminateGeneration();
+	else
+		MGEllersSingleton::Instance().TerminateGeneration();
 
-		MazeConnectorSingleton::Instance().TerminateGeneration();
-		DeadEndRemoverSingleton::Instance().TerminateGeneration();
+	MazeConnectorSingleton::Instance().TerminateGeneration();
+	DeadEndRemoverSingleton::Instance().TerminateGeneration();
 }
 
 void GridManager::Draw(sf::RenderWindow& rw)

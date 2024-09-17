@@ -19,14 +19,10 @@ void DeadEndRemover::RemoveDeadEnds(std::vector<std::vector<Tile>>& tiles, const
 	m_columnCount = (int)(*m_tiles)[0].size();
 	m_removalPercentage = removalPercentage;
 	if (genType == Step)
-	{
 		RemoveByStep();
-		SetDoneState(true);
-	}
 	else
 		RemoveFull();
-	
-
+	SetDoneState(true);
 }
 
 void DeadEndRemover::RemoveFull()

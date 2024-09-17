@@ -27,6 +27,14 @@ struct PerEntityData
 	unsigned int type;
 };
 
+struct SceneData
+{
+	DirectX::XMMATRIX camVP;
+	DirectX::XMMATRIX sunVP;
+
+	DirectX::XMMATRIX PAD[2];
+};
+
 class Tile;
 class UploadBuffer_D12;
 class DescriptorAllocator_D12;
@@ -77,7 +85,6 @@ class Renderer_D12 {
 		ComPtr<IDXGISwapChain4>				m_swapChain;
 		ComPtr<ID3D12Resource>				m_backbuffers[NUM_BACKBUFFER_FRAMES];
 		ComPtr<ID3D12Resource>				m_depthBuffer;
-		std::shared_ptr<Texture_D12>		m_shadowTexture;
 
 		D3D_ROOT_SIGNATURE_VERSION m_highestRootSignatureVersion;
 
@@ -106,6 +113,11 @@ class Renderer_D12 {
 		CD3DX12_CPU_DESCRIPTOR_HANDLE m_entityDataCPUHandle;
 		CD3DX12_GPU_DESCRIPTOR_HANDLE m_entityDataGPUHandle;
 
+		ComPtr<ID3D12Resource> m_vpBuffer;
+		D3D12_VERTEX_BUFFER_VIEW m_vpBufferView;
+		CD3DX12_CPU_DESCRIPTOR_HANDLE m_vpCPUHandle;
+		CD3DX12_GPU_DESCRIPTOR_HANDLE m_vpGPUHandle;
+
 		ComPtr<ID3D12Resource> m_colorBuffer;
 		D3D12_VERTEX_BUFFER_VIEW m_colorBufferView;
 		// Pipeline state object.
@@ -119,14 +131,17 @@ class Renderer_D12 {
 		std::shared_ptr<Texture_D12> m_wallTexture;
 		std::shared_ptr<Texture_D12> m_grassTexture;
 		std::shared_ptr<Texture_D12> m_dirtTexture;
+		std::shared_ptr<Texture_D12> m_shadowTexture;
 
 		D3D12_VIEWPORT m_viewport;
 		D3D12_RECT m_scissorRect;
 
 		size_t m_indexCount;
 		int m_worldWidth;
-		DirectX::XMMATRIX m_viewMatrix;
-		DirectX::XMMATRIX m_projectionMatrix;
+		UINT8* m_sceneDataBegin;
+		SceneData m_sceneData;
+		DirectX::XMFLOAT4 m_sunPos;
+		DirectX::XMFLOAT4 m_camPos;
 
 		//Fencing
 		uint64_t			m_fenceValue = 0;
