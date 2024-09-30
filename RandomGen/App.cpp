@@ -5,31 +5,60 @@
 #include "GridManager.h"
 
 using namespace DirectX;
-static VertexInput BOX_VERTICES[12] = {
-    { XMFLOAT3(-1.0f, -1.0f, -1.0f), XMFLOAT3(0.0f, 0.0f, 0.0f), XMFLOAT3(0.0f, 0.0f, 0.0f) }, // 0
-    { XMFLOAT3(-1.0f,  1.0f, -1.0f), XMFLOAT3(0.0f, 1.0f, 0.0f), XMFLOAT3(0.0f, 1.0f, 0.0f) }, // 1
-    { XMFLOAT3(1.0f,  1.0f, -1.0f),  XMFLOAT3(1.0f, 1.0f, 0.0f), XMFLOAT3(1.0f, 1.0f, 0.0f) }, // 2
-    { XMFLOAT3(1.0f, -1.0f, -1.0f),  XMFLOAT3(1.0f, 0.0f, 0.0f), XMFLOAT3(1.0f, 0.0f, 0.0f) }, // 3
-    { XMFLOAT3(-1.0f, -1.0f,  1.0f), XMFLOAT3(0.0f, 0.0f, 1.0f), XMFLOAT3(1.0f, 0.0f, 0.0f) }, // 4
-    { XMFLOAT3(-1.0f,  1.0f,  1.0f), XMFLOAT3(0.0f, 1.0f, 1.0f), XMFLOAT3(1.0f, 1.0f, 0.0f) }, // 5
-    { XMFLOAT3(1.0f,  1.0f,  1.0f),  XMFLOAT3(1.0f, 1.0f, 1.0f), XMFLOAT3(0.0f, 1.0f, 0.0f) }, // 6
-    { XMFLOAT3(1.0f, -1.0f,  1.0f),  XMFLOAT3(1.0f, 0.0f, 1.0f), XMFLOAT3(0.0f, 0.0f, 0.0f)},  // 7
+static VertexInput BOX_VERTICES[24] = {
+    //Size Za
+    { XMFLOAT3(-1.0f, -1.0f, -1.0f), XMFLOAT3(0.0f, 0.0f, 0.0f), XMFLOAT3(0.0f, 0.0f, -1.0f), XMFLOAT3(0.0f, 0.0f, 0.0f) },
+    { XMFLOAT3(-1.0f,  1.0f, -1.0f), XMFLOAT3(0.0f, 1.0f, 0.0f), XMFLOAT3(0.0f, 0.0f, -1.0f), XMFLOAT3(0.0f, 1.0f, 0.0f) },
+    { XMFLOAT3(1.0f,  1.0f, -1.0f),  XMFLOAT3(1.0f, 1.0f, 0.0f), XMFLOAT3(0.0f, 0.0f, -1.0f), XMFLOAT3(1.0f, 1.0f, 0.0f) },
+    { XMFLOAT3(1.0f, -1.0f, -1.0f),  XMFLOAT3(1.0f, 0.0f, 0.0f), XMFLOAT3(0.0f, 0.0f, -1.0f), XMFLOAT3(1.0f, 0.0f, 0.0f) },
+
+    //Size Zb
+    { XMFLOAT3(-1.0f, -1.0f,  1.0f), XMFLOAT3(0.0f, 0.0f, 1.0f), XMFLOAT3(0.0f, 0.0f, 1.0f), XMFLOAT3(1.0f, 0.0f, 0.0f) }, 
+    { XMFLOAT3(-1.0f,  1.0f,  1.0f), XMFLOAT3(0.0f, 1.0f, 1.0f), XMFLOAT3(0.0f, 0.0f, 1.0f), XMFLOAT3(1.0f, 1.0f, 0.0f) }, 
+    { XMFLOAT3(1.0f,  1.0f,  1.0f),  XMFLOAT3(1.0f, 1.0f, 1.0f), XMFLOAT3(0.0f, 0.0f, 1.0f), XMFLOAT3(0.0f, 1.0f, 0.0f) }, 
+    { XMFLOAT3(1.0f, -1.0f,  1.0f),  XMFLOAT3(1.0f, 0.0f, 1.0f), XMFLOAT3(0.0f, 0.0f, 1.0f), XMFLOAT3(0.0f, 0.0f, 0.0f) },  
+
+    //Side Xa
+    { XMFLOAT3(-1.0f, -1.0f, -1.0f), XMFLOAT3(0.0f, 0.0f, 0.0f), XMFLOAT3(-1.0f, 0.0f, 0.0f), XMFLOAT3(0.0f, 0.0f, 0.0f) },
+    { XMFLOAT3(-1.0f,  1.0f, -1.0f), XMFLOAT3(0.0f, 1.0f, 0.0f), XMFLOAT3(-1.0f, 0.0f, 0.0f), XMFLOAT3(0.0f, 1.0f, 0.0f) },
+    { XMFLOAT3(-1.0f,  1.0f, 1.0f),  XMFLOAT3(1.0f, 1.0f, 0.0f), XMFLOAT3(-1.0f, 0.0f, 0.0f), XMFLOAT3(1.0f, 1.0f, 0.0f) },
+    { XMFLOAT3(-1.0f, -1.0f, 1.0f),  XMFLOAT3(1.0f, 0.0f, 0.0f), XMFLOAT3(-1.0f, 0.0f, 0.0f), XMFLOAT3(1.0f, 0.0f, 0.0f) },
+
+    //Side Xb
+    { XMFLOAT3(1.0f, -1.0f, -1.0f), XMFLOAT3(0.0f, 0.0f, 0.0f), XMFLOAT3(1.0f, 0.0f, 0.0f), XMFLOAT3(0.0f, 0.0f, 0.0f) },
+    { XMFLOAT3(1.0f,  1.0f, -1.0f), XMFLOAT3(0.0f, 1.0f, 0.0f), XMFLOAT3(1.0f, 0.0f, 0.0f), XMFLOAT3(0.0f, 1.0f, 0.0f) },
+    { XMFLOAT3(1.0f,  1.0f, 1.0f),  XMFLOAT3(1.0f, 1.0f, 0.0f), XMFLOAT3(1.0f, 0.0f, 0.0f), XMFLOAT3(1.0f, 1.0f, 0.0f) },
+    { XMFLOAT3(1.0f, -1.0f, 1.0f),  XMFLOAT3(1.0f, 0.0f, 0.0f), XMFLOAT3(1.0f, 0.0f, 0.0f), XMFLOAT3(1.0f, 0.0f, 0.0f) },
+
     //Top
-    { XMFLOAT3(-1.0f,  1.0f, -1.0f), XMFLOAT3(0.6f, 1.0f, 0.0f), XMFLOAT3(0.0f, 0.0f, 1.0f) }, // 8
-    { XMFLOAT3(1.0f,  1.0f, -1.0f),  XMFLOAT3(0.6f, 1.0f, 0.0f), XMFLOAT3(1.0f, 0.0f, 1.0f) }, // 9
-    { XMFLOAT3(-1.0f,  1.0f,  1.0f), XMFLOAT3(0.6f, 1.0f, 0.0f), XMFLOAT3(0.0f, 1.0f, 1.0f) }, // 10
-    { XMFLOAT3(1.0f,  1.0f,  1.0f),  XMFLOAT3(0.6f, 1.0f, 0.0f), XMFLOAT3(1.0f, 1.0f, 1.0f) }, // 11
+    { XMFLOAT3(-1.0f,  1.0f, -1.0f), XMFLOAT3(0.6f, 1.0f, 0.0f), XMFLOAT3(0.0f, 1.0f, 0.0f), XMFLOAT3(0.0f, 0.0f, 1.0f) }, 
+    { XMFLOAT3(1.0f,  1.0f, -1.0f),  XMFLOAT3(0.6f, 1.0f, 0.0f), XMFLOAT3(0.0f, 1.0f, 0.0f), XMFLOAT3(1.0f, 0.0f, 1.0f) }, 
+    { XMFLOAT3(-1.0f,  1.0f,  1.0f), XMFLOAT3(0.6f, 1.0f, 0.0f), XMFLOAT3(0.0f, 1.0f, 0.0f), XMFLOAT3(0.0f, 1.0f, 1.0f) }, 
+    { XMFLOAT3(1.0f,  1.0f,  1.0f),  XMFLOAT3(0.6f, 1.0f, 0.0f), XMFLOAT3(0.0f, 1.0f, 0.0f), XMFLOAT3(1.0f, 1.0f, 1.0f) }, 
+
+    //Bot
+    { XMFLOAT3(-1.0f, -1.0f, -1.0f), XMFLOAT3(0.6f, 1.0f, 0.0f), XMFLOAT3(0.0f, -1.0f, 0.0f), XMFLOAT3(0.0f, 0.0f, 1.0f) },
+    { XMFLOAT3(1.0f,  -1.0f, -1.0f), XMFLOAT3(0.6f, 1.0f, 0.0f), XMFLOAT3(0.0f, -1.0f, 0.0f), XMFLOAT3(1.0f, 0.0f, 1.0f) },
+    { XMFLOAT3(-1.0f, -1.0f,  1.0f), XMFLOAT3(0.6f, 1.0f, 0.0f), XMFLOAT3(0.0f, -1.0f, 0.0f), XMFLOAT3(0.0f, 1.0f, 1.0f) },
+    { XMFLOAT3(1.0f,  -1.0f,  1.0f), XMFLOAT3(0.6f, 1.0f, 0.0f), XMFLOAT3(0.0f, -1.0f, 0.0f), XMFLOAT3(1.0f, 1.0f, 1.0f) },
 };
 
 static WORD BOX_INDICES[36] =
-{
+{   
+    //Za
     0, 1, 2, 0, 2, 3,
+    //Zb
     4, 6, 5, 4, 7, 6,
-    4, 5, 1, 4, 1, 0,
-    3, 2, 6, 3, 6, 7,
-    4, 0, 3, 4, 3, 7,
+
+    //Xa
+    8, 10, 9, 8, 11, 10,
+    //Xb
+    12, 13, 14, 12, 14, 15,
+    
     //Top
-    8, 10, 11, 8, 11, 9
+    16, 18, 19, 16, 19, 17,
+    //Bot
+    20, 23, 22, 20, 21, 22
 };
 
 
@@ -43,7 +72,7 @@ App::App(const std::wstring& name, int width, int height, bool vSync, HINSTANCE 
     , m_gridManager(std::make_shared<GridManager>())
 {
     m_cameraPos    = XMVectorSet(-17, 26.7f, 16, 1);
-    m_sunPos       = XMVectorSet(24, 55.7f, 16, 1);
+    m_sunPos       = XMVectorSet(-17, 26.7f, 16, 1);
     m_camAngles[0] = 0.66f;
     m_camAngles[1] = 1.57f;
     m_camAngles[2] = 0;
@@ -84,8 +113,8 @@ bool App::LoadContent() {
     RENDERER->PopulateVertexBuffer(BOX_VERTICES, _countof(BOX_VERTICES));
     RENDERER->PopulateIndexBuffer(BOX_INDICES, _countof(BOX_INDICES));
     RENDERER->CreateSRVForBoxes(m_gridManager->GetTiles(), 0);
-    RENDERER->BuildPipelineState(L"C:/Projects/RandomMazeGen/x64/Debug/vertex_basic.cso", L"C:/Projects/RandomMazeGen/x64/Debug/pixel_basic.cso");
-    RENDERER->BuildShadowPipelineState(L"C:/Projects/RandomMazeGen/x64/Debug/vertex_shadow.cso", L"C:/Projects/RandomMazeGen/x64/Debug/pixel_shadow.cso");
+    RENDERER->BuildPipelineState(L"vertex_basic.cso", L"pixel_basic.cso");
+    RENDERER->BuildShadowPipelineState(L"vertex_shadow.cso", L"pixel_shadow.cso");
     RENDERER->ResizeDepthBuffer(m_width, m_height);
 
     m_contentLoaded = true;

@@ -1,9 +1,10 @@
 struct VertexInput
 {
     float3 position : POSITION;
-    float3 color    : COLOR;
-    float3 uv       : TEXCOORD0;
-    uint instanceid : SV_InstanceID;
+    float3 color : COLOR;
+    float3 normal : NORMAL0;
+    float3 uv : TEXCOORD0;
+    uint   instanceid : SV_InstanceID;
 };
 
 struct Model

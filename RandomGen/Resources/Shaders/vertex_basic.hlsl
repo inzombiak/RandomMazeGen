@@ -2,6 +2,7 @@ struct VertexInput
 {
     float3 position : POSITION;
     float3 color    : COLOR;
+    float3 normal   : NORMAL0;
     float3 uv       : TEXCOORD0;
     uint instanceid : SV_InstanceID;
 };
@@ -26,11 +27,12 @@ struct SceneData
 ConstantBuffer<SceneData> SceneDataCB : register(b0);
 
 struct VertexOutput
-{
+{   
+    float3 normal   : NORMAL0;
     float4 color    : COLOR;
     float3 uv       : TEXCOORD0;
     float4 sunPos   : TEXCOORD1;
-    float4 worldPos : TEXCOORD2;
+    float3 worldPos : TEXCOORD2;
     uint instanceid : SV_InstanceID;
     float4 hpos     : SV_Position;
 };
@@ -38,11 +40,12 @@ struct VertexOutput
 VertexOutput main(VertexInput input)
 {
     VertexOutput output;
-    output.worldPos = mul(ModelSB[input.instanceid].M, float4(input.position, 1.0f));
-    output.sunPos = mul(SceneDataCB.sunVP, output.worldPos);
-    output.hpos = mul(SceneDataCB.camVP, output.worldPos);
-    output.color = float4(input.color, 1.0f);
-    output.uv = input.uv;
-    output.instanceid = input.instanceid;
+    output.worldPos     = mul(ModelSB[input.instanceid].M, float4(input.position, 1.0f)).xyz;
+    output.sunPos       = mul(SceneDataCB.sunVP, float4(output.worldPos, 1.f));
+    output.hpos         = mul(SceneDataCB.camVP, float4(output.worldPos, 1.f));
+    output.color        = float4(input.color, 1.0f);
+    output.uv           = input.uv;
+    output.instanceid   = input.instanceid;
+    output.normal       = input.normal;
     return output;
 }

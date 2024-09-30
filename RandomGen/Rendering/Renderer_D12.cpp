@@ -363,9 +363,11 @@ void Renderer_D12::Shadowmap(XMVECTOR sunPos) {
 
 		// Update the MVP matrix
 		XMStoreFloat4(&m_sunPos, sunPos);
-		XMVECTOR lookAtPos = XMVectorSet(m_worldWidth/2.f - m_worldWidth / 4.f, 0, m_worldWidth / 2.f, 1.f);
-		const XMVECTOR upDirection = XMVector3Cross(lookAtPos-sunPos, XMVectorSet(1.f, 0.f, 0.f, 0.f));
-		auto viewMat = XMMatrixLookAtLH(sunPos, lookAtPos, upDirection);
+		XMVECTOR lookAtPos = XMVectorSet(m_worldWidth/2.f, 0, m_worldWidth / 2.f, 1.f);
+		XMVECTOR sunDir = XMVector4Normalize(lookAtPos - sunPos);
+		const XMVECTOR rightDirection = XMVector3Cross(XMVectorSet(0.f, 1.f, 0.f, 0.f), sunDir);
+;		const XMVECTOR upDirection = XMVector3Cross(sunDir, rightDirection);
+		auto viewMat = XMMatrixLookAtLH(sunPos, sunPos + sunDir, upDirection);
 
 		// Update the projection matrix.
 		auto projMat = XMMatrixOrthographicLH(m_worldWidth * 1.5, m_worldWidth * 1.5, 0.1f, 100.0f);
@@ -589,6 +591,7 @@ void Renderer_D12::BuildPipelineState(const std::wstring& vertexShaderName, cons
 	D3D12_INPUT_ELEMENT_DESC inputLayout[] = {
 		{ "POSITION", 0, DXGI_FORMAT_R32G32B32_FLOAT, 0, D3D12_APPEND_ALIGNED_ELEMENT, D3D12_INPUT_CLASSIFICATION_PER_VERTEX_DATA, 0 },
 		{ "COLOR", 0, DXGI_FORMAT_R32G32B32_FLOAT, 0, D3D12_APPEND_ALIGNED_ELEMENT, D3D12_INPUT_CLASSIFICATION_PER_VERTEX_DATA, 0 },
+		{ "NORMAL", 0, DXGI_FORMAT_R32G32B32_FLOAT, 0, D3D12_APPEND_ALIGNED_ELEMENT, D3D12_INPUT_CLASSIFICATION_PER_VERTEX_DATA, 0 },
 		{ "TEXCOORD", 0, DXGI_FORMAT_R32G32B32_FLOAT, 0, D3D12_APPEND_ALIGNED_ELEMENT, D3D12_INPUT_CLASSIFICATION_PER_VERTEX_DATA, 0 },
 	};
 
@@ -690,6 +693,7 @@ void Renderer_D12::BuildShadowPipelineState(const std::wstring& vertexShaderName
 	D3D12_INPUT_ELEMENT_DESC inputLayout[] = {
 		{ "POSITION", 0, DXGI_FORMAT_R32G32B32_FLOAT, 0, D3D12_APPEND_ALIGNED_ELEMENT, D3D12_INPUT_CLASSIFICATION_PER_VERTEX_DATA, 0 },
 		{ "COLOR", 0, DXGI_FORMAT_R32G32B32_FLOAT, 0, D3D12_APPEND_ALIGNED_ELEMENT, D3D12_INPUT_CLASSIFICATION_PER_VERTEX_DATA, 0 },
+		{ "NORMAL", 0, DXGI_FORMAT_R32G32B32_FLOAT, 0, D3D12_APPEND_ALIGNED_ELEMENT, D3D12_INPUT_CLASSIFICATION_PER_VERTEX_DATA, 0 },
 		{ "TEXCOORD", 0, DXGI_FORMAT_R32G32B32_FLOAT, 0, D3D12_APPEND_ALIGNED_ELEMENT, D3D12_INPUT_CLASSIFICATION_PER_VERTEX_DATA, 0 },
 	};
 
@@ -748,6 +752,7 @@ void Renderer_D12::BuildShadowPipelineState(const std::wstring& vertexShaderName
 		CD3DX12_PIPELINE_STATE_STREAM_PS PS;
 		CD3DX12_PIPELINE_STATE_STREAM_DEPTH_STENCIL_FORMAT DSVFormat;
 		CD3DX12_PIPELINE_STATE_STREAM_RENDER_TARGET_FORMATS RTVFormats;
+		CD3DX12_PIPELINE_STATE_STREAM_RASTERIZER Rasterizer;
 	} pipelineStateStream;
 
 	D3D12_RT_FORMAT_ARRAY rtvFormats = {};
@@ -761,6 +766,9 @@ void Renderer_D12::BuildShadowPipelineState(const std::wstring& vertexShaderName
 	//pipelineStateStream.PS = CD3DX12_SHADER_BYTECODE(pixelShaderBlob.Get());
 	pipelineStateStream.DSVFormat = DXGI_FORMAT_D32_FLOAT;
 	pipelineStateStream.RTVFormats = rtvFormats;
+	CD3DX12_RASTERIZER_DESC raster(D3D12_DEFAULT);
+	raster.CullMode = D3D12_CULL_MODE_BACK;
+	pipelineStateStream.Rasterizer = raster;
 
 	D3D12_PIPELINE_STATE_STREAM_DESC pipelineStateStreamDesc = {
 	sizeof(PipelineStateStream), &pipelineStateStream
