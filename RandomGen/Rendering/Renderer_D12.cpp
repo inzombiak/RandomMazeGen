@@ -4,6 +4,7 @@
 #include "DescriptorAllocator_D12.h"
 #include "DescriptorAllocation_D12.h"
 #include "RootSignature_D12.h"
+#include "DynamicDescriptorHeap_D12.h"
 #include "Texture_D12.h"
 
 #include "Window.h"
@@ -225,7 +226,9 @@ void Renderer_D12::PostInit() {
 	cbvSrvUavHeapDesc.NumDescriptors = 7;
 	cbvSrvUavHeapDesc.Type = D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV;
 	cbvSrvUavHeapDesc.Flags = D3D12_DESCRIPTOR_HEAP_FLAG_SHADER_VISIBLE;
-	ThrowIfFailed(m_device->CreateDescriptorHeap(&cbvSrvUavHeapDesc, IID_PPV_ARGS(&m_cbvSrvUavHeap)));
+	ThrowIfFailed(m_device->CreateDescriptorHeap(&cbvSrvUavHeapDesc, IID_PPV_ARGS(&m_cbvSrvUavHeapCPU)));
+
+	m_cbvSrvUavDynHeap = std::make_shared<DynamicDescriptorHeap_D12>(D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV);
 	UpdateRenderTargetViews();
 }
 
@@ -300,8 +303,8 @@ void Renderer_D12::Render() {
 		d3dCommList->IASetVertexBuffers(0, 1, &m_vertexBufferView);
 		d3dCommList->IASetIndexBuffer(&m_indexBufferView);
 
-		ID3D12DescriptorHeap* ppHeaps[] = { m_cbvSrvUavHeap.Get() };
-		d3dCommList->SetDescriptorHeaps(1, ppHeaps);
+		m_cbvSrvUavDynHeap->CommitStagedDescriptorsForDraw(commandList);
+
 		d3dCommList->RSSetViewports(1, &m_viewport);
 		d3dCommList->RSSetScissorRects(1, &m_scissorRect);
 		
@@ -354,8 +357,7 @@ void Renderer_D12::Shadowmap(XMVECTOR sunPos) {
 		d3dCommList->IASetVertexBuffers(0, 1, &m_vertexBufferView);
 		d3dCommList->IASetIndexBuffer(&m_indexBufferView);
 
-		ID3D12DescriptorHeap* ppHeaps[] = { m_cbvSrvUavHeap.Get() };
-		d3dCommList->SetDescriptorHeaps(1, ppHeaps);
+		m_cbvSrvUavDynHeap->CommitStagedDescriptorsForDraw(commandList);
 		d3dCommList->RSSetViewports(1, &m_viewport);
 		d3dCommList->RSSetScissorRects(1, &m_scissorRect);
 
@@ -504,8 +506,7 @@ void Renderer_D12::CreateSRVForBoxes(const std::vector<std::vector<Tile>>& tiles
 	srvDesc.Buffer.StructureByteStride = sizeof(XMMATRIX);
 	srvDesc.Buffer.Flags = D3D12_BUFFER_SRV_FLAG_NONE;
 
-	m_modelCPUHandle = m_cbvSrvUavHeap->GetCPUDescriptorHandleForHeapStart();
-	m_modelGPUHandle = m_cbvSrvUavHeap->GetGPUDescriptorHandleForHeapStart();
+	m_modelCPUHandle = m_cbvSrvUavHeapCPU->GetCPUDescriptorHandleForHeapStart();
 	m_device->CreateShaderResourceView(m_modelBuffer.Get(), &srvDesc, m_modelCPUHandle);
 }
 
@@ -575,6 +576,8 @@ void Renderer_D12::CreateSRVForBoxes(const std::vector<std::vector<Tile>>& tiles
 	m_dirtTexture = std::make_shared<Texture_D12>();
 	m_dirtTexture->SetHandles(CD3DX12_CPU_DESCRIPTOR_HANDLE(m_modelCPUHandle, 5, descStep), CD3DX12_GPU_DESCRIPTOR_HANDLE(m_modelGPUHandle, 6, descStep));
 	commandList->LoadTexture(L"Dirt.dds", m_dirtTexture);
+	
+	m_cbvSrvUavDynHeap->StageDescriptors(0, 0, 7, m_modelCPUHandle);
 }
 
 

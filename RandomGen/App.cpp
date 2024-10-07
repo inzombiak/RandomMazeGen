@@ -72,7 +72,7 @@ App::App(const std::wstring& name, int width, int height, bool vSync, HINSTANCE 
     , m_gridManager(std::make_shared<GridManager>())
 {
     m_cameraPos    = XMVectorSet(-17, 26.7f, 16, 1);
-    m_sunPos       = XMVectorSet(-17, 26.7f, 16, 1);
+    m_sunPos       = XMVectorSet(42, 38.7f, 29, 1);
     m_camAngles[0] = 0.66f;
     m_camAngles[1] = 1.57f;
     m_camAngles[2] = 0;
@@ -109,9 +109,9 @@ bool App::LoadContent() {
     if (!RENDERER || !RENDERER->IsInitialized())
         return false;
 
-    m_gridManager->GenerateMap(m_width, m_height, 16, 16);
     RENDERER->PopulateVertexBuffer(BOX_VERTICES, _countof(BOX_VERTICES));
     RENDERER->PopulateIndexBuffer(BOX_INDICES, _countof(BOX_INDICES));
+    m_gridManager->GenerateMap(m_width, m_height, 16, 16);
     RENDERER->CreateSRVForBoxes(m_gridManager->GetTiles(), 0);
     RENDERER->BuildPipelineState(L"vertex_basic.cso", L"pixel_basic.cso");
     RENDERER->BuildShadowPipelineState(L"vertex_shadow.cso", L"pixel_shadow.cso");

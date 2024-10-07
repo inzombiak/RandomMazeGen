@@ -40,7 +40,7 @@ class Tile;
 class UploadBuffer_D12;
 class DescriptorAllocator_D12;
 class DescriptorAllocation_D12;
-class DynamicDecriptorHeap_D12;
+class DynamicDescriptorHeap_D12;
 class RootSignature_D12;
 class Texture_D12;
 class Renderer_D12 {
@@ -94,8 +94,8 @@ class Renderer_D12 {
 		std::shared_ptr<DescriptorAllocator_D12>  m_dsvAllocator;
 		std::shared_ptr<DescriptorAllocation_D12> m_dsvs;
 
-		ComPtr<ID3D12DescriptorHeap>			  m_cbvSrvUavHeap;
-		std::shared_ptr<DynamicDecriptorHeap_D12> m_cbvSrvUavDynHeap;
+		ComPtr<ID3D12DescriptorHeap>			  m_cbvSrvUavHeapCPU;
+		std::shared_ptr<DynamicDescriptorHeap_D12> m_cbvSrvUavDynHeap;
 
 		ComPtr<ID3D12Resource> m_vertexBuffer;
 		D3D12_VERTEX_BUFFER_VIEW m_vertexBufferView;

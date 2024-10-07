@@ -72,7 +72,7 @@ float4 main(PixelInput input) : SV_Target
     
     float3 lightColor = float3(1.0, 1.0, 1.0);
     // ambient
-    float3 ambient = 0.15 * lightColor;
+    float3 ambient = 0.35 * lightColor;
     // diffuse
     float3 lightDir = normalize(lightPos.xyz - input.worldPos.xyz);
     
