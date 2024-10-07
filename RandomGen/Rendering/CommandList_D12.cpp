@@ -175,7 +175,8 @@ void CommandList_D12::LoadTexture(std::wstring filename, shared_ptr<Texture_D12>
     TrackResource(texResource);
 }
 void CommandList_D12::SetDescriptorHeap(D3D12_DESCRIPTOR_HEAP_TYPE type, ID3D12DescriptorHeap* heap) {
-
+    ID3D12DescriptorHeap* ppHeaps[] = { heap };
+    m_graphicsCommandList->SetDescriptorHeaps(1, ppHeaps);
 }
 
 void CommandList_D12::Reset() {

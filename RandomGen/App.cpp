@@ -112,9 +112,9 @@ bool App::LoadContent() {
     RENDERER->PopulateVertexBuffer(BOX_VERTICES, _countof(BOX_VERTICES));
     RENDERER->PopulateIndexBuffer(BOX_INDICES, _countof(BOX_INDICES));
     m_gridManager->GenerateMap(m_width, m_height, 16, 16);
-    RENDERER->CreateSRVForBoxes(m_gridManager->GetTiles(), 0);
     RENDERER->BuildPipelineState(L"vertex_basic.cso", L"pixel_basic.cso");
     RENDERER->BuildShadowPipelineState(L"vertex_shadow.cso", L"pixel_shadow.cso");
+    RENDERER->CreateSRVForBoxes(m_gridManager->GetTiles(), 0);
     RENDERER->ResizeDepthBuffer(m_width, m_height);
 
     m_contentLoaded = true;

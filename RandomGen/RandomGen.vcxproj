@@ -198,7 +198,6 @@
     <ClCompile Include="Rendering\DescriptorAllocation_D12.cpp" />
     <ClCompile Include="Rendering\DescriptorAllocatorPage_D12.cpp" />
     <ClCompile Include="Rendering\DescriptorAllocator_D12.cpp" />
-    <ClCompile Include="Rendering\DescriptorHeapManager_D12.cpp" />
     <ClCompile Include="Rendering\DynamicDescriptorHeap_D12.cpp" />
     <ClCompile Include="Rendering\Renderer_D12.cpp" />
     <ClCompile Include="Rendering\RootSignature_D12.cpp" />
@@ -261,7 +260,6 @@
     <ClInclude Include="Rendering\DescriptorAllocation_D12.h" />
     <ClInclude Include="Rendering\DescriptorAllocatorPage_D12.h" />
     <ClInclude Include="Rendering\DescriptorAllocator_D12.h" />
-    <ClInclude Include="Rendering\DescriptorHeapManager_D12.h" />
     <ClInclude Include="Rendering\DX12_Helpers.h" />
     <ClInclude Include="Rendering\DynamicDescriptorHeap_D12.h" />
     <ClInclude Include="Rendering\RenderDefs.h" />

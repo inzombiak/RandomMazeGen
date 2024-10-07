@@ -94,8 +94,9 @@ class Renderer_D12 {
 		std::shared_ptr<DescriptorAllocator_D12>  m_dsvAllocator;
 		std::shared_ptr<DescriptorAllocation_D12> m_dsvs;
 
-		ComPtr<ID3D12DescriptorHeap>			  m_cbvSrvUavHeapCPU;
-		std::shared_ptr<DynamicDescriptorHeap_D12> m_cbvSrvUavDynHeap;
+		std::shared_ptr<DescriptorAllocator_D12>  m_shaderResourceAllocator;
+		std::shared_ptr<DescriptorAllocation_D12> m_shaderResources;
+		std::shared_ptr<DynamicDescriptorHeap_D12> m_shaderResourceDynHeap;
 
 		ComPtr<ID3D12Resource> m_vertexBuffer;
 		D3D12_VERTEX_BUFFER_VIEW m_vertexBufferView;

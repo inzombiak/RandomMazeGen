@@ -11,14 +11,13 @@ Microsoft::WRL::ComPtr<ID3D12Resource> Texture_D12::GetResource() const {
 	return m_resource;
 }
 
-void Texture_D12::SetHandles(CD3DX12_CPU_DESCRIPTOR_HANDLE& cpu, CD3DX12_GPU_DESCRIPTOR_HANDLE& gpu) {
+void Texture_D12::SetCPUHandle(D3D12_CPU_DESCRIPTOR_HANDLE cpu) {
 	m_cpuHandle = cpu;
-	m_gpuHandle = gpu;
 }
-CD3DX12_CPU_DESCRIPTOR_HANDLE Texture_D12::GetCPUHandle() const {
+D3D12_CPU_DESCRIPTOR_HANDLE Texture_D12::GetCPUHandle() const {
 	return m_cpuHandle;
 }
-CD3DX12_GPU_DESCRIPTOR_HANDLE Texture_D12::GetGPUHandle() const {
+D3D12_GPU_DESCRIPTOR_HANDLE Texture_D12::GetGPUHandle() const {
 	return m_gpuHandle;
 }
 

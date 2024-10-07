@@ -180,9 +180,6 @@
     <ClCompile Include="Extern\DirectXTex\DirectXTexUtil.cpp">
       <Filter>Header Files\Extern</Filter>
     </ClCompile>
-    <ClCompile Include="Rendering\DescriptorHeapManager_D12.cpp">
-      <Filter>Source Files\Rendering\D12</Filter>
-    </ClCompile>
     <ClCompile Include="Rendering\Texture_D12.cpp">
       <Filter>Source Files\Rendering\D12</Filter>
     </ClCompile>
@@ -373,9 +370,6 @@
     </ClInclude>
     <ClInclude Include="Extern\DirectXTex\scoped.h">
       <Filter>Header Files\Extern</Filter>
-    </ClInclude>
-    <ClInclude Include="Rendering\DescriptorHeapManager_D12.h">
-      <Filter>Header Files\Rendering\D12</Filter>
     </ClInclude>
     <ClInclude Include="Rendering\Texture_D12.h">
       <Filter>Header Files\Rendering\D12</Filter>

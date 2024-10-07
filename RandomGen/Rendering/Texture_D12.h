@@ -11,9 +11,9 @@ public:
 	void SetResource(Microsoft::WRL::ComPtr<ID3D12Resource> resource);
 	Microsoft::WRL::ComPtr<ID3D12Resource> GetResource() const;
 
-	void SetHandles(CD3DX12_CPU_DESCRIPTOR_HANDLE& cpu, CD3DX12_GPU_DESCRIPTOR_HANDLE& gpu);
-	CD3DX12_CPU_DESCRIPTOR_HANDLE GetCPUHandle() const;
-	CD3DX12_GPU_DESCRIPTOR_HANDLE GetGPUHandle() const;
+	void SetCPUHandle(D3D12_CPU_DESCRIPTOR_HANDLE cpu);
+	D3D12_CPU_DESCRIPTOR_HANDLE GetCPUHandle() const;
+	D3D12_GPU_DESCRIPTOR_HANDLE GetGPUHandle() const;
 
 	void SetReady(bool ready);
 	bool IsReady() const;

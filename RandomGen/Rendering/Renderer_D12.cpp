@@ -221,14 +221,10 @@ void Renderer_D12::PostInit() {
 	m_rtvs = std::make_shared<DescriptorAllocation_D12>(m_rtvAllocator->Allocate(NUM_BACKBUFFER_FRAMES));
 	m_dsvAllocator = std::make_shared<DescriptorAllocator_D12>(D3D12_DESCRIPTOR_HEAP_TYPE_DSV, 2);
 	m_dsvs = std::make_shared<DescriptorAllocation_D12>(m_dsvAllocator->Allocate(2));
+	m_shaderResourceAllocator = std::make_shared<DescriptorAllocator_D12>(D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV);
+	m_shaderResources = std::make_shared<DescriptorAllocation_D12>(m_shaderResourceAllocator->Allocate(7));
+	m_shaderResourceDynHeap = std::make_shared<DynamicDescriptorHeap_D12>(D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV);
 
-	D3D12_DESCRIPTOR_HEAP_DESC cbvSrvUavHeapDesc = {};
-	cbvSrvUavHeapDesc.NumDescriptors = 7;
-	cbvSrvUavHeapDesc.Type = D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV;
-	cbvSrvUavHeapDesc.Flags = D3D12_DESCRIPTOR_HEAP_FLAG_SHADER_VISIBLE;
-	ThrowIfFailed(m_device->CreateDescriptorHeap(&cbvSrvUavHeapDesc, IID_PPV_ARGS(&m_cbvSrvUavHeapCPU)));
-
-	m_cbvSrvUavDynHeap = std::make_shared<DynamicDescriptorHeap_D12>(D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV);
 	UpdateRenderTargetViews();
 }
 
@@ -303,8 +299,6 @@ void Renderer_D12::Render() {
 		d3dCommList->IASetVertexBuffers(0, 1, &m_vertexBufferView);
 		d3dCommList->IASetIndexBuffer(&m_indexBufferView);
 
-		m_cbvSrvUavDynHeap->CommitStagedDescriptorsForDraw(commandList);
-
 		d3dCommList->RSSetViewports(1, &m_viewport);
 		d3dCommList->RSSetScissorRects(1, &m_scissorRect);
 		
@@ -314,7 +308,10 @@ void Renderer_D12::Render() {
 		d3dCommList->SetGraphicsRootConstantBufferView(0, m_vpBufferView.BufferLocation);
 		d3dCommList->SetGraphicsRootShaderResourceView(1, m_modelBufferView.BufferLocation);
 		d3dCommList->SetGraphicsRootShaderResourceView(2, m_entityDataBufferView.BufferLocation);
-		d3dCommList->SetGraphicsRootDescriptorTable(3, m_wallTexture->GetGPUHandle());
+		m_shaderResourceDynHeap->ParseRootSignature(*m_rootSignature.get());
+		m_shaderResourceDynHeap->StageDescriptors(3, 0, 4, m_shaderResources->GetDescriptorHandle(3));
+		m_shaderResourceDynHeap->CommitStagedDescriptorsForDraw(commandList);
+		//d3dCommList->SetGraphicsRootDescriptorTable(3, m_wallTexture->GetGPUHandle());
 		d3dCommList->SetGraphicsRoot32BitConstants(4, sizeof(XMFLOAT4), &m_sunPos, 0);
 		d3dCommList->DrawIndexedInstanced((UINT)m_indexCount, m_numInstances, 0, 0, 0);
 	}
@@ -333,6 +330,7 @@ void Renderer_D12::Render() {
 		ThrowIfFailed(m_swapChain->Present(syncInterval, presentFlags));
 		m_commQueue->WaitForFenceValue(m_perFrameFenceValues[m_currentBufferIdx]);
 		m_currentBufferIdx = m_swapChain->GetCurrentBackBufferIndex();
+		m_shaderResourceDynHeap->Reset();
 
 	}
 	++m_currentFrame;
@@ -357,7 +355,6 @@ void Renderer_D12::Shadowmap(XMVECTOR sunPos) {
 		d3dCommList->IASetVertexBuffers(0, 1, &m_vertexBufferView);
 		d3dCommList->IASetIndexBuffer(&m_indexBufferView);
 
-		m_cbvSrvUavDynHeap->CommitStagedDescriptorsForDraw(commandList);
 		d3dCommList->RSSetViewports(1, &m_viewport);
 		d3dCommList->RSSetScissorRects(1, &m_scissorRect);
 
@@ -506,7 +503,7 @@ void Renderer_D12::CreateSRVForBoxes(const std::vector<std::vector<Tile>>& tiles
 	srvDesc.Buffer.StructureByteStride = sizeof(XMMATRIX);
 	srvDesc.Buffer.Flags = D3D12_BUFFER_SRV_FLAG_NONE;
 
-	m_modelCPUHandle = m_cbvSrvUavHeapCPU->GetCPUDescriptorHandleForHeapStart();
+	m_modelCPUHandle = m_shaderResources->GetDescriptorHandle(0);
 	m_device->CreateShaderResourceView(m_modelBuffer.Get(), &srvDesc, m_modelCPUHandle);
 }
 
@@ -522,8 +519,8 @@ void Renderer_D12::CreateSRVForBoxes(const std::vector<std::vector<Tile>>& tiles
 	D3D12_CONSTANT_BUFFER_VIEW_DESC cbvDesc = {};
 	cbvDesc.BufferLocation = m_vpBuffer->GetGPUVirtualAddress();
 	cbvDesc.SizeInBytes = sizeof(m_sceneData);
-	m_vpCPUHandle = CD3DX12_CPU_DESCRIPTOR_HANDLE(m_modelCPUHandle, 1, descStep);
-	m_vpGPUHandle = CD3DX12_GPU_DESCRIPTOR_HANDLE(m_modelGPUHandle, 1, descStep);
+	m_vpCPUHandle = m_shaderResources->GetDescriptorHandle(1);
+	//m_vpGPUHandle = CD3DX12_GPU_DESCRIPTOR_HANDLE(m_modelGPUHandle, 1, descStep);
 	m_device->CreateConstantBufferView(&cbvDesc, m_vpCPUHandle);
 
 	m_vpBufferView.BufferLocation = m_vpBuffer->GetGPUVirtualAddress();
@@ -561,23 +558,23 @@ void Renderer_D12::CreateSRVForBoxes(const std::vector<std::vector<Tile>>& tiles
 	srvDesc.Buffer.StructureByteStride = sizeof(PerEntityData);
 	srvDesc.Buffer.Flags = D3D12_BUFFER_SRV_FLAG_NONE;
 
-	m_entityDataCPUHandle = CD3DX12_CPU_DESCRIPTOR_HANDLE(m_modelCPUHandle, 2, descStep);
-	m_entityDataGPUHandle = CD3DX12_GPU_DESCRIPTOR_HANDLE(m_modelGPUHandle, 2, descStep);
+	m_entityDataCPUHandle = m_shaderResources->GetDescriptorHandle(2);
 	m_device->CreateShaderResourceView(m_entityDataBuffer.Get(), &srvDesc, m_entityDataCPUHandle);
 }
 	m_wallTexture = std::make_shared<Texture_D12>(); 
-	m_wallTexture->SetHandles(CD3DX12_CPU_DESCRIPTOR_HANDLE(m_modelCPUHandle, 3, descStep), CD3DX12_GPU_DESCRIPTOR_HANDLE(m_modelGPUHandle, 3, descStep));
+	m_wallTexture->SetCPUHandle(m_shaderResources->GetDescriptorHandle(3));
 	commandList->LoadTexture(L"Clay.dds", m_wallTexture);
 
 	m_grassTexture = std::make_shared<Texture_D12>();
-	m_grassTexture->SetHandles(CD3DX12_CPU_DESCRIPTOR_HANDLE(m_modelCPUHandle, 4, descStep), CD3DX12_GPU_DESCRIPTOR_HANDLE(m_modelGPUHandle, 4, descStep));
+	m_grassTexture->SetCPUHandle(m_shaderResources->GetDescriptorHandle(4));
 	commandList->LoadTexture(L"Grass.dds", m_grassTexture);
 
 	m_dirtTexture = std::make_shared<Texture_D12>();
-	m_dirtTexture->SetHandles(CD3DX12_CPU_DESCRIPTOR_HANDLE(m_modelCPUHandle, 5, descStep), CD3DX12_GPU_DESCRIPTOR_HANDLE(m_modelGPUHandle, 6, descStep));
+	m_dirtTexture->SetCPUHandle(m_shaderResources->GetDescriptorHandle(5));
 	commandList->LoadTexture(L"Dirt.dds", m_dirtTexture);
-	
-	m_cbvSrvUavDynHeap->StageDescriptors(0, 0, 7, m_modelCPUHandle);
+
+	auto fenceValue = m_commQueue->ExecuteActiveCommandList();
+	m_commQueue->WaitForFenceValue(fenceValue);
 }
 
 
@@ -678,8 +675,6 @@ void Renderer_D12::BuildPipelineState(const std::wstring& vertexShaderName, cons
 	};
 	ThrowIfFailed(m_device->CreatePipelineState(&pipelineStateStreamDesc, IID_PPV_ARGS(&m_pipelineState)));
 
-	auto fenceValue = m_commQueue->ExecuteActiveCommandList();
-	m_commQueue->WaitForFenceValue(fenceValue);
 
 }
 
@@ -829,7 +824,7 @@ void Renderer_D12::ResizeDepthBuffer(int width, int height) {
 		m_dsvs->GetDescriptorHandle(1));
 	m_shadowTexture = std::make_shared<Texture_D12>();
 	m_shadowTexture->SetResource(resource);
-	m_shadowTexture->SetHandles(CD3DX12_CPU_DESCRIPTOR_HANDLE(m_modelCPUHandle, 6, descStep), CD3DX12_GPU_DESCRIPTOR_HANDLE(m_modelGPUHandle, 6, descStep));
+	m_shadowTexture->SetCPUHandle(m_shaderResources->GetDescriptorHandle(6));
 	D3D12_SHADER_RESOURCE_VIEW_DESC srvDesc = {};
 	srvDesc.Shader4ComponentMapping = D3D12_DEFAULT_SHADER_4_COMPONENT_MAPPING;
 	srvDesc.Format = DXGI_FORMAT_R32_FLOAT;

@@ -60,7 +60,7 @@ void DynamicDescriptorHeap_D12::StageDescriptors(uint32_t rootParameterIndex, ui
 {
     // Cannot stage more than the maximum number of descriptors per heap.
     // Cannot stage more than MAX_DESCRIPTOR_TABLES root parameters.
-    if (numDescriptors > m_numDescriptorsPerHeap || rootParameterIndex >= MAX_DESCRIPTOR_TABLES)
+        if (numDescriptors > m_numDescriptorsPerHeap || rootParameterIndex >= MAX_DESCRIPTOR_TABLES)
     {
         throw std::bad_alloc();
     }
