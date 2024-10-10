@@ -36,6 +36,13 @@ struct SceneData
 	DirectX::XMMATRIX PAD[2];
 };
 
+struct LightingData {
+	DirectX::XMFLOAT4 sunPos;
+	DirectX::XMFLOAT4 camPos;
+	DirectX::XMFLOAT2 invShadowTexSize;
+};
+
+
 class Tile;
 class UploadBuffer_D12;
 class DescriptorAllocator_D12;
@@ -142,9 +149,7 @@ class Renderer_D12 {
 		int m_worldWidth;
 		UINT8* m_sceneDataBegin;
 		SceneData m_sceneData;
-		DirectX::XMFLOAT4 m_sunPos;
-		DirectX::XMFLOAT4 m_camPos;
-
+		LightingData m_lightingData;
 		//Fencing
 		uint64_t			m_fenceValue = 0;
 		uint64_t			m_shadowMapFenceVal = 0;

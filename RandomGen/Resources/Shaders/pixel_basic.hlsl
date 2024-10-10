@@ -12,6 +12,7 @@ cbuffer LightingPos : register(b0)
 {
     float4 lightPos;
     float4 viewPos;
+    float2 shadowTexelSize;
 };
 
 struct PerEntityData
@@ -24,7 +25,6 @@ Texture2D wallTexture : register(t2);
 Texture2D grassTexture : register(t3);
 Texture2D dirtTexture : register(t4);
 Texture2D shadowTexture : register(t5);
-
 SamplerState TextureSampler
 {
     Filter = MIN_MAG_MIP_LINEAR;
@@ -34,18 +34,30 @@ SamplerState TextureSampler
 
 float ShadowCalculation(float4 fragPosLightSpace)
 {
-    // perform perspective divide
+     // perform perspective divide
     float3 projCoords = fragPosLightSpace.xyz / fragPosLightSpace.w;
     // transform to [0,1] range
     float z = projCoords.z;
     projCoords = projCoords * 0.5 + 0.5;
     // get closest depth value from light's perspective (using [0,1] range fragPosLight as coords)
-    float closestDepth = shadowTexture.Sample(TextureSampler, projCoords.xy).r;
+    float closestDepth = shadowTexture.Sample(TextureSampler, float2(projCoords.x, 1 - projCoords.y)).r;
     // get depth of current fragment from light's perspective
-    float currentDepth = z;
+    float currentDepth = projCoords.z;
     // check whether current frag pos is in shadow
-    float shadow = currentDepth < closestDepth ? 1.0 : 0.0;
+    float bias = 0.001;
+    //float shadow = z - bias > closestDepth ? 1.0 : 0.0;
 
+    float shadow = 0.0;
+    for (int x = -1; x <= 1; ++x)
+    {
+        for (int y = -1; y <= 1; ++y)
+        {
+            float pcfDepth = shadowTexture.Sample(TextureSampler, float2(projCoords.x, 1 - projCoords.y) + float2(x, y) * shadowTexelSize).r;
+            shadow += z - bias > pcfDepth ? 1.0 : 0.0;
+        }
+    }
+    shadow /= 9.0;
+    
     return shadow;
 }
 
@@ -97,7 +109,7 @@ float4 main(PixelInput input) : SV_Target
     float currentDepth = projCoords.z;
     // check whether current frag pos is in shadow
     float bias = 0.001;
-    float shadow = z - bias > closestDepth ? 1.0 : 0.0;
+    float shadow = ShadowCalculation(input.sunPos);
     
     float3 lighting = (ambient + (1.0 - shadow) * (diffuse + specular)) * color.xyz;
     

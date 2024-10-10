@@ -311,8 +311,7 @@ void Renderer_D12::Render() {
 		m_shaderResourceDynHeap->ParseRootSignature(*m_rootSignature.get());
 		m_shaderResourceDynHeap->StageDescriptors(3, 0, 4, m_shaderResources->GetDescriptorHandle(3));
 		m_shaderResourceDynHeap->CommitStagedDescriptorsForDraw(commandList);
-		//d3dCommList->SetGraphicsRootDescriptorTable(3, m_wallTexture->GetGPUHandle());
-		d3dCommList->SetGraphicsRoot32BitConstants(4, sizeof(XMFLOAT4), &m_sunPos, 0);
+		d3dCommList->SetGraphicsRoot32BitConstants(4, sizeof(LightingData), &m_lightingData, 0);
 		d3dCommList->DrawIndexedInstanced((UINT)m_indexCount, m_numInstances, 0, 0, 0);
 	}
 	// Present
@@ -361,7 +360,7 @@ void Renderer_D12::Shadowmap(XMVECTOR sunPos) {
 		d3dCommList->OMSetRenderTargets(0, NULL, FALSE, &dsv);
 
 		// Update the MVP matrix
-		XMStoreFloat4(&m_sunPos, sunPos);
+		XMStoreFloat4(&m_lightingData.sunPos, sunPos);
 		XMVECTOR lookAtPos = XMVectorSet(m_worldWidth/2.f, 0, m_worldWidth / 2.f, 1.f);
 		XMVECTOR sunDir = XMVector4Normalize(lookAtPos - sunPos);
 		const XMVECTOR rightDirection = XMVector3Cross(XMVectorSet(0.f, 1.f, 0.f, 0.f), sunDir);
@@ -619,7 +618,7 @@ void Renderer_D12::BuildPipelineState(const std::wstring& vertexShaderName, cons
 	rootParameters[2].InitAsShaderResourceView(1, 0, D3D12_ROOT_DESCRIPTOR_FLAG_NONE, D3D12_SHADER_VISIBILITY_PIXEL);
 	CD3DX12_DESCRIPTOR_RANGE1 texture1Range(D3D12_DESCRIPTOR_RANGE_TYPE_SRV, 4, 2);
 	rootParameters[3].InitAsDescriptorTable(1, &texture1Range, D3D12_SHADER_VISIBILITY_PIXEL);
-	rootParameters[4].InitAsConstants(sizeof(DirectX::XMFLOAT4), 0, 0, D3D12_SHADER_VISIBILITY_PIXEL);
+	rootParameters[4].InitAsConstants(sizeof(LightingData), 0, 0, D3D12_SHADER_VISIBILITY_PIXEL);
 
 	D3D12_STATIC_SAMPLER_DESC sampler = {};
 	sampler.Filter = D3D12_FILTER_MIN_MAG_MIP_POINT;
@@ -832,11 +831,13 @@ void Renderer_D12::ResizeDepthBuffer(int width, int height) {
 	srvDesc.Texture2D.MipLevels = 1;
 	m_device->CreateShaderResourceView(m_shadowTexture->GetResource().Get(), &srvDesc,
 		m_shadowTexture->GetCPUHandle());
+
+	m_lightingData.invShadowTexSize = XMFLOAT2(1.f / width, 1.f / height);
 }
 
 void Renderer_D12::UpdateMVP(float fov, DirectX::XMVECTOR camPos, DirectX::XMVECTOR camFwd, DirectX::XMVECTOR camRight, DirectX::XMVECTOR camUp) {
 	// Update the view matrix.
-	XMStoreFloat4(&m_camPos, camPos);
+	XMStoreFloat4(&m_lightingData.camPos, camPos);
 	const XMVECTOR upDirection = XMVector3Cross(camFwd, camRight);
 	auto view = XMMatrixLookAtLH(camPos, camPos + camFwd, upDirection);
 
