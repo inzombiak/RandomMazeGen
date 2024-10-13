@@ -25,12 +25,14 @@ Texture2D wallTexture : register(t2);
 Texture2D grassTexture : register(t3);
 Texture2D dirtTexture : register(t4);
 Texture2D shadowTexture : register(t5);
-SamplerState TextureSampler
+SamplerState TextureSampler : register(s0)
 {
     Filter = MIN_MAG_MIP_LINEAR;
     AddressU = Wrap;
     AddressV = Wrap;
 };
+
+SamplerComparisonState ShadowSampler : register(s1);
 
 float ShadowCalculation(float4 fragPosLightSpace)
 {
@@ -40,7 +42,7 @@ float ShadowCalculation(float4 fragPosLightSpace)
     float z = projCoords.z;
     projCoords = projCoords * 0.5 + 0.5;
     // get closest depth value from light's perspective (using [0,1] range fragPosLight as coords)
-    float closestDepth = shadowTexture.Sample(TextureSampler, float2(projCoords.x, 1 - projCoords.y)).r;
+    //float closestDepth = shadowTexture.Sample(TextureSampler, float2(projCoords.x, 1 - projCoords.y)).r;
     // get depth of current fragment from light's perspective
     float currentDepth = projCoords.z;
     // check whether current frag pos is in shadow
@@ -52,8 +54,7 @@ float ShadowCalculation(float4 fragPosLightSpace)
     {
         for (int y = -1; y <= 1; ++y)
         {
-            float pcfDepth = shadowTexture.Sample(TextureSampler, float2(projCoords.x, 1 - projCoords.y) + float2(x, y) * shadowTexelSize).r;
-            shadow += z - bias > pcfDepth ? 1.0 : 0.0;
+            shadow += 1 - shadowTexture.SampleCmpLevelZero(ShadowSampler, float2(projCoords.x, 1 - projCoords.y) + float2(x, y) * shadowTexelSize, z - bias).r;
         }
     }
     shadow /= 9.0;
