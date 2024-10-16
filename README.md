@@ -2,19 +2,16 @@
 Random dungeon generator
 
 A game I am currently working on with a friend requires randomly generated stealth levels with randomly placed enemies, treasures and power-ups.
-I decided to write a separate generator using C++/SFML, then port it to C#/Unity.
+I decided to write a separate generator using C++/DirectX 12
 
 Also includes ability visualize generator through the magic of \~\~MuLtIThReAdIng\~\~.
 
-Note: ~~I'll add buttons after I'm done, until then bare with keyboard controls~~ I'll add buttons later
+![3DMaze](https://github.com/user-attachments/assets/292e50f7-3488-4866-ab68-571d28df65e4)
 
 ## Directions
  * R - generate new map
  * G - toggle maze generator(Recursive is default)
  * T - toggles visualization(disabled by default)
-
-## Build Requirements:
-SFML 2.4.2 for rendering
 
 ## References:
 * Dungeon Generation
@@ -25,3 +22,4 @@ SFML 2.4.2 for rendering
   * Jamis Buck, "Maze Generation: Eller's Algorithm" - [jamisbuck.org](http://weblog.jamisbuck.org/2010/12/29/maze-generation-eller-s-algorithm.html)
 * Random Numbers
   * Dr Mads Haahr, "Introduction to Randomness and Random Numbers" - [random.org](https://www.random.org/randomness/)
+
