@@ -4,6 +4,8 @@
 #include "Rendering/Renderer_D12.h"
 #include "GridManager.h"
 
+#include <iostream>
+
 using namespace DirectX;
 static VertexInput BOX_VERTICES[24] = {
     //Size Za
@@ -94,6 +96,10 @@ bool App::Initialize()
         return false;
     }
 
+    std::cout << "R - Generate New Map" << std::endl;
+    std::cout << "G - Toggle Maze Generator(Recursive Backtacker(default) and Eller's Algortihm)" << std::endl;
+    std::cout << "T - Toggle between watch and instant (instant is default)" << std::endl;
+
     GAME_WINDOW = std::make_shared<Window>(m_hInstance);
     GAME_WINDOW->RegisterCallbacks(shared_from_this());
     RENDERER = std::make_shared<Renderer_D12>();
@@ -111,10 +117,11 @@ bool App::LoadContent() {
 
     RENDERER->PopulateVertexBuffer(BOX_VERTICES, _countof(BOX_VERTICES));
     RENDERER->PopulateIndexBuffer(BOX_INDICES, _countof(BOX_INDICES));
+    //m_gridManager->RandomizeMap();
     m_gridManager->GenerateMap(m_width, m_height, 16, 16);
     RENDERER->BuildPipelineState(L"vertex_basic.cso", L"pixel_basic.cso");
     RENDERER->BuildShadowPipelineState(L"vertex_shadow.cso", L"pixel_shadow.cso");
-    RENDERER->CreateSRVForBoxes(m_gridManager->GetTiles(), 0);
+    RENDERER->LoadTextures();
     RENDERER->ResizeDepthBuffer(m_width, m_height);
 
     m_contentLoaded = true;
@@ -159,18 +166,20 @@ void App::OnUpdate(UpdateEventArgs& e)
     auto camUp = orientation.r[1];
     auto camFwd = orientation.r[2];
     if (Globals::INPUT_STATE.keyStates[KeyCode::Key::W]){
-        m_cameraPos += camFwd * Globals::CAM_PAN_SPEED;
+        m_cameraPos += camFwd * Globals::CAM_PAN_SPEED * totalTime;
     }
     if (Globals::INPUT_STATE.keyStates[KeyCode::Key::S]) {
-        m_cameraPos -= camFwd * Globals::CAM_PAN_SPEED;
+        m_cameraPos -= camFwd * Globals::CAM_PAN_SPEED * totalTime;
     }
     if (Globals::INPUT_STATE.keyStates[KeyCode::Key::D]) {
-        m_cameraPos += camRight * Globals::CAM_PAN_SPEED;
+        m_cameraPos += camRight * Globals::CAM_PAN_SPEED * totalTime;
     }
     if (Globals::INPUT_STATE.keyStates[KeyCode::Key::A]) {
-        m_cameraPos -= camRight * Globals::CAM_PAN_SPEED;
+        m_cameraPos -= camRight * Globals::CAM_PAN_SPEED * totalTime;
     }
+
     //m_updateClock.GetTotalSeconds();
+    RENDERER->CreateSRVForBoxes(m_gridManager->GetTiles(), 0);
     RENDERER->UpdateMVP(m_fov, m_cameraPos, camFwd, camRight, camUp);
 }
 
@@ -186,6 +195,14 @@ void App::OnRender(RenderEventArgs& e)
 void App::OnKeyPressed(KeyEventArgs& e)
 {
     Globals::INPUT_STATE.keyStates[e.Key] = true;
+
+    if (Globals::INPUT_STATE.keyStates[KeyCode::Key::R]) {
+        m_gridManager->GenerateMap(m_width, m_height, 16, 16);
+    }
+    else if (Globals::INPUT_STATE.keyStates[KeyCode::Key::G])
+        m_gridManager->ToggleMazeGenerator();
+    else if (Globals::INPUT_STATE.keyStates[KeyCode::Key::T])
+        m_gridManager->ToggleMazeGenerateType();
 }
 
 void App::OnKeyReleased(KeyEventArgs& e)

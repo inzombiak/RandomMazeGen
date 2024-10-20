@@ -421,6 +421,48 @@ void Renderer_D12::PopulateIndexBuffer(const WORD *data, size_t count) {
 	commandList->TrackResource(intermediateIndexBuffer);
 }
 
+void Renderer_D12::LoadTextures() {
+
+	auto commandList = m_commQueue->GetCommandList();
+	
+	ThrowIfFailed(m_device->CreateCommittedResource(
+		&CD3DX12_HEAP_PROPERTIES(D3D12_HEAP_TYPE_UPLOAD),
+		D3D12_HEAP_FLAG_NONE,
+		&CD3DX12_RESOURCE_DESC::Buffer(sizeof(m_sceneData)),
+		D3D12_RESOURCE_STATE_GENERIC_READ,
+		nullptr,
+		IID_PPV_ARGS(&m_vpBuffer)));
+
+	// Describe and create a constant buffer view.
+	D3D12_CONSTANT_BUFFER_VIEW_DESC cbvDesc = {};
+	cbvDesc.BufferLocation = m_vpBuffer->GetGPUVirtualAddress();
+	cbvDesc.SizeInBytes = sizeof(m_sceneData);
+	m_vpCPUHandle = m_shaderResources->GetDescriptorHandle(1);
+	m_device->CreateConstantBufferView(&cbvDesc, m_vpCPUHandle);
+
+	m_vpBufferView.BufferLocation = m_vpBuffer->GetGPUVirtualAddress();
+	m_vpBufferView.SizeInBytes = (UINT)(sizeof(XMMATRIX) * m_numInstances);
+	m_vpBufferView.StrideInBytes = sizeof(XMMATRIX);
+
+	CD3DX12_RANGE readRange(0, 0); 
+	ThrowIfFailed(m_vpBuffer->Map(0, &readRange, reinterpret_cast<void**>(&m_sceneDataBegin)));
+	memcpy(m_sceneDataBegin, &m_sceneData, sizeof(m_sceneData));
+	m_wallTexture = std::make_shared<Texture_D12>();
+	m_wallTexture->SetCPUHandle(m_shaderResources->GetDescriptorHandle(3));
+	commandList->LoadTexture(L"Clay.dds", m_wallTexture);
+
+	m_grassTexture = std::make_shared<Texture_D12>();
+	m_grassTexture->SetCPUHandle(m_shaderResources->GetDescriptorHandle(4));
+	commandList->LoadTexture(L"Grass.dds", m_grassTexture);
+
+	m_dirtTexture = std::make_shared<Texture_D12>();
+	m_dirtTexture->SetCPUHandle(m_shaderResources->GetDescriptorHandle(5));
+	commandList->LoadTexture(L"Dirt.dds", m_dirtTexture);
+
+
+
+}
+
 void Renderer_D12::CreateSRVForBoxes(const std::vector<std::vector<Tile>>& tiles, double t) {
 
 	m_numInstances = 0;
@@ -506,32 +548,6 @@ void Renderer_D12::CreateSRVForBoxes(const std::vector<std::vector<Tile>>& tiles
 	m_device->CreateShaderResourceView(m_modelBuffer.Get(), &srvDesc, m_modelCPUHandle);
 }
 
-	ThrowIfFailed(m_device->CreateCommittedResource(
-		&CD3DX12_HEAP_PROPERTIES(D3D12_HEAP_TYPE_UPLOAD),
-		D3D12_HEAP_FLAG_NONE,
-		&CD3DX12_RESOURCE_DESC::Buffer(sizeof(m_sceneData)),
-		D3D12_RESOURCE_STATE_GENERIC_READ,
-		nullptr,
-		IID_PPV_ARGS(&m_vpBuffer)));
-
-	// Describe and create a constant buffer view.
-	D3D12_CONSTANT_BUFFER_VIEW_DESC cbvDesc = {};
-	cbvDesc.BufferLocation = m_vpBuffer->GetGPUVirtualAddress();
-	cbvDesc.SizeInBytes = sizeof(m_sceneData);
-	m_vpCPUHandle = m_shaderResources->GetDescriptorHandle(1);
-	//m_vpGPUHandle = CD3DX12_GPU_DESCRIPTOR_HANDLE(m_modelGPUHandle, 1, descStep);
-	m_device->CreateConstantBufferView(&cbvDesc, m_vpCPUHandle);
-
-	m_vpBufferView.BufferLocation = m_vpBuffer->GetGPUVirtualAddress();
-	m_vpBufferView.SizeInBytes = (UINT)(sizeof(XMMATRIX) * m_numInstances);
-	m_vpBufferView.StrideInBytes = sizeof(XMMATRIX);
-
-	// Map and initialize the constant buffer. We don't unmap this until the
-	// app closes. Keeping things mapped for the lifetime of the resource is okay.
-	CD3DX12_RANGE readRange(0, 0);        // We do not intend to read from this resource on the CPU.
-	ThrowIfFailed(m_vpBuffer->Map(0, &readRange, reinterpret_cast<void**>(&m_sceneDataBegin)));
-	memcpy(m_sceneDataBegin, &m_sceneData, sizeof(m_sceneData));
-
 {
 	D3D12_SUBRESOURCE_DATA pedData = {};
 	pedData.pData = peds.data();
@@ -560,18 +576,6 @@ void Renderer_D12::CreateSRVForBoxes(const std::vector<std::vector<Tile>>& tiles
 	m_entityDataCPUHandle = m_shaderResources->GetDescriptorHandle(2);
 	m_device->CreateShaderResourceView(m_entityDataBuffer.Get(), &srvDesc, m_entityDataCPUHandle);
 }
-	m_wallTexture = std::make_shared<Texture_D12>(); 
-	m_wallTexture->SetCPUHandle(m_shaderResources->GetDescriptorHandle(3));
-	commandList->LoadTexture(L"Clay.dds", m_wallTexture);
-
-	m_grassTexture = std::make_shared<Texture_D12>();
-	m_grassTexture->SetCPUHandle(m_shaderResources->GetDescriptorHandle(4));
-	commandList->LoadTexture(L"Grass.dds", m_grassTexture);
-
-	m_dirtTexture = std::make_shared<Texture_D12>();
-	m_dirtTexture->SetCPUHandle(m_shaderResources->GetDescriptorHandle(5));
-	commandList->LoadTexture(L"Dirt.dds", m_dirtTexture);
-
 	auto fenceValue = m_commQueue->ExecuteActiveCommandList();
 	m_commQueue->WaitForFenceValue(fenceValue);
 }

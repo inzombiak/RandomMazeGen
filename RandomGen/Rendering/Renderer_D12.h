@@ -67,7 +67,7 @@ class Renderer_D12 {
 		void BuildPipelineState(const std::wstring& vertexShaderName, const std::wstring& pixelShaderName);
 		void BuildShadowPipelineState(const std::wstring& vertexShaderName, const std::wstring& pixelShaderName);
 		void CreateSRVForBoxes(const std::vector<std::vector<Tile>>& tiles, double t);
-
+		void LoadTextures();
 		// Resize the depth buffer to match the size of the client area.
 		void ResizeDepthBuffer(int width, int height);
 

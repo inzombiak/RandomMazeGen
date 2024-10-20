@@ -171,7 +171,7 @@ namespace Globals {
 
 	extern InputState INPUT_STATE;
 
-	static const float CAM_PAN_SPEED = 0.008f;
+	static const float CAM_PAN_SPEED = 0.08f;
 	static const float CAM_ROT_SPEED = 0.005f;
 }
 
