@@ -75,7 +75,6 @@ void MazeConnector::ConnectRoomFull(int index)
 	//Loop until we find an unconnected region
 	for (j = 0; j < possibleDoors.size(); ++j)
 	{
-		
 		tileIndices = possibleDoors[j].first;
 
 		dirIndex = possibleDoors[j].second;
@@ -282,10 +281,10 @@ void MazeConnector::ConnectRoomByStep(int index)
 		{
 
 			//Open it up
-			//(*m_tiles)[tileIndices.first][tileIndices.second].AddDirection(GameDefs::DIRECTIONS[dirIndex]);
-			//(*m_tiles)[nextTileIndices.first][nextTileIndices.second].AddDirection(GameDefs::OPPOSITE_DIRECTIONS[dirIndex]);
-			(*m_tiles)[tileIndices.first][tileIndices.second].SetBorder(GameDefs::DIRECTIONS[dirIndex], 4, sf::Color::Yellow);
-			(*m_tiles)[nextTileIndices.first][nextTileIndices.second].SetBorder(GameDefs::OPPOSITE_DIRECTIONS[dirIndex], 4, sf::Color::Yellow);
+			(*m_tiles)[tileIndices.first][tileIndices.second].AddDirection(GameDefs::DIRECTIONS[dirIndex]);
+			(*m_tiles)[nextTileIndices.first][nextTileIndices.second].AddDirection(GameDefs::OPPOSITE_DIRECTIONS[dirIndex]);
+			//(*m_tiles)[tileIndices.first][tileIndices.second].SetBorder(GameDefs::DIRECTIONS[dirIndex], 4, sf::Color::Yellow);
+			//(*m_tiles)[nextTileIndices.first][nextTileIndices.second].SetBorder(GameDefs::OPPOSITE_DIRECTIONS[dirIndex], 4, sf::Color::Yellow);
 
 			//Flood it cause pretty
 			if (SetIDManagerSingleton::Instance().GetSetMemberCount(currID) > SetIDManagerSingleton::Instance().GetSetMemberCount(nextID))

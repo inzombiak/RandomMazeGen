@@ -139,14 +139,14 @@ void GridManager::RandomizeMap()
 	m_seed = (int)std::chrono::system_clock::now().time_since_epoch().count();
 
 	auto start = std::chrono::high_resolution_clock::now();
-	std::vector<sf::IntRect> rooms = GenerateRooms();
+	m_rooms = GenerateRooms();
 	auto finish = std::chrono::high_resolution_clock::now();
 	std::chrono::duration<double> elapsed = finish - start;
 	std::cout << "Room generation elapsed time: " << elapsed.count() << std::endl;
 	
 	m_simPhase = GeneratingMaze;
 	GenerateMaze();
-	ConnectMap(rooms);
+	ConnectMap();
 	RemoveDeadEnds();
 	m_simPhase = Done;
 }
@@ -218,18 +218,18 @@ void GridManager::GenerateMazeWorkerByStep()
 	}
 }
 
-void GridManager::ConnectMap(const std::vector<sf::IntRect>& rooms)
+void GridManager::ConnectMap()
 {
 	if (m_mazeGenerateType == GenerateType::Step)
 	{
-		m_mazeConnectorThread = std::thread(&GridManager::ConnectMapWorkerByStep, this, rooms);
+		m_mazeConnectorThread = std::thread(&GridManager::ConnectMapWorkerByStep, this, m_rooms);
 		m_mazeConnectorThread.detach();
 	}
 	else
 	{
 		m_simPhase = ConnectingMap;
 		auto start = std::chrono::high_resolution_clock::now();
-		ConnectMapWorker(rooms);
+		ConnectMapWorker(m_rooms);
 		auto finish = std::chrono::high_resolution_clock::now();
 		std::chrono::duration<double> elapsed = finish - start;
 		std::cout << "Maze connection elapsed time: " << elapsed.count() << std::endl;

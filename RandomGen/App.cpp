@@ -143,8 +143,8 @@ void App::OnUpdate(UpdateEventArgs& e)
     m_updateClock.Tick();
     static uint64_t frameCount = 0;
     static double totalTime = 0.0;
-
-    totalTime += m_updateClock.GetDeltaSeconds();
+    double dt = m_updateClock.GetDeltaSeconds();
+    totalTime += dt;
     frameCount++;
 
     if (totalTime > 1.0)
@@ -166,16 +166,16 @@ void App::OnUpdate(UpdateEventArgs& e)
     auto camUp = orientation.r[1];
     auto camFwd = orientation.r[2];
     if (Globals::INPUT_STATE.keyStates[KeyCode::Key::W]){
-        m_cameraPos += camFwd * Globals::CAM_PAN_SPEED * totalTime;
+        m_cameraPos += camFwd * Globals::CAM_PAN_SPEED * dt;
     }
     if (Globals::INPUT_STATE.keyStates[KeyCode::Key::S]) {
-        m_cameraPos -= camFwd * Globals::CAM_PAN_SPEED * totalTime;
+        m_cameraPos -= camFwd * Globals::CAM_PAN_SPEED * dt;
     }
     if (Globals::INPUT_STATE.keyStates[KeyCode::Key::D]) {
-        m_cameraPos += camRight * Globals::CAM_PAN_SPEED * totalTime;
+        m_cameraPos += camRight * Globals::CAM_PAN_SPEED * dt;
     }
     if (Globals::INPUT_STATE.keyStates[KeyCode::Key::A]) {
-        m_cameraPos -= camRight * Globals::CAM_PAN_SPEED * totalTime;
+        m_cameraPos -= camRight * Globals::CAM_PAN_SPEED * dt;
     }
 
     //m_updateClock.GetTotalSeconds();

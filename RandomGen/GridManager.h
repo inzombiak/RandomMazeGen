@@ -56,7 +56,7 @@ private:
 	void GenerateMazeWorker();
 	void GenerateMazeWorkerByStep();
 	//Step 3: Connect them
-	void ConnectMap(const std::vector<sf::IntRect>& rooms);
+	void ConnectMap();
 	void ConnectMapWorker(const std::vector<sf::IntRect>& rooms);
 	void ConnectMapWorkerByStep(std::vector<sf::IntRect> rooms);
 	//Step 4: Remove dead ends
@@ -76,7 +76,7 @@ private:
 	const int BORDER_WIDTH = 2;
 	int m_threadSleepTime = 5;
 	int m_seed;
-	int m_removeDeadEndsPercentage = 50;
+	int m_removeDeadEndsPercentage = 75;
 
 	const sf::Color BORDER_COLOR = sf::Color::Black;
 
@@ -101,6 +101,8 @@ private:
 	std::atomic<bool> m_removeDeadEnds = true;
 
 	std::vector<std::vector<Tile>> m_tiles;
+
+	std::vector<sf::IntRect> m_rooms;
 };
 
 #endif
