@@ -1,6 +1,9 @@
 #include "Window.h"
 #include "../App.h"
 
+#include "imgui.h"
+#include "imgui_impl_win32.h"
+
 MouseButtonEventArgs::MouseButton DecodeMouseButton(UINT messageID)
 {
     MouseButtonEventArgs::MouseButton mouseButton = MouseButtonEventArgs::None;
@@ -33,6 +36,10 @@ MouseButtonEventArgs::MouseButton DecodeMouseButton(UINT messageID)
 }
 static LRESULT CALLBACK WndProc(HWND hwnd, UINT message, WPARAM wParam, LPARAM lParam)
 {
+    extern IMGUI_IMPL_API LRESULT ImGui_ImplWin32_WndProcHandler(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam);
+    if (ImGui_ImplWin32_WndProcHandler(hwnd, message, wParam, lParam))
+        return true;
+
     switch (message)
     {
     case WM_PAINT:

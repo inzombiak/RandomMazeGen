@@ -1,4 +1,4 @@
-#include "MGEllers.h"
+#include "MAEllers.h"
 #include <algorithm>
 #include <random>       
 #include <chrono> 
@@ -6,7 +6,7 @@
 
 using namespace GameDefs;
 
-void MGEllers::GenerateMaze(std::vector<std::vector<Tile>>& tiles, const GenerateType& genType, unsigned seed, int sleepDuration)
+void MAEllers::GenerateMaze(std::vector<std::vector<Tile>>& tiles, const GenerateType& genType, unsigned seed, int sleepDuration)
 {
 	if (tiles.size() < 1)
 		return;
@@ -34,7 +34,7 @@ void MGEllers::GenerateMaze(std::vector<std::vector<Tile>>& tiles, const Generat
 
 }
 
-bool MGEllers::CompareAndMergeSets(const std::pair<int, int>& first, const std::pair<int, int>& second)
+bool MAEllers::CompareAndMergeSets(const std::pair<int, int>& first, const std::pair<int, int>& second)
 {
 	int firstSetIndex, secondSetIndex, minSetIndex, maxSetIndex;
 	firstSetIndex = m_rowSets[first.second].second;
@@ -89,7 +89,7 @@ bool MGEllers::CompareAndMergeSets(const std::pair<int, int>& first, const std::
 	return true;
 }
 
-void MGEllers::InitalizeRow(int row)
+void MAEllers::InitalizeRow(int row)
 {
 	//m_setToIndices.clear();
 	int id;
@@ -117,7 +117,7 @@ void MGEllers::InitalizeRow(int row)
 
 	}
 }
-void MGEllers::MergeColumns(int row)
+void MAEllers::MergeColumns(int row)
 {
 	std::pair<int, int> current, next;
 	if (row == m_rowCount - 1)
@@ -206,7 +206,7 @@ void MGEllers::MergeColumns(int row)
 		}
 	}
 }
-void MGEllers::MakeVerticalCuts(int row)
+void MAEllers::MakeVerticalCuts(int row)
 {
 	int makeVerticalCut;
 	std::uniform_int_distribution<int> distributionVertical(0, 1);
@@ -237,7 +237,7 @@ void MGEllers::MakeVerticalCuts(int row)
 	}
 }
 
-void MGEllers::GenerateFull()
+void MAEllers::GenerateFull()
 {
 	for (int i = 0; i < m_rowCount; ++i)
 	{
@@ -251,7 +251,7 @@ void MGEllers::GenerateFull()
 	}
 }
 
-void MGEllers::InitalizeRowByStep(int row)
+void MAEllers::InitalizeRowByStep(int row)
 {
 	//m_setToIndices.clear();
 	int id;
@@ -286,7 +286,7 @@ void MGEllers::InitalizeRowByStep(int row)
 
 	}
 }
-void MGEllers::MergeColumnsByStep(int row)
+void MAEllers::MergeColumnsByStep(int row)
 {
 	std::pair<int, int> current, next;
 	if (row == m_rowCount - 1)
@@ -382,7 +382,7 @@ void MGEllers::MergeColumnsByStep(int row)
 		}
 	}
 }
-void MGEllers::MakeVerticalCutsByStep(int row)
+void MAEllers::MakeVerticalCutsByStep(int row)
 {
 	int makeVerticalCut;
 	std::uniform_int_distribution<int> distributionVertical(0, 1);
@@ -419,7 +419,7 @@ void MGEllers::MakeVerticalCutsByStep(int row)
 	}
 }
 
-void MGEllers::GenerateByStep()
+void MAEllers::GenerateByStep()
 {
 	CanGenerate();
 	SetDoneState(false);
@@ -454,4 +454,4 @@ void MGEllers::GenerateByStep()
 
 }
 
-const std::pair<int, int> MGEllers::INVALID_INDICES = std::make_pair(-1, -1);
+const std::pair<int, int> MAEllers::INVALID_INDICES = std::make_pair(-1, -1);

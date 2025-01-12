@@ -4,14 +4,14 @@
 #include "Tile.h"
 #include "IThreadedSolver.h"
 
-class IMazeGenerator : public IThreadedSolver
+class IMazeAlgorithm : public IThreadedSolver
 {
 public:
-	virtual ~IMazeGenerator() {};
+	virtual ~IMazeAlgorithm() {};
 
 	virtual void GenerateMaze(std::vector<std::vector<Tile>>& tiles, const GameDefs::GenerateType& genType, unsigned seed, int sleepDuration) = 0;
 protected:
-	IMazeGenerator(){}
+	IMazeAlgorithm(){}
 	//Allows full to run faster
 	virtual void GenerateFull() = 0;
 	virtual void GenerateByStep() = 0;

@@ -1,10 +1,10 @@
-#include "MGRecursiveBacktracker.h"
+#include "MARecursiveBacktracker.h"
 #include <thread>
 #include <mutex>
 
 using namespace GameDefs;
 
-void MGRecursiveBacktracker::GenerateMaze(std::vector<std::vector<Tile>>& tiles, const GenerateType& genType, unsigned seed, int sleepDuration)
+void MARecursiveBacktracker::GenerateMaze(std::vector<std::vector<Tile>>& tiles, const GenerateType& genType, unsigned seed, int sleepDuration)
 {
 	if (tiles.size() < 1)
 		return;
@@ -24,7 +24,7 @@ void MGRecursiveBacktracker::GenerateMaze(std::vector<std::vector<Tile>>& tiles,
 
 }
 
-void MGRecursiveBacktracker::GenerateFull()
+void MARecursiveBacktracker::GenerateFull()
 {
 	int startI = 0 , startJ = 0;
 	int id;
@@ -50,7 +50,7 @@ void MGRecursiveBacktracker::GenerateFull()
 	}
 }
 
-void MGRecursiveBacktracker::CarvePassageFull(int startI, int startJ)
+void MARecursiveBacktracker::CarvePassageFull(int startI, int startJ)
 {
 
 	std::array<int, 4> directionIndices = { 0, 1, 2, 3 };
@@ -83,7 +83,7 @@ void MGRecursiveBacktracker::CarvePassageFull(int startI, int startJ)
 }
 
 
-void MGRecursiveBacktracker::GenerateByStep()
+void MARecursiveBacktracker::GenerateByStep()
 {
 	CanGenerate();
 	SetDoneState(false);
@@ -122,7 +122,7 @@ void MGRecursiveBacktracker::GenerateByStep()
 	SetDoneState(true);
 }
 
-void MGRecursiveBacktracker::CarvePassageByStep(int startI, int startJ)
+void MARecursiveBacktracker::CarvePassageByStep(int startI, int startJ)
 {
 	std::array<int, 4> directionIndices = { 0, 1, 2, 3 };
 	shuffle(directionIndices.begin(), directionIndices.end(), m_randomNumGen);

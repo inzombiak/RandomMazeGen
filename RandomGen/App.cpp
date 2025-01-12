@@ -87,6 +87,15 @@ App::~App()
 std::shared_ptr<Window> GAME_WINDOW;
 std::shared_ptr<Renderer_D12> RENDERER;
 Globals::InputState Globals::INPUT_STATE;
+
+//@ZGTODO streamline
+inline bool GUIActive() {
+    if (RENDERER && RENDERER->GUIInitialized()) {
+        auto& io = ImGui::GetIO();
+        return io.WantCaptureMouse || io.WantCaptureKeyboard;
+    }
+    return false;
+}
 bool App::Initialize()
 {
     // Check for DirectX Math library support.
@@ -95,10 +104,6 @@ bool App::Initialize()
         MessageBoxA(NULL, "Failed to verify DirectX Math library support.", "Error", MB_OK | MB_ICONERROR);
         return false;
     }
-
-    std::cout << "R - Generate New Map" << std::endl;
-    std::cout << "G - Toggle Maze Generator(Recursive Backtacker(default) and Eller's Algortihm)" << std::endl;
-    std::cout << "T - Toggle between watch and instant (instant is default)" << std::endl;
 
     GAME_WINDOW = std::make_shared<Window>(m_hInstance);
     GAME_WINDOW->RegisterCallbacks(shared_from_this());
@@ -140,6 +145,7 @@ void App::Destroy()
 
 void App::OnUpdate(UpdateEventArgs& e)
 {
+
     m_updateClock.Tick();
     static uint64_t frameCount = 0;
     static double totalTime = 0.0;
@@ -165,7 +171,41 @@ void App::OnUpdate(UpdateEventArgs& e)
     auto camRight = orientation.r[0];
     auto camUp = orientation.r[1];
     auto camFwd = orientation.r[2];
-    if (Globals::INPUT_STATE.keyStates[KeyCode::Key::W]){
+    RENDERER->CreateSRVForBoxes(m_gridManager->GetTiles(), 0);
+
+    if (RENDERER && RENDERER->GUIInitialized()) {
+        ImGui_ImplDX12_NewFrame();
+        ImGui_ImplWin32_NewFrame();
+        ImGui::NewFrame();
+        ImGui::Begin("Controls");
+        if (ImGui::CollapsingHeader("Map Generation"))
+        {
+            ImGui::Combo("Maze Algorithm", &m_mazeAlgorithm, GameDefs::MazeAlgorithmLabels, 2);
+            m_gridManager->SetMazeAlgorithm(GameDefs::MazeAlgorithm(m_mazeAlgorithm));
+
+            ImGui::Combo("Generation Type", &m_generationType, GameDefs::GenerateTypeLabels, 2);
+            m_gridManager->SetMazeGenerateType(GameDefs::GenerateType(m_generationType));
+
+            ImGui::PushItemWidth(100);
+            ImGui::InputInt("Rows", &m_rows);
+            m_rows = std::clamp(m_rows, 1, 100);
+            ImGui::SameLine();
+            ImGui::InputInt("Columns", &m_columns);
+            m_columns = std::clamp(m_columns, 1, 100);
+            ImGui::SameLine();
+            bool regen = ImGui::Button("Regenerate");
+            if (regen)
+                m_gridManager->GenerateMap(m_width, m_height, 16, 16);
+
+        }
+        ImGui::End();
+    }
+
+
+    if (GUIActive()) 
+        return;
+
+    if (Globals::INPUT_STATE.keyStates[KeyCode::Key::W]) {
         m_cameraPos += camFwd * Globals::CAM_PAN_SPEED * dt;
     }
     if (Globals::INPUT_STATE.keyStates[KeyCode::Key::S]) {
@@ -178,8 +218,8 @@ void App::OnUpdate(UpdateEventArgs& e)
         m_cameraPos -= camRight * Globals::CAM_PAN_SPEED * dt;
     }
 
+
     //m_updateClock.GetTotalSeconds();
-    RENDERER->CreateSRVForBoxes(m_gridManager->GetTiles(), 0);
     RENDERER->UpdateMVP(m_fov, m_cameraPos, camFwd, camRight, camUp);
 }
 
@@ -194,15 +234,6 @@ void App::OnRender(RenderEventArgs& e)
 
 void App::OnKeyPressed(KeyEventArgs& e)
 {
-    Globals::INPUT_STATE.keyStates[e.Key] = true;
-
-    if (Globals::INPUT_STATE.keyStates[KeyCode::Key::R]) {
-        m_gridManager->GenerateMap(m_width, m_height, 16, 16);
-    }
-    else if (Globals::INPUT_STATE.keyStates[KeyCode::Key::G])
-        m_gridManager->ToggleMazeGenerator();
-    else if (Globals::INPUT_STATE.keyStates[KeyCode::Key::T])
-        m_gridManager->ToggleMazeGenerateType();
 }
 
 void App::OnKeyReleased(KeyEventArgs& e)
@@ -212,6 +243,9 @@ void App::OnKeyReleased(KeyEventArgs& e)
 
 void App::OnMouseMoved(class MouseMotionEventArgs& e)
 {
+    if (GUIActive())
+        return;
+
     Globals::INPUT_STATE.mousePos = sf::Vector2i(e.X, e.Y);
     if (Globals::INPUT_STATE.mouseBtnState & MK_RBUTTON) {
         int dx = Globals::INPUT_STATE.mousePos.x - Globals::INPUT_STATE.lastMouseDownPos.x;
@@ -236,15 +270,18 @@ void App::OnMouseButtonPressed(MouseButtonEventArgs& e){
 void App::OnMouseButtonReleased(MouseButtonEventArgs& e)
 {
     if (!e.LeftButton)
-        Globals::INPUT_STATE.mouseBtnState ^= MK_LBUTTON;
+        Globals::INPUT_STATE.mouseBtnState &= ~MK_LBUTTON;
     if (!e.MiddleButton)
-        Globals::INPUT_STATE.mouseBtnState ^= MK_MBUTTON;
+        Globals::INPUT_STATE.mouseBtnState &= ~MK_MBUTTON;
     if (!e.RightButton)
-        Globals::INPUT_STATE.mouseBtnState ^= MK_RBUTTON;
+        Globals::INPUT_STATE.mouseBtnState &= ~MK_RBUTTON;
 }
 #include <algorithm>
 void App::OnMouseWheel(MouseWheelEventArgs& e)
 {
+    if (GUIActive())
+        return;
+
     m_fov -= e.WheelDelta;
     m_fov = std::clamp(m_fov, 12.0f, 90.0f);
 
@@ -271,6 +308,4 @@ void App::OnWindowDestroy()
     // destroyed, then any resources which are associated 
     // to the window must be released.
     UnloadContent();
-    if (RENDERER && RENDERER->IsInitialized())
-        RENDERER->Shutdown();
 }

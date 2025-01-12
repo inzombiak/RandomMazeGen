@@ -109,9 +109,13 @@ private:
 
     HINSTANCE m_hInstance;
 
-
     HighResolutionClock m_updateClock;
     HighResolutionClock m_renderClock;
+
+    int m_rows = 16;
+    int m_columns = 16;
+    int m_generationType = 0;
+    int m_mazeAlgorithm = 0;
 
     float m_fov = 45.0;
     DirectX::XMVECTOR m_cameraPos;

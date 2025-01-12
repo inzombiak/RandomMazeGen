@@ -1,7 +1,7 @@
 #include "GridManager.h"
 
-#include "MGEllers.h"
-#include "MGRecursiveBacktracker.h"
+#include "MAEllers.h"
+#include "MARecursiveBacktracker.h"
 
 #include "RoomGenerator.h"
 
@@ -16,8 +16,8 @@
 
 using namespace GameDefs;
 
-typedef SingletonHolder<MGEllers, CreationPolicies::CreateWithNew, LifetimePolicies::DefaultLifetime> MGEllersSingleton;
-typedef SingletonHolder<MGRecursiveBacktracker, CreationPolicies::CreateWithNew, LifetimePolicies::DefaultLifetime> MGRecursiveBacktrackerSingleton;
+typedef SingletonHolder<MAEllers, CreationPolicies::CreateWithNew, LifetimePolicies::DefaultLifetime> MAEllersSingleton;
+typedef SingletonHolder<MARecursiveBacktracker, CreationPolicies::CreateWithNew, LifetimePolicies::DefaultLifetime> MARecursiveBacktrackerSingleton;
 typedef SingletonHolder<RoomGenerator, CreationPolicies::CreateWithNew, LifetimePolicies::DefaultLifetime> RoomGeneratorSingleton;
 typedef SingletonHolder<MazeConnector, CreationPolicies::CreateWithNew, LifetimePolicies::DefaultLifetime> MazeConnectorSingleton;
 typedef SingletonHolder<DeadEndRemover, CreationPolicies::CreateWithNew, LifetimePolicies::DefaultLifetime> DeadEndRemoverSingleton;
@@ -55,8 +55,8 @@ void GridManager::GenerateMap(int windowWidth, int windowHeight, unsigned int ro
 
 	RandomizeMap();
 
-	m_prevMazeGen = m_mazeGenerator;
-	m_prevMazeGenType = m_mazeGenerateType;
+	m_prevMazeAlgo = m_mazeAlgorithm;
+	m_prevMazeAlgoType = m_mazeGenerateType;
 }
 
 void GridManager::Terminate()
@@ -77,10 +77,10 @@ void GridManager::Terminate()
 	}
 
 
-	if (m_prevMazeGen == MazeGenerator::RecursiveBacktracker)
-		MGRecursiveBacktrackerSingleton::Instance().TerminateGeneration();
+	if (m_prevMazeAlgo == MazeAlgorithm::RecursiveBacktracker)
+		MARecursiveBacktrackerSingleton::Instance().TerminateGeneration();
 	else
-		MGEllersSingleton::Instance().TerminateGeneration();
+		MAEllersSingleton::Instance().TerminateGeneration();
 
 	MazeConnectorSingleton::Instance().TerminateGeneration();
 	DeadEndRemoverSingleton::Instance().TerminateGeneration();
@@ -103,13 +103,13 @@ const std::vector<std::vector<Tile>>& GridManager::GetTiles() const {
 
 void GridManager::RandomizeMap()
 {
-	if (m_prevMazeGenType == Step)
+	if (m_prevMazeAlgoType == Step)
 	{
 		Terminate();
 	}
 
-	m_prevMazeGenType = m_mazeGenerateType;
-	m_prevMazeGen = m_mazeGenerator;
+	m_prevMazeAlgoType = m_mazeGenerateType;
+	m_prevMazeAlgo = m_mazeAlgorithm;
 	SetIDManagerSingleton::Instance().Reset();
 
 	//Reset Map
@@ -153,22 +153,16 @@ void GridManager::RandomizeMap()
 
 void GridManager::Close()
 {
-	MGRecursiveBacktrackerSingleton::Instance().TerminateGeneration();
+	MARecursiveBacktrackerSingleton::Instance().TerminateGeneration();
 }
 
-void GridManager::ToggleMazeGenerator()
+void GridManager::SetMazeAlgorithm(MazeAlgorithm algo)
 {
-	if (m_mazeGenerator == MazeGenerator::RecursiveBacktracker)
-		m_mazeGenerator = EllersAlgorithm;
-	else
-		m_mazeGenerator = MazeGenerator::RecursiveBacktracker;
+	m_mazeAlgorithm = algo;
 }
-void GridManager::ToggleMazeGenerateType()
+void GridManager::SetMazeGenerateType(GenerateType type)
 {
-	if (m_mazeGenerateType == GenerateType::Step)
-		m_mazeGenerateType = GenerateType::Full;
-	else
-		m_mazeGenerateType = GenerateType::Step;
+	m_mazeGenerateType = type;
 }
 
 const std::vector<sf::IntRect>& GridManager::GenerateRooms()
@@ -190,10 +184,10 @@ void GridManager::GenerateMaze()
 void GridManager::GenerateMazeWorker()
 {
 	auto start = std::chrono::high_resolution_clock::now();
-	if (m_mazeGenerator == MazeGenerator::RecursiveBacktracker)
-		MGRecursiveBacktrackerSingleton::Instance().GenerateMaze(m_tiles, m_mazeGenerateType, m_seed, m_threadSleepTime);
+	if (m_mazeAlgorithm == MazeAlgorithm::RecursiveBacktracker)
+		MARecursiveBacktrackerSingleton::Instance().GenerateMaze(m_tiles, m_mazeGenerateType, m_seed, m_threadSleepTime);
 	else
-		MGEllersSingleton::Instance().GenerateMaze(m_tiles, m_mazeGenerateType, m_seed, m_threadSleepTime);
+		MAEllersSingleton::Instance().GenerateMaze(m_tiles, m_mazeGenerateType, m_seed, m_threadSleepTime);
 	auto finish = std::chrono::high_resolution_clock::now();
 	std::chrono::duration<double> elapsed = finish - start;
 	std::cout << "Maze generation elapsed time: " << elapsed.count() << std::endl;
@@ -202,10 +196,10 @@ void GridManager::GenerateMazeWorkerByStep()
 {
 
 	auto start = std::chrono::high_resolution_clock::now();
-	if (m_mazeGenerator == MazeGenerator::RecursiveBacktracker)
-		MGRecursiveBacktrackerSingleton::Instance().GenerateMaze(m_tiles, m_mazeGenerateType, m_seed, m_threadSleepTime);
+	if (m_mazeAlgorithm == MazeAlgorithm::RecursiveBacktracker)
+		MARecursiveBacktrackerSingleton::Instance().GenerateMaze(m_tiles, m_mazeGenerateType, m_seed, m_threadSleepTime);
 	else
-		MGEllersSingleton::Instance().GenerateMaze(m_tiles, m_mazeGenerateType, m_seed, m_threadSleepTime);
+		MAEllersSingleton::Instance().GenerateMaze(m_tiles, m_mazeGenerateType, m_seed, m_threadSleepTime);
 	auto finish = std::chrono::high_resolution_clock::now();
 	std::chrono::duration<double> elapsed = finish - start;
 	std::cout << "Maze generation elapsed time: " << elapsed.count() << std::endl;

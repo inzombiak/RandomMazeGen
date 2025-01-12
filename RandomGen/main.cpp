@@ -29,7 +29,7 @@ int main()
 				if (event.key.code == sf::Keyboard::R)
 					gm.RandomizeMap();
 				else if (event.key.code == sf::Keyboard::G)
-					gm.ToggleMazeGenerator();
+					gm.ToggleMazeAlgorithm();
 				else if (event.key.code == sf::Keyboard::T)
 					gm.ToggleMazeGenerateType();
 			}

@@ -1,12 +1,12 @@
 #ifndef MG_ELLERS_H
 #define MG_ELLERS_H
 
-#include "IMazeGenerator.h"
+#include "IMazeAlgorithm.h"
 
 #include <set>
 #include <map>
 
-class MGEllers : public IMazeGenerator
+class MAEllers : public IMazeAlgorithm
 {
 public:
 	void GenerateMaze(std::vector<std::vector<Tile>>& tiles, const GameDefs::GenerateType& genType, unsigned seed, int sleepDuration) override;

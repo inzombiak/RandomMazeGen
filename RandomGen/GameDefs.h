@@ -20,6 +20,24 @@ namespace GameDefs
 		Full
 	};
 
+	static const char* GenerateTypeLabels[2] =
+	{
+		"Step",
+		"Full"
+	};
+
+	enum MazeAlgorithm
+	{
+		RecursiveBacktracker,
+		EllersAlgorithm
+	};
+
+	static const char* MazeAlgorithmLabels[2] =
+	{
+		"Recursive Backtracker",
+		"EllersAlgorithm"
+	};
+
 	enum TileType
 	{
 		Empty = 0,

@@ -49,6 +49,9 @@
     <Filter Include="Header Files\Extern">
       <UniqueIdentifier>{f9a26f26-e746-48cf-adf5-a09c7a2a0c4f}</UniqueIdentifier>
     </Filter>
+    <Filter Include="Header Files\Extern\imgui">
+      <UniqueIdentifier>{b2dcc291-2de3-450f-b3be-455403f90708}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="main.cpp">
@@ -62,12 +65,6 @@
     </ClCompile>
     <ClCompile Include="Math.cpp">
       <Filter>Source Files\Utilities</Filter>
-    </ClCompile>
-    <ClCompile Include="MGEllers.cpp">
-      <Filter>Source Files\MazeGen</Filter>
-    </ClCompile>
-    <ClCompile Include="MGRecursiveBacktracker.cpp">
-      <Filter>Source Files\MazeGen</Filter>
     </ClCompile>
     <ClCompile Include="RoomGenerator.cpp">
       <Filter>Source Files</Filter>
@@ -183,6 +180,36 @@
     <ClCompile Include="Rendering\Texture_D12.cpp">
       <Filter>Source Files\Rendering\D12</Filter>
     </ClCompile>
+    <ClCompile Include="Extern\imgui\imgui.cpp">
+      <Filter>Header Files\Extern\imgui</Filter>
+    </ClCompile>
+    <ClCompile Include="Extern\imgui\imgui_demo.cpp">
+      <Filter>Header Files\Extern\imgui</Filter>
+    </ClCompile>
+    <ClCompile Include="Extern\imgui\imgui_draw.cpp">
+      <Filter>Header Files\Extern\imgui</Filter>
+    </ClCompile>
+    <ClCompile Include="Extern\imgui\imgui_tables.cpp">
+      <Filter>Header Files\Extern\imgui</Filter>
+    </ClCompile>
+    <ClCompile Include="Extern\imgui\imgui_widgets.cpp">
+      <Filter>Header Files\Extern\imgui</Filter>
+    </ClCompile>
+    <ClCompile Include="Extern\imgui\backends\imgui_impl_dx12.cpp">
+      <Filter>Header Files\Extern\imgui</Filter>
+    </ClCompile>
+    <ClCompile Include="Extern\imgui\misc\cpp\imgui_stdlib.cpp">
+      <Filter>Header Files\Extern\imgui</Filter>
+    </ClCompile>
+    <ClCompile Include="Extern\imgui\backends\imgui_impl_win32.cpp">
+      <Filter>Header Files\Extern\imgui</Filter>
+    </ClCompile>
+    <ClCompile Include="MAEllers.cpp">
+      <Filter>Source Files\MazeGen</Filter>
+    </ClCompile>
+    <ClCompile Include="MARecursiveBacktracker.cpp">
+      <Filter>Source Files\MazeGen</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="GridManager.h">
@@ -191,20 +218,11 @@
     <ClInclude Include="Tile.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="IMazeGenerator.h">
-      <Filter>Header Files\MazeGen</Filter>
-    </ClInclude>
     <ClInclude Include="Singleton.h">
       <Filter>Header Files\Utilities</Filter>
     </ClInclude>
     <ClInclude Include="Math.h">
       <Filter>Header Files\Utilities</Filter>
-    </ClInclude>
-    <ClInclude Include="MGEllers.h">
-      <Filter>Header Files\MazeGen</Filter>
-    </ClInclude>
-    <ClInclude Include="MGRecursiveBacktracker.h">
-      <Filter>Header Files\MazeGen</Filter>
     </ClInclude>
     <ClInclude Include="GameDefs.h">
       <Filter>Header Files\Utilities</Filter>
@@ -374,6 +392,42 @@
     <ClInclude Include="Rendering\Texture_D12.h">
       <Filter>Header Files\Rendering\D12</Filter>
     </ClInclude>
+    <ClInclude Include="Extern\imgui\imstb_truetype.h">
+      <Filter>Header Files\Extern\imgui</Filter>
+    </ClInclude>
+    <ClInclude Include="Extern\imgui\imconfig.h">
+      <Filter>Header Files\Extern\imgui</Filter>
+    </ClInclude>
+    <ClInclude Include="Extern\imgui\imgui.h">
+      <Filter>Header Files\Extern\imgui</Filter>
+    </ClInclude>
+    <ClInclude Include="Extern\imgui\imgui_internal.h">
+      <Filter>Header Files\Extern\imgui</Filter>
+    </ClInclude>
+    <ClInclude Include="Extern\imgui\imstb_rectpack.h">
+      <Filter>Header Files\Extern\imgui</Filter>
+    </ClInclude>
+    <ClInclude Include="Extern\imgui\imstb_textedit.h">
+      <Filter>Header Files\Extern\imgui</Filter>
+    </ClInclude>
+    <ClInclude Include="Extern\imgui\backends\imgui_impl_dx12.h">
+      <Filter>Header Files\Extern\imgui</Filter>
+    </ClInclude>
+    <ClInclude Include="Extern\imgui\misc\cpp\imgui_stdlib.h">
+      <Filter>Header Files\Extern\imgui</Filter>
+    </ClInclude>
+    <ClInclude Include="Extern\imgui\backends\imgui_impl_win32.h">
+      <Filter>Header Files\Extern\imgui</Filter>
+    </ClInclude>
+    <ClInclude Include="IMazeAlgorithm.h">
+      <Filter>Header Files\MazeGen</Filter>
+    </ClInclude>
+    <ClInclude Include="MARecursiveBacktracker.h">
+      <Filter>Header Files\MazeGen</Filter>
+    </ClInclude>
+    <ClInclude Include="MAEllers.h">
+      <Filter>Header Files\MazeGen</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <FxCompile Include="Resources\Shaders\vertex_basic.hlsl">
@@ -393,5 +447,13 @@
     <None Include="Extern\DirectXTex\DirectXTex.inl">
       <Filter>Header Files\Extern</Filter>
     </None>
+    <None Include="Extern\imgui\misc\debuggers\imgui.natstepfilter">
+      <Filter>Header Files\Extern\imgui</Filter>
+    </None>
+  </ItemGroup>
+  <ItemGroup>
+    <Natvis Include="Extern\imgui\misc\debuggers\imgui.natvis">
+      <Filter>Header Files\Extern\imgui</Filter>
+    </Natvis>
   </ItemGroup>
 </Project>

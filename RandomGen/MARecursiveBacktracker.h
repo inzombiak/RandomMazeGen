@@ -1,7 +1,7 @@
 #pragma once
-#include "IMazeGenerator.h"
-class MGRecursiveBacktracker :
-	public IMazeGenerator
+#include "IMazeAlgorithm.h"
+class MARecursiveBacktracker :
+	public IMazeAlgorithm
 {
 public:
 	void GenerateMaze(std::vector<std::vector<Tile>>& tiles, const GameDefs::GenerateType& genType, unsigned seed, int sleepDuration) override;

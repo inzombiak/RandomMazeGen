@@ -50,10 +50,58 @@ class DescriptorAllocation_D12;
 class DynamicDescriptorHeap_D12;
 class RootSignature_D12;
 class Texture_D12;
+
+#include "imgui.h"
+#include "imgui_impl_dx12.h"
+#include "imgui_impl_win32.h"
+//@ZGTODO merge this with the decriptor alocator
+struct ExampleDescriptorHeapAllocator
+{
+	ID3D12DescriptorHeap* Heap = nullptr;
+	D3D12_DESCRIPTOR_HEAP_TYPE  HeapType = D3D12_DESCRIPTOR_HEAP_TYPE_NUM_TYPES;
+	D3D12_CPU_DESCRIPTOR_HANDLE HeapStartCpu;
+	D3D12_GPU_DESCRIPTOR_HANDLE HeapStartGpu;
+	UINT                        HeapHandleIncrement;
+	ImVector<int>               FreeIndices;
+
+	void Create(ID3D12Device* device, ID3D12DescriptorHeap* heap)
+	{
+		Heap = heap;
+		D3D12_DESCRIPTOR_HEAP_DESC desc = heap->GetDesc();
+		HeapType = desc.Type;
+		HeapStartCpu = Heap->GetCPUDescriptorHandleForHeapStart();
+		HeapStartGpu = Heap->GetGPUDescriptorHandleForHeapStart();
+		HeapHandleIncrement = device->GetDescriptorHandleIncrementSize(HeapType);
+		FreeIndices.reserve((int)desc.NumDescriptors);
+		for (int n = desc.NumDescriptors; n > 0; n--)
+			FreeIndices.push_back(n);
+	}
+	void Destroy()
+	{
+		Heap = nullptr;
+		FreeIndices.clear();
+	}
+	void Alloc(D3D12_CPU_DESCRIPTOR_HANDLE* out_cpu_desc_handle, D3D12_GPU_DESCRIPTOR_HANDLE* out_gpu_desc_handle)
+	{
+		int idx = FreeIndices.back();
+		FreeIndices.pop_back();
+		out_cpu_desc_handle->ptr = HeapStartCpu.ptr + (idx * HeapHandleIncrement);
+		out_gpu_desc_handle->ptr = HeapStartGpu.ptr + (idx * HeapHandleIncrement);
+	}
+	void Free(D3D12_CPU_DESCRIPTOR_HANDLE out_cpu_desc_handle, D3D12_GPU_DESCRIPTOR_HANDLE out_gpu_desc_handle)
+	{
+		int cpu_idx = (int)((out_cpu_desc_handle.ptr - HeapStartCpu.ptr) / HeapHandleIncrement);
+		int gpu_idx = (int)((out_gpu_desc_handle.ptr - HeapStartGpu.ptr) / HeapHandleIncrement);
+		FreeIndices.push_back(cpu_idx);
+	}
+};
+
+
 class Renderer_D12 {
 
 	public:
 		Renderer_D12();
+		~Renderer_D12();
 		void PostInit();
 		void ResizeTargets();
 		void UpdateRenderTargetViews();
@@ -78,6 +126,10 @@ class Renderer_D12 {
 		uint32_t GetDescriptorHandleIncrementSize(D3D12_DESCRIPTOR_HEAP_TYPE type) const;
 		D3D_ROOT_SIGNATURE_VERSION GetHighestRootSigVer() const;
 
+		bool GUIInitialized() const;
+
+		ExampleDescriptorHeapAllocator				m_imGUIAllocator;
+
 	private:
 		D3D12_CPU_DESCRIPTOR_HANDLE GetCurrentRenderTargetView() const;
 
@@ -101,9 +153,13 @@ class Renderer_D12 {
 		std::shared_ptr<DescriptorAllocator_D12>  m_dsvAllocator;
 		std::shared_ptr<DescriptorAllocation_D12> m_dsvs;
 
-		std::shared_ptr<DescriptorAllocator_D12>  m_shaderResourceAllocator;
-		std::shared_ptr<DescriptorAllocation_D12> m_shaderResources;
-		std::shared_ptr<DynamicDescriptorHeap_D12> m_shaderResourceDynHeap;
+		std::shared_ptr<DescriptorAllocator_D12>	m_shaderResourceAllocator;
+		std::shared_ptr<DescriptorAllocation_D12>	m_shaderResources;
+		std::shared_ptr<DynamicDescriptorHeap_D12>	m_shaderResourceDynHeap;
+
+		const UINT						IMGUI_HEAP_SIZE = 64;
+		bool							m_imGUIInitalized = false;
+		ComPtr<ID3D12DescriptorHeap>	m_imGUISRVHeap;
 
 		ComPtr<ID3D12Resource> m_vertexBuffer;
 		D3D12_VERTEX_BUFFER_VIEW m_vertexBufferView;

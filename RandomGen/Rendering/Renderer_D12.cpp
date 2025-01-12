@@ -2,6 +2,7 @@
 
 #include "UploadBuffer_D12.h"
 #include "DescriptorAllocator_D12.h"
+#include "DescriptorAllocatorPage_D12.h"
 #include "DescriptorAllocation_D12.h"
 #include "RootSignature_D12.h"
 #include "DynamicDescriptorHeap_D12.h"
@@ -211,7 +212,7 @@ Renderer_D12::Renderer_D12() {
 		}
 		m_highestRootSignatureVersion = featureData.HighestVersion;
 	}
-	
+
 	m_initalized = true;
 }
 
@@ -224,8 +225,57 @@ void Renderer_D12::PostInit() {
 	m_shaderResourceAllocator = std::make_shared<DescriptorAllocator_D12>(D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV);
 	m_shaderResources = std::make_shared<DescriptorAllocation_D12>(m_shaderResourceAllocator->Allocate(7));
 	m_shaderResourceDynHeap = std::make_shared<DynamicDescriptorHeap_D12>(D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV);
+	
+	//ImGUI
+	{
+		IMGUI_CHECKVERSION();
+		ImGui::CreateContext();
+		ImGuiIO& io = ImGui::GetIO();
+		io.ConfigFlags |= ImGuiConfigFlags_NavEnableKeyboard;     // Enable Keyboard Controls
+		io.ConfigFlags |= ImGuiConfigFlags_NavEnableGamepad;      // Enable Gamepad Controls
+		io.ConfigFlags |= ImGuiConfigFlags_DockingEnable;         // IF using Docking Branch
+
+
+		ImGui_ImplWin32_Init(GAME_WINDOW->GetHandle());
+
+		// Setup Platform/Renderer backends
+		ImGui_ImplDX12_InitInfo init_info = {};
+		init_info.Device = m_device.Get();
+		init_info.CommandQueue = m_commQueue->GetD3D12CommandQueue().Get();
+		init_info.NumFramesInFlight = NUM_BACKBUFFER_FRAMES;
+		init_info.RTVFormat = DXGI_FORMAT_R8G8B8A8_UNORM; // Or your render target format.
+
+		// Allocating SRV descriptors (for textures) is up to the application, so we provide callbacks.
+		// The example_win32_directx12/main.cpp application include a simple free-list based allocator.
+
+
+		D3D12_DESCRIPTOR_HEAP_DESC desc = {};
+		desc.Type = D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV;
+		desc.NumDescriptors = IMGUI_HEAP_SIZE;
+		desc.Flags = D3D12_DESCRIPTOR_HEAP_FLAG_SHADER_VISIBLE;
+	
+		m_device->CreateDescriptorHeap(&desc, IID_PPV_ARGS(&m_imGUISRVHeap));
+
+		init_info.SrvDescriptorHeap = m_imGUISRVHeap.Get();
+		m_imGUIAllocator.Create(init_info.Device, init_info.SrvDescriptorHeap);
+		init_info.SrvDescriptorAllocFn = 
+			[](ImGui_ImplDX12_InitInfo*, D3D12_CPU_DESCRIPTOR_HANDLE* out_cpu_handle, D3D12_GPU_DESCRIPTOR_HANDLE* out_gpu_handle) {
+				RENDERER->m_imGUIAllocator.Alloc(out_cpu_handle, out_gpu_handle);
+			};
+		init_info.SrvDescriptorFreeFn = 
+			[](ImGui_ImplDX12_InitInfo*, D3D12_CPU_DESCRIPTOR_HANDLE cpu_handle, D3D12_GPU_DESCRIPTOR_HANDLE gpu_handle) { 
+			RENDERER->m_imGUIAllocator.Free(cpu_handle, gpu_handle);
+			};
+
+		m_imGUIInitalized = ImGui_ImplDX12_Init(&init_info);
+	}
+
 
 	UpdateRenderTargetViews();
+}
+
+bool Renderer_D12::GUIInitialized() const {
+	return m_imGUIInitalized;
 }
 
 void Renderer_D12::ResizeTargets() {
@@ -314,14 +364,27 @@ void Renderer_D12::Render() {
 		d3dCommList->SetGraphicsRoot32BitConstants(4, sizeof(LightingData), &m_lightingData, 0);
 		d3dCommList->DrawIndexedInstanced((UINT)m_indexCount, m_numInstances, 0, 0, 0);
 	}
+
+
 	// Present
 	{
+
+		//ImGUI Draw
+		{
+			/*
+			auto open = true;
+			ImGui::ShowDemoWindow(&open);*/
+			commandList->SetDescriptorHeap(D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV, m_imGUISRVHeap.Get());
+			ImGui::Render();
+			
+			ImGui_ImplDX12_RenderDrawData(ImGui::GetDrawData(), commandList->GetGraphicsCommandList().Get());
+		}
+
 		commandList->TransitionResource(backBuffer,
 			D3D12_RESOURCE_STATE_RENDER_TARGET, D3D12_RESOURCE_STATE_PRESENT);
 
 		commandList->TransitionResource(m_shadowTexture->GetResource(),
 			D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE, D3D12_RESOURCE_STATE_DEPTH_WRITE);
-
 		m_perFrameFenceValues[m_currentBufferIdx] = m_commQueue->ExecuteCommandList(commandList);
 
 		UINT syncInterval = Globals::VSYNC_ENABLED ? 1 : 0;
@@ -381,8 +444,14 @@ void Renderer_D12::Shadowmap(XMVECTOR sunPos) {
 	}
 }
 
+Renderer_D12::~Renderer_D12() {
+
+}
 
 void Renderer_D12::Shutdown() {
+	ImGui_ImplDX12_Shutdown();
+	ImGui_ImplWin32_Shutdown();
+	ImGui::DestroyContext();
 	// Make sure the command queue has finished all commands before closing.
 	m_commQueue->Flush();
 }
@@ -458,9 +527,6 @@ void Renderer_D12::LoadTextures() {
 	m_dirtTexture = std::make_shared<Texture_D12>();
 	m_dirtTexture->SetCPUHandle(m_shaderResources->GetDescriptorHandle(5));
 	commandList->LoadTexture(L"Dirt.dds", m_dirtTexture);
-
-
-
 }
 
 void Renderer_D12::CreateSRVForBoxes(const std::vector<std::vector<Tile>>& tiles, double t) {

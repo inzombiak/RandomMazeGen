@@ -2,7 +2,7 @@
 #define GRID_MANAGER_H
 
 #include "Tile.h"
-#include "IMazeGenerator.h"
+#include "IMazeAlgorithm.h"
 
 #include <vector>
 #include <queue>
@@ -29,16 +29,10 @@ public:
 		Done,
 	};
 
-	enum MazeGenerator
-	{
-		RecursiveBacktracker,
-		EllersAlgorithm
-	};
-
 	void GenerateMap(int windowWidth, int windowHeight, unsigned int rows, unsigned int columns);
 	void RandomizeMap();
-	void ToggleMazeGenerator();
-	void ToggleMazeGenerateType();
+	void SetMazeAlgorithm(GameDefs::MazeAlgorithm algo);
+	void SetMazeGenerateType(GameDefs::GenerateType type);
 	void Close();
 	void Draw(sf::RenderWindow& rw);
 
@@ -83,11 +77,11 @@ private:
 	volatile std::atomic<bool> m_terminated;
 
 	SimulationPhase m_simPhase;
-	MazeGenerator m_mazeGenerator = RecursiveBacktracker;
-	MazeGenerator m_prevMazeGen;
+	GameDefs::MazeAlgorithm m_mazeAlgorithm = GameDefs::RecursiveBacktracker;
+	GameDefs::MazeAlgorithm m_prevMazeAlgo;
 
 	GameDefs::GenerateType m_mazeGenerateType = GameDefs::Full;
-	GameDefs::GenerateType m_prevMazeGenType = GameDefs::Full;
+	GameDefs::GenerateType m_prevMazeAlgoType = GameDefs::Full;
 
 	std::thread m_mazeConnectorThread;
 	std::thread m_removeDeadEndsThread;
