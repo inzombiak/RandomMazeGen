@@ -74,7 +74,7 @@ App::App(const std::wstring& name, int width, int height, bool vSync, HINSTANCE 
     , m_gridManager(std::make_shared<GridManager>())
 {
     m_cameraPos    = XMVectorSet(-17, 26.7f, 16, 1);
-    m_sunPos       = XMVectorSet(42, 38.7f, 29, 1);
+    m_sunPos       = XMVectorSet(0, 38.7f, 29, 1);
     m_camAngles[0] = 0.66f;
     m_camAngles[1] = 1.57f;
     m_camAngles[2] = 0;
@@ -122,8 +122,7 @@ bool App::LoadContent() {
 
     RENDERER->PopulateVertexBuffer(BOX_VERTICES, _countof(BOX_VERTICES));
     RENDERER->PopulateIndexBuffer(BOX_INDICES, _countof(BOX_INDICES));
-    //m_gridManager->RandomizeMap();
-    m_gridManager->GenerateMap(m_width, m_height, 16, 16);
+    m_gridManager->GenerateMap(m_width, m_height, m_rows, m_columns);
     RENDERER->BuildPipelineState(L"vertex_basic.cso", L"pixel_basic.cso");
     RENDERER->BuildShadowPipelineState(L"vertex_shadow.cso", L"pixel_shadow.cso");
     RENDERER->LoadTextures();
@@ -141,6 +140,24 @@ void App::Destroy()
 {
     if (RENDERER && RENDERER->IsInitialized())
         RENDERER->Shutdown();
+}
+
+// Function to convert from XYZ position to an angle in the ZY plane
+float GetAngleOnZYPlane(const XMVECTOR& position) {
+    // Extract the Z and Y components of the position vector
+    XMFLOAT3 pos;
+    XMStoreFloat3(&pos, position);
+    return atan2f(pos.z, pos.y); // atan2(z, y) gives the angle in radians
+}
+
+// Function to convert from an angle in the ZY plane back to an XYZ position
+XMVECTOR GetPositionFromAngle(float angle, float radius = 1.0f) {
+    // Compute the Y and Z components based on the angle
+    float y = radius * cosf(angle); // y = r * cos(angle)
+    float z = radius * sinf(angle); // z = r * sin(angle)
+
+    // Return the new position as an XMVECTOR (x = 0, y, z)
+    return XMVectorSet(0.0f, y, z, 1.0f);
 }
 
 void App::OnUpdate(UpdateEventArgs& e)
@@ -188,52 +205,74 @@ void App::OnUpdate(UpdateEventArgs& e)
 
             ImGui::PushItemWidth(100);
             ImGui::InputInt("Rows", &m_rows);
-            m_rows = std::clamp(m_rows, 1, 100);
+            m_rows = std::clamp(m_rows, 10, 100);
             ImGui::SameLine();
             ImGui::InputInt("Columns", &m_columns);
-            m_columns = std::clamp(m_columns, 1, 100);
+            m_columns = std::clamp(m_columns, 10, 100);
             ImGui::SameLine();
             bool regen = ImGui::Button("Regenerate");
             if (regen)
-                m_gridManager->GenerateMap(m_width, m_height, 16, 16);
+                m_gridManager->GenerateMap(m_width, m_height, m_rows, m_columns);
 
         }
+
+        if (ImGui::CollapsingHeader("Atmosphere")) {
+
+            auto length = XMVector3Length(m_sunPos);
+            float radius = 0.0f;
+            XMStoreFloat(&radius, length);
+
+            // Convert the current sun position to an angle in the ZY plane
+            float angle = GetAngleOnZYPlane(m_sunPos);
+            float timeOfDay = ((angle / M_PI) + 1) * 12.f;
+            // Use ImGui slider to modify the angle (range from -PI to +PI)
+            ImGui::SliderFloat("Sun Angle 6AM-6PM", &timeOfDay, 6, 18);
+            //timeOfDay += 5 * dt;
+            
+            angle = (timeOfDay - 12) * M_PI / 12.f;
+
+
+            // Convert the angle back to an XYZ position
+            m_sunPos = GetPositionFromAngle(angle, radius);
+        }
+
         ImGui::End();
     }
 
 
-    if (GUIActive()) 
-        return;
+    if (!GUIActive()) {
 
-    if (Globals::INPUT_STATE.keyStates[KeyCode::Key::W]) {
-        m_cameraPos += camFwd * Globals::CAM_PAN_SPEED * dt;
+        if (Globals::INPUT_STATE.keyStates[KeyCode::Key::W]) {
+            m_cameraPos += camFwd * Globals::CAM_PAN_SPEED * dt;
+        }
+        if (Globals::INPUT_STATE.keyStates[KeyCode::Key::S]) {
+            m_cameraPos -= camFwd * Globals::CAM_PAN_SPEED * dt;
+        }
+        if (Globals::INPUT_STATE.keyStates[KeyCode::Key::D]) {
+            m_cameraPos += camRight * Globals::CAM_PAN_SPEED * dt;
+        }
+        if (Globals::INPUT_STATE.keyStates[KeyCode::Key::A]) {
+            m_cameraPos -= camRight * Globals::CAM_PAN_SPEED * dt;
+        }
     }
-    if (Globals::INPUT_STATE.keyStates[KeyCode::Key::S]) {
-        m_cameraPos -= camFwd * Globals::CAM_PAN_SPEED * dt;
-    }
-    if (Globals::INPUT_STATE.keyStates[KeyCode::Key::D]) {
-        m_cameraPos += camRight * Globals::CAM_PAN_SPEED * dt;
-    }
-    if (Globals::INPUT_STATE.keyStates[KeyCode::Key::A]) {
-        m_cameraPos -= camRight * Globals::CAM_PAN_SPEED * dt;
-    }
-
 
     //m_updateClock.GetTotalSeconds();
-    RENDERER->UpdateMVP(m_fov, m_cameraPos, camFwd, camRight, camUp);
+    RENDERER->UpdateMVP(m_fov, m_cameraPos, camFwd, camRight, camUp, m_sunPos);
 }
 
 void App::OnRender(RenderEventArgs& e)
 {
     m_renderClock.Tick();
     if (RENDERER && RENDERER->IsInitialized()) {
-        RENDERER->Shadowmap(m_sunPos);
         RENDERER->Render();
     }
 }
 
 void App::OnKeyPressed(KeyEventArgs& e)
 {
+    Globals::INPUT_STATE.keyStates[e.Key] = true;
+    auto io = ImGui::GetIO();
+    io.AddInputCharacter(e.Char);
 }
 
 void App::OnKeyReleased(KeyEventArgs& e)

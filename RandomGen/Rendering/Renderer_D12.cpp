@@ -318,6 +318,8 @@ void Renderer_D12::UpdateRenderTargetViews()
 }
 
 void Renderer_D12::Render() {
+
+	Shadowmap();
 	auto commandList = m_commQueue->GetCommandList();
 
 	auto backBuffer = m_backbuffers[m_currentBufferIdx];
@@ -329,10 +331,6 @@ void Renderer_D12::Render() {
 	{
 		commandList->TransitionResource(backBuffer,
 			D3D12_RESOURCE_STATE_PRESENT, D3D12_RESOURCE_STATE_RENDER_TARGET);
-
-		commandList->TransitionResource(m_shadowTexture->GetResource(),
-			D3D12_RESOURCE_STATE_DEPTH_WRITE, D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE);
-
 
 		FLOAT clearColor[] = { 0.4f, 0.6f, 0.9f, 1.0f };
 
@@ -365,15 +363,11 @@ void Renderer_D12::Render() {
 		d3dCommList->DrawIndexedInstanced((UINT)m_indexCount, m_numInstances, 0, 0, 0);
 	}
 
-
 	// Present
 	{
 
 		//ImGUI Draw
 		{
-			/*
-			auto open = true;
-			ImGui::ShowDemoWindow(&open);*/
 			commandList->SetDescriptorHeap(D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV, m_imGUISRVHeap.Get());
 			ImGui::Render();
 			
@@ -383,8 +377,7 @@ void Renderer_D12::Render() {
 		commandList->TransitionResource(backBuffer,
 			D3D12_RESOURCE_STATE_RENDER_TARGET, D3D12_RESOURCE_STATE_PRESENT);
 
-		commandList->TransitionResource(m_shadowTexture->GetResource(),
-			D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE, D3D12_RESOURCE_STATE_DEPTH_WRITE);
+
 		m_perFrameFenceValues[m_currentBufferIdx] = m_commQueue->ExecuteCommandList(commandList);
 
 		UINT syncInterval = Globals::VSYNC_ENABLED ? 1 : 0;
@@ -398,18 +391,21 @@ void Renderer_D12::Render() {
 	++m_currentFrame;
 }
 
-void Renderer_D12::Shadowmap(XMVECTOR sunPos) {
+void Renderer_D12::Shadowmap() {
 	auto commandList = m_commQueue->GetCommandList();
 
 	auto dsv = m_dsvs->GetDescriptorHandle(1);
 
 	// Clear the render targets.
 	{
+		commandList->TransitionResource(m_shadowTexture->GetResource(),
+			D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE, D3D12_RESOURCE_STATE_DEPTH_WRITE);
 		commandList->ClearDepth(dsv);
 	}
 
 	//@ZGTODO Move to CommandList_D12
 	{
+
 		auto d3dCommList = commandList->GetGraphicsCommandList();
 		d3dCommList->SetPipelineState(m_shadowPipelineState.Get());
 		d3dCommList->SetGraphicsRootSignature(m_shadowRootSignature->GetD3D12RootSignature().Get());
@@ -423,19 +419,13 @@ void Renderer_D12::Shadowmap(XMVECTOR sunPos) {
 		d3dCommList->OMSetRenderTargets(0, NULL, FALSE, &dsv);
 
 		// Update the MVP matrix
-		XMStoreFloat4(&m_lightingData.sunPos, sunPos);
-		XMVECTOR lookAtPos = XMVectorSet(m_worldWidth/2.f, 0, m_worldWidth / 2.f, 1.f);
-		XMVECTOR sunDir = XMVector4Normalize(lookAtPos - sunPos);
-		const XMVECTOR rightDirection = XMVector3Cross(XMVectorSet(0.f, 1.f, 0.f, 0.f), sunDir);
-;		const XMVECTOR upDirection = XMVector3Cross(sunDir, rightDirection);
-		auto viewMat = XMMatrixLookAtLH(sunPos, sunPos + sunDir, upDirection);
-
-		// Update the projection matrix.
-		auto projMat = XMMatrixOrthographicLH(m_worldWidth * 1.5, m_worldWidth * 1.5, 0.1f, 100.0f);
-		m_sceneData.sunVP = XMMatrixMultiply(viewMat, projMat);
 		d3dCommList->SetGraphicsRoot32BitConstants(0, sizeof(XMMATRIX) / 4, &m_sceneData.sunVP, 0);
 		d3dCommList->SetGraphicsRootShaderResourceView(1, m_modelBufferView.BufferLocation);
 		d3dCommList->DrawIndexedInstanced((UINT)m_indexCount, m_numInstances, 0, 0, 0);
+
+		commandList->TransitionResource(m_shadowTexture->GetResource(),
+			D3D12_RESOURCE_STATE_DEPTH_WRITE, D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE);
+
 	}
 	// Present
 	{
@@ -895,7 +885,7 @@ void Renderer_D12::ResizeDepthBuffer(int width, int height) {
 		D3D12_HEAP_FLAG_NONE,
 		&CD3DX12_RESOURCE_DESC::Tex2D(DXGI_FORMAT_D32_FLOAT, width, height,
 			1, 0, 1, 0, D3D12_RESOURCE_FLAG_ALLOW_DEPTH_STENCIL),
-		D3D12_RESOURCE_STATE_DEPTH_WRITE,
+		D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE,
 		&optimizedClearValue,
 		IID_PPV_ARGS(&resource)
 	));
@@ -917,10 +907,11 @@ void Renderer_D12::ResizeDepthBuffer(int width, int height) {
 	m_lightingData.invShadowTexSize = XMFLOAT2(1.f / width, 1.f / height);
 }
 
-void Renderer_D12::UpdateMVP(float fov, DirectX::XMVECTOR camPos, DirectX::XMVECTOR camFwd, DirectX::XMVECTOR camRight, DirectX::XMVECTOR camUp) {
+
+void Renderer_D12::UpdateMVP(float fov, DirectX::XMVECTOR camPos, DirectX::XMVECTOR camFwd, DirectX::XMVECTOR camRight, DirectX::XMVECTOR camUp, XMVECTOR sunPos) {
 	// Update the view matrix.
 	XMStoreFloat4(&m_lightingData.camPos, camPos);
-	const XMVECTOR upDirection = XMVector3Cross(camFwd, camRight);
+	XMVECTOR upDirection = XMVector3Cross(camFwd, camRight);
 	auto view = XMMatrixLookAtLH(camPos, camPos + camFwd, upDirection);
 
 	// Update the projection matrix.
@@ -929,8 +920,20 @@ void Renderer_D12::UpdateMVP(float fov, DirectX::XMVECTOR camPos, DirectX::XMVEC
 
 	m_sceneData.camVP = XMMatrixMultiply(view, proj);
 
+	//Sun
+	XMVECTOR lookAtPos = XMVectorSet(m_worldWidth / 2.f, 0, m_worldWidth / 2.f, 1.f);
+	XMVECTOR sunDir = XMVector4Normalize(lookAtPos - sunPos);
+	const XMVECTOR rightDirection = XMVector3Cross(XMVectorSet(0.f, 1.f, 0.f, 0.f), sunDir);
+	upDirection = XMVector3Cross(sunDir, rightDirection);
+	view = XMMatrixLookAtLH(sunPos, sunPos + sunDir, upDirection);
+	// Update the projection matrix.
+	proj = XMMatrixOrthographicLH(m_worldWidth * 1.5, m_worldWidth * 1.5, 0.1f, 100.0f);
+	m_sceneData.sunVP = XMMatrixMultiply(view, proj);
+
+	XMStoreFloat4(&m_lightingData.sunPos, sunPos);
 	memcpy(m_sceneDataBegin, &m_sceneData, sizeof(m_sceneData));
 }
+
 
 ComPtr<ID3D12Device2> Renderer_D12::GetDevice() const {
 	return m_device;

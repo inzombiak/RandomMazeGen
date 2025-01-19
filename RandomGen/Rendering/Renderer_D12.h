@@ -105,7 +105,7 @@ class Renderer_D12 {
 		void PostInit();
 		void ResizeTargets();
 		void UpdateRenderTargetViews();
-		void Shadowmap(DirectX::XMVECTOR sunPos);
+		void Shadowmap();
 		void Render();
 		void Shutdown();
 		bool IsInitialized() const;
@@ -119,7 +119,7 @@ class Renderer_D12 {
 		// Resize the depth buffer to match the size of the client area.
 		void ResizeDepthBuffer(int width, int height);
 
-		void UpdateMVP(float fov, DirectX::XMVECTOR camPos, DirectX::XMVECTOR camFwd, DirectX::XMVECTOR camRight, DirectX::XMVECTOR camUp);
+		void UpdateMVP(float fov, DirectX::XMVECTOR camPos, DirectX::XMVECTOR camFwd, DirectX::XMVECTOR camRight, DirectX::XMVECTOR camUp, DirectX::XMVECTOR sunPos);
 
 		ComPtr<ID3D12Device2> GetDevice() const;
 		uint64_t GetCurrentFrameCount() const;
