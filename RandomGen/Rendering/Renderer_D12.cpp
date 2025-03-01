@@ -37,7 +37,6 @@ bool CheckTearingSupport()
 
 	return allowTearing == TRUE;
 }
-
 void EnableDebugLayer()
 {
 #if defined(_DEBUG)
@@ -49,7 +48,6 @@ void EnableDebugLayer()
 	debugInterface->EnableDebugLayer();
 #endif
 }
-
 ComPtr<IDXGISwapChain4> CreateSwapChain(HWND hWnd,
 	ComPtr<ID3D12CommandQueue> commandQueue,
 	uint32_t width, uint32_t height, uint32_t bufferCount)
@@ -94,7 +92,6 @@ ComPtr<IDXGISwapChain4> CreateSwapChain(HWND hWnd,
 
 	return dxgiSwapChain4;
 }
-
 ComPtr<IDXGIAdapter4> GetAdapter(bool useWarp)
 {
 	ComPtr<IDXGIFactory4> dxgiFactory;
@@ -140,7 +137,6 @@ ComPtr<IDXGIAdapter4> GetAdapter(bool useWarp)
 
 	return dxgiAdapter4;
 }
-
 ComPtr<ID3D12Device2> CreateDevice(ComPtr<IDXGIAdapter4> adapter)
 {
 	ComPtr<ID3D12Device2> d3d12Device2;
@@ -370,13 +366,11 @@ void Renderer_D12::Render() {
 		{
 			commandList->SetDescriptorHeap(D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV, m_imGUISRVHeap.Get());
 			ImGui::Render();
-			
 			ImGui_ImplDX12_RenderDrawData(ImGui::GetDrawData(), commandList->GetGraphicsCommandList().Get());
 		}
 
 		commandList->TransitionResource(backBuffer,
 			D3D12_RESOURCE_STATE_RENDER_TARGET, D3D12_RESOURCE_STATE_PRESENT);
-
 
 		m_perFrameFenceValues[m_currentBufferIdx] = m_commQueue->ExecuteCommandList(commandList);
 
@@ -575,67 +569,66 @@ void Renderer_D12::CreateSRVForBoxes(const std::vector<std::vector<Tile>>& tiles
 	auto commandList = m_commQueue->GetCommandList();
 	m_numInstances = mvpMatrices.size();
 	// Create a buffer and upload the MVP matrices to the GPU
-{
-	D3D12_SUBRESOURCE_DATA mvpData = {};
-	mvpData.pData = mvpMatrices.data();
-	mvpData.RowPitch = sizeof(XMMATRIX) * m_numInstances;
-	mvpData.SlicePitch = mvpData.RowPitch;
+	{
+		D3D12_SUBRESOURCE_DATA mvpData = {};
+		mvpData.pData = mvpMatrices.data();
+		mvpData.RowPitch = sizeof(XMMATRIX) * m_numInstances;
+		mvpData.SlicePitch = mvpData.RowPitch;
 
-	ComPtr<ID3D12Resource> intermediateBuffer;
-	commandList->UpdateBufferResource(m_device,
-		&m_modelBuffer, &intermediateBuffer,
-		m_numInstances, sizeof(XMMATRIX), mvpMatrices.data());
+		ComPtr<ID3D12Resource> intermediateBuffer;
+		commandList->UpdateBufferResource(m_device,
+			&m_modelBuffer, &intermediateBuffer,
+			m_numInstances, sizeof(XMMATRIX), mvpMatrices.data());
 
-	m_modelBufferView.BufferLocation = m_modelBuffer->GetGPUVirtualAddress();
-	m_modelBufferView.SizeInBytes = (UINT)(sizeof(XMMATRIX) * m_numInstances);
-	m_modelBufferView.StrideInBytes = sizeof(XMMATRIX);
-	commandList->TrackResource(intermediateBuffer);
+		m_modelBufferView.BufferLocation = m_modelBuffer->GetGPUVirtualAddress();
+		m_modelBufferView.SizeInBytes = (UINT)(sizeof(XMMATRIX) * m_numInstances);
+		m_modelBufferView.StrideInBytes = sizeof(XMMATRIX);
+		commandList->TrackResource(intermediateBuffer);
 
-	D3D12_SHADER_RESOURCE_VIEW_DESC srvDesc = {};
-	srvDesc.ViewDimension = D3D12_SRV_DIMENSION_BUFFER;
-	srvDesc.Format = DXGI_FORMAT_UNKNOWN;
-	srvDesc.Shader4ComponentMapping = D3D12_DEFAULT_SHADER_4_COMPONENT_MAPPING;
-	srvDesc.Buffer.FirstElement = 0;
-	srvDesc.Buffer.NumElements = m_numInstances;
-	srvDesc.Buffer.StructureByteStride = sizeof(XMMATRIX);
-	srvDesc.Buffer.Flags = D3D12_BUFFER_SRV_FLAG_NONE;
+		D3D12_SHADER_RESOURCE_VIEW_DESC srvDesc = {};
+		srvDesc.ViewDimension = D3D12_SRV_DIMENSION_BUFFER;
+		srvDesc.Format = DXGI_FORMAT_UNKNOWN;
+		srvDesc.Shader4ComponentMapping = D3D12_DEFAULT_SHADER_4_COMPONENT_MAPPING;
+		srvDesc.Buffer.FirstElement = 0;
+		srvDesc.Buffer.NumElements = m_numInstances;
+		srvDesc.Buffer.StructureByteStride = sizeof(XMMATRIX);
+		srvDesc.Buffer.Flags = D3D12_BUFFER_SRV_FLAG_NONE;
 
-	m_modelCPUHandle = m_shaderResources->GetDescriptorHandle(0);
-	m_device->CreateShaderResourceView(m_modelBuffer.Get(), &srvDesc, m_modelCPUHandle);
-}
+		m_modelCPUHandle = m_shaderResources->GetDescriptorHandle(0);
+		m_device->CreateShaderResourceView(m_modelBuffer.Get(), &srvDesc, m_modelCPUHandle);
+	}
 
-{
-	D3D12_SUBRESOURCE_DATA pedData = {};
-	pedData.pData = peds.data();
-	pedData.RowPitch = sizeof(PerEntityData) * m_numInstances;
-	pedData.SlicePitch = pedData.RowPitch;
+	{
+		D3D12_SUBRESOURCE_DATA pedData = {};
+		pedData.pData = peds.data();
+		pedData.RowPitch = sizeof(PerEntityData) * m_numInstances;
+		pedData.SlicePitch = pedData.RowPitch;
 
-	ComPtr<ID3D12Resource> intermediateBuffer;
-	commandList->UpdateBufferResource(m_device,
-		&m_entityDataBuffer, &intermediateBuffer,
-		m_numInstances, sizeof(PerEntityData), peds.data());
+		ComPtr<ID3D12Resource> intermediateBuffer;
+		commandList->UpdateBufferResource(m_device,
+			&m_entityDataBuffer, &intermediateBuffer,
+			m_numInstances, sizeof(PerEntityData), peds.data());
 
-	m_entityDataBufferView.BufferLocation = m_entityDataBuffer->GetGPUVirtualAddress();
-	m_entityDataBufferView.SizeInBytes = (UINT)(sizeof(PerEntityData) * m_numInstances);
-	m_entityDataBufferView.StrideInBytes = sizeof(PerEntityData);
-	commandList->TrackResource(intermediateBuffer);
+		m_entityDataBufferView.BufferLocation = m_entityDataBuffer->GetGPUVirtualAddress();
+		m_entityDataBufferView.SizeInBytes = (UINT)(sizeof(PerEntityData) * m_numInstances);
+		m_entityDataBufferView.StrideInBytes = sizeof(PerEntityData);
+		commandList->TrackResource(intermediateBuffer);
 
-	D3D12_SHADER_RESOURCE_VIEW_DESC srvDesc = {};
-	srvDesc.ViewDimension = D3D12_SRV_DIMENSION_BUFFER;
-	srvDesc.Format = DXGI_FORMAT_UNKNOWN;
-	srvDesc.Shader4ComponentMapping = D3D12_DEFAULT_SHADER_4_COMPONENT_MAPPING;
-	srvDesc.Buffer.FirstElement = 0;
-	srvDesc.Buffer.NumElements = m_numInstances;
-	srvDesc.Buffer.StructureByteStride = sizeof(PerEntityData);
-	srvDesc.Buffer.Flags = D3D12_BUFFER_SRV_FLAG_NONE;
+		D3D12_SHADER_RESOURCE_VIEW_DESC srvDesc = {};
+		srvDesc.ViewDimension = D3D12_SRV_DIMENSION_BUFFER;
+		srvDesc.Format = DXGI_FORMAT_UNKNOWN;
+		srvDesc.Shader4ComponentMapping = D3D12_DEFAULT_SHADER_4_COMPONENT_MAPPING;
+		srvDesc.Buffer.FirstElement = 0;
+		srvDesc.Buffer.NumElements = m_numInstances;
+		srvDesc.Buffer.StructureByteStride = sizeof(PerEntityData);
+		srvDesc.Buffer.Flags = D3D12_BUFFER_SRV_FLAG_NONE;
 
-	m_entityDataCPUHandle = m_shaderResources->GetDescriptorHandle(2);
-	m_device->CreateShaderResourceView(m_entityDataBuffer.Get(), &srvDesc, m_entityDataCPUHandle);
-}
+		m_entityDataCPUHandle = m_shaderResources->GetDescriptorHandle(2);
+		m_device->CreateShaderResourceView(m_entityDataBuffer.Get(), &srvDesc, m_entityDataCPUHandle);
+	}
 	auto fenceValue = m_commQueue->ExecuteActiveCommandList();
 	m_commQueue->WaitForFenceValue(fenceValue);
 }
-
 
 void Renderer_D12::BuildPipelineState(const std::wstring& vertexShaderName, const std::wstring& pixelShaderName) {
 	// Load the vertex shader.
@@ -747,8 +740,6 @@ void Renderer_D12::BuildPipelineState(const std::wstring& vertexShaderName, cons
 	sizeof(PipelineStateStream), &pipelineStateStream
 	};
 	ThrowIfFailed(m_device->CreatePipelineState(&pipelineStateStreamDesc, IID_PPV_ARGS(&m_pipelineState)));
-
-
 }
 
 void Renderer_D12::BuildShadowPipelineState(const std::wstring& vertexShaderName, const std::wstring& pixelShaderName) {
@@ -906,7 +897,6 @@ void Renderer_D12::ResizeDepthBuffer(int width, int height) {
 
 	m_lightingData.invShadowTexSize = XMFLOAT2(1.f / width, 1.f / height);
 }
-
 
 void Renderer_D12::UpdateMVP(float fov, DirectX::XMVECTOR camPos, DirectX::XMVECTOR camFwd, DirectX::XMVECTOR camRight, DirectX::XMVECTOR camUp, XMVECTOR sunPos) {
 	// Update the view matrix.
