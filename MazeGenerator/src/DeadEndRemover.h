@@ -8,7 +8,7 @@ class DeadEndRemover : public IThreadedSolver
 {
 public:
 	
-	void RemoveDeadEnds(std::vector<std::vector<Tile>>& tiles, const GameDefs::GenerateType& genType, int removalPercentage, unsigned seed, int sleepDuration);
+	void RemoveDeadEnds(const TileHolder& tiles, const MazeDefs::GenerateType& genType, int removalPercentage, unsigned seed, int sleepDuration);
 
 private:
 
@@ -17,7 +17,7 @@ private:
 	void RemoveByStep();
 	void RemoveDeadEndByStep(int i, int j);
 
-	std::vector<std::vector<Tile>>* m_tiles;
+	const TileHolder* m_tiles;
 
 	int m_rowCount;
 	int m_columnCount;
@@ -25,7 +25,7 @@ private:
 	int m_sleepDuration;
 	int m_removalPercentage;
 
-	GameDefs::GenerateType m_generateType;
+	MazeDefs::GenerateType m_generateType;
 	std::default_random_engine m_randomNumGen;
 	std::uniform_int_distribution<int> m_distribution;
 

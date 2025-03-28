@@ -4,7 +4,7 @@ class MARecursiveBacktracker :
 	public IMazeAlgorithm
 {
 public:
-	void GenerateMaze(std::vector<std::vector<Tile>>& tiles, const GameDefs::GenerateType& genType, unsigned seed, int sleepDuration) override;
+	void GenerateMaze(const TileHolder& tiles, const MazeDefs::GenerateType& genType, unsigned seed, int sleepDuration) override;
 
 protected:
 	void GenerateFull() override;

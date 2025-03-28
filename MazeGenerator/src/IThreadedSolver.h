@@ -27,7 +27,7 @@ public:
 	}
 
 protected:
-	IThreadedSolver::IThreadedSolver(const IThreadedSolver &){}
+	IThreadedSolver(const IThreadedSolver &){}
 	bool CanGenerate()
 	{
 		std::unique_lock<std::mutex> lock(m_generateMutex);

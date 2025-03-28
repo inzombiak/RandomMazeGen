@@ -1,7 +1,7 @@
 #include "RootSignature_D12.h"
 
 #include "Renderer_D12.h"
-#include "../GameDefs.h"
+#include "../AppDefs.h"
 
 RootSignature_D12::RootSignature_D12(const D3D12_ROOT_SIGNATURE_DESC1& rootSignatureDesc) :
       m_rootSignatureDesc{}

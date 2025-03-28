@@ -1,51 +1,4 @@
-#include "GameDefs.h"
-#include "GridManager.h"
-
-
-#if USE_SFML
-#include <iostream>
-
-#include <iostream>
-
-int main()
-{
-	std::cout << "R - Generate New Map" << std::endl;
-	std::cout << "G - Toggle Maze Generator(Recursive Backtacker(default) and Eller's Algortihm)" << std::endl;
-	std::cout << "T - Toggle between watch and instant (instant is default)" << std::endl;
-
-	while (window.isOpen())
-	{
-		sf::Event event;
-
-		while (window.pollEvent(event))
-		{
-			if (event.type == sf::Event::Closed)
-			{
-				gm.Close();
-				window.close();
-			}
-			if (event.type == sf::Event::KeyPressed)
-			{
-				if (event.key.code == sf::Keyboard::R)
-					gm.RandomizeMap();
-				else if (event.key.code == sf::Keyboard::G)
-					gm.ToggleMazeAlgorithm();
-				else if (event.key.code == sf::Keyboard::T)
-					gm.ToggleMazeGenerateType();
-			}
-		}
-
-		window.clear(sf::Color::White);
-		gm.Draw(window);
-		window.display();
-	}
-
-	return 0;
-}
-
-#else
 #include "Rendering/Window.h"
-#include "GameDefs.h"
 
 #include <algorithm>
 #include <cassert>
@@ -96,4 +49,3 @@ int CALLBACK wWinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, PWSTR lpCmdL
 	mazeGen->Destroy();
 	return 0;
 }
-#endif

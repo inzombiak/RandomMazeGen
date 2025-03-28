@@ -11,14 +11,15 @@ class RoomGenerator
 {
 
 public:
+	RoomGenerator() {};
 
 	void SetPlacementAttemptCount(int count);
-	void SetRoomHorizontalBounds(const sf::Vector2i& newHorizBounds);
-	sf::Vector2i GetRoomHorizontalBounds();
-	void SetRoomVerticalBounds(const sf::Vector2i& newVertBounds);
-	sf::Vector2i GetRoomVerticalBounds();
+	void SetRoomHorizontalBounds(const MazeDefs::Vector2i& newHorizBounds);
+	MazeDefs::Vector2i GetRoomHorizontalBounds();
+	void SetRoomVerticalBounds(const MazeDefs::Vector2i& newVertBounds);
+	MazeDefs::Vector2i GetRoomVerticalBounds();
 	
-	const std::vector<sf::IntRect>& GenerateRoom(std::vector<std::vector<Tile>>& tiles, const GameDefs::GenerateType& genType, unsigned seed, int sleepDuration);
+	const std::vector<MazeDefs::IntRect>& GenerateRoom(const TileHolder& tiles, const MazeDefs::GenerateType& genType, unsigned seed, int sleepDuration);
 
 private:
 
@@ -27,12 +28,12 @@ private:
 	void GenerateByStep();
 
 	//TODO: May need to lock all reads for these if I add GUI
-	sf::Vector2i m_verticalBounds;
-	sf::Vector2i m_horizontalBounds;
+	MazeDefs::Vector2i m_verticalBounds;
+	MazeDefs::Vector2i m_horizontalBounds;
 	int m_attemptCount;
 
-	std::vector<sf::IntRect> m_rooms;
-	std::vector<std::vector<Tile>>* m_tiles;
+	std::vector<MazeDefs::IntRect> m_rooms;
+	const TileHolder* m_tiles;
 	int m_rowCount;
 	int m_columnCount;
 	int m_seed;
@@ -48,7 +49,7 @@ private:
 	static std::atomic<bool> m_done;
 	int m_sleepDuration;
 
-	GameDefs::GenerateType m_generateType;
+	MazeDefs::GenerateType m_generateType;
 	std::default_random_engine m_randomNumGen;
 
 };

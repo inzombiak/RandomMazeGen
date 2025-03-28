@@ -13,12 +13,6 @@
       <UniqueIdentifier>{67DA6AB6-F800-4c08-8B7A-83BB121AAD01}</UniqueIdentifier>
       <Extensions>rc;ico;cur;bmp;dlg;rc2;rct;bin;rgs;gif;jpg;jpeg;jpe;resx;tiff;tif;png;wav;mfcribbon-ms</Extensions>
     </Filter>
-    <Filter Include="Header Files\MazeGen">
-      <UniqueIdentifier>{73189443-aa36-492e-9015-b9ed60328bad}</UniqueIdentifier>
-    </Filter>
-    <Filter Include="Source Files\MazeGen">
-      <UniqueIdentifier>{76c5b953-7c15-40b3-8a51-a54a14f0b192}</UniqueIdentifier>
-    </Filter>
     <Filter Include="Header Files\Utilities">
       <UniqueIdentifier>{3676cfe7-b949-4e68-bfa3-1c9348a7d28d}</UniqueIdentifier>
     </Filter>
@@ -55,24 +49,6 @@
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="main.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="GridManager.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="Tile.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="Math.cpp">
-      <Filter>Source Files\Utilities</Filter>
-    </ClCompile>
-    <ClCompile Include="RoomGenerator.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="MazeConnector.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="DeadEndRemover.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="Rendering\Window.cpp">
@@ -204,41 +180,8 @@
     <ClCompile Include="Extern\imgui\backends\imgui_impl_win32.cpp">
       <Filter>Header Files\Extern\imgui</Filter>
     </ClCompile>
-    <ClCompile Include="MAEllers.cpp">
-      <Filter>Source Files\MazeGen</Filter>
-    </ClCompile>
-    <ClCompile Include="MARecursiveBacktracker.cpp">
-      <Filter>Source Files\MazeGen</Filter>
-    </ClCompile>
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="GridManager.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="Tile.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="Singleton.h">
-      <Filter>Header Files\Utilities</Filter>
-    </ClInclude>
-    <ClInclude Include="Math.h">
-      <Filter>Header Files\Utilities</Filter>
-    </ClInclude>
-    <ClInclude Include="GameDefs.h">
-      <Filter>Header Files\Utilities</Filter>
-    </ClInclude>
-    <ClInclude Include="RoomGenerator.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="MazeConnector.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="DeadEndRemover.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="IThreadedSolver.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
     <ClInclude Include="Rendering\d3dx12\d3d12.h">
       <Filter>Header Files\Rendering\d3dx12</Filter>
     </ClInclude>
@@ -419,14 +362,8 @@
     <ClInclude Include="Extern\imgui\backends\imgui_impl_win32.h">
       <Filter>Header Files\Extern\imgui</Filter>
     </ClInclude>
-    <ClInclude Include="IMazeAlgorithm.h">
-      <Filter>Header Files\MazeGen</Filter>
-    </ClInclude>
-    <ClInclude Include="MARecursiveBacktracker.h">
-      <Filter>Header Files\MazeGen</Filter>
-    </ClInclude>
-    <ClInclude Include="MAEllers.h">
-      <Filter>Header Files\MazeGen</Filter>
+    <ClInclude Include="AppDefs.h">
+      <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>

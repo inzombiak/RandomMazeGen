@@ -1,10 +1,10 @@
 #include "DeadEndRemover.h"
 
-using namespace GameDefs;
+using namespace MazeDefs;
 
-void DeadEndRemover::RemoveDeadEnds(std::vector<std::vector<Tile>>& tiles, const GameDefs::GenerateType& genType, int removalPercentage, unsigned seed, int sleepDuration)
+void DeadEndRemover::RemoveDeadEnds(const TileHolder& tiles, const MazeDefs::GenerateType& genType, int removalPercentage, unsigned seed, int sleepDuration)
 {
-	m_rowCount = (int)tiles.size();
+	m_rowCount = tiles.GetRowCount();
 	if (m_rowCount < 1)
 		return;
 	{
@@ -16,7 +16,7 @@ void DeadEndRemover::RemoveDeadEnds(std::vector<std::vector<Tile>>& tiles, const
 	m_randomNumGen.seed(seed);
 	m_tiles = &tiles;
 	m_seed = seed;
-	m_columnCount = (int)(*m_tiles)[0].size();
+	m_columnCount = tiles.GetColumnCount();
 	m_removalPercentage = removalPercentage;
 	if (genType == Step)
 		RemoveByStep();
@@ -45,17 +45,16 @@ void DeadEndRemover::RemoveDeadEnd(int i, int j)
 	int nextI, nextJ;
 	
 	//Skip rooms and empty tiles
-	if ((*m_tiles)[i][j].GetType() != TileType::Passage)
+	if ((*m_tiles)(i ,j).GetType() != TileType::Passage)
 		return;
 
-	tilePassageIndices = (*m_tiles)[i][j].GetPassageDirectionIndices();
+	tilePassageIndices = (*m_tiles)(i, j).GetPassageDirectionIndices();
 	
 	//Only want dead ends (only 1 passage is open)
 	if (tilePassageIndices.size() != 1)
 		return;
 
-	(*m_tiles)[i][j].SetType(TileType::Empty);
-	(*m_tiles)[i][j].SetColor(sf::Color::White);
+	(*m_tiles)(i, j).SetType(TileType::Empty);
 
 	nextI = i + DIRECTION_CHANGES[tilePassageIndices[0]].first;
 	nextJ = j + DIRECTION_CHANGES[tilePassageIndices[0]].second;
@@ -64,7 +63,7 @@ void DeadEndRemover::RemoveDeadEnd(int i, int j)
 		nextJ < 0 || nextJ >= m_columnCount)
 		return;
 
-	(*m_tiles)[nextI][nextJ].RemoveDirection(OPPOSITE_DIRECTIONS[tilePassageIndices[0]]);
+	(*m_tiles)(nextI, nextJ).RemoveDirection(OPPOSITE_DIRECTIONS[tilePassageIndices[0]]);
 
 	RemoveDeadEnd(nextI, nextJ);
 }
@@ -112,10 +111,10 @@ void DeadEndRemover::RemoveDeadEndByStep(int i, int j)
 	std::vector<int> tilePassageIndices;
 	int nextI, nextJ;
 	//Skip rooms and empty tiles
-	if ((*m_tiles)[i][j].GetType() != TileType::Passage)
+	if ((*m_tiles)(i, j).GetType() != TileType::Passage)
 		return;
 
-	tilePassageIndices = (*m_tiles)[i][j].GetPassageDirectionIndices();
+	tilePassageIndices = (*m_tiles)(i, j).GetPassageDirectionIndices();
 
 	if (!CanGenerate())
 	{
@@ -127,8 +126,7 @@ void DeadEndRemover::RemoveDeadEndByStep(int i, int j)
 	if (tilePassageIndices.size() != 1)
 		return;
 
-	(*m_tiles)[i][j].SetType(TileType::Empty);
-	(*m_tiles)[i][j].SetColor(sf::Color::White);
+	(*m_tiles)(i, j).SetType(TileType::Empty);
 
 	nextI = i + DIRECTION_CHANGES[tilePassageIndices[0]].first;
 	nextJ = j + DIRECTION_CHANGES[tilePassageIndices[0]].second;
@@ -137,7 +135,7 @@ void DeadEndRemover::RemoveDeadEndByStep(int i, int j)
 		nextJ < 0 || nextJ >= m_columnCount)
 		return;
 
-	(*m_tiles)[nextI][nextJ].RemoveDirection(OPPOSITE_DIRECTIONS[tilePassageIndices[0]]);
+	(*m_tiles)(nextI, nextJ).RemoveDirection(OPPOSITE_DIRECTIONS[tilePassageIndices[0]]);
 	std::this_thread::sleep_for(std::chrono::milliseconds(m_sleepDuration));
 
 	if (!CanGenerate())

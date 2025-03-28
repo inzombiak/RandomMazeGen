@@ -3,7 +3,7 @@
 #include "Renderer_D12.h"
 #include "DescriptorAllocatorPage_D12.h"
 
-#include "../GameDefs.h"
+#include "../AppDefs.h"
 
 DescriptorAllocation_D12::DescriptorAllocation_D12()
     : m_descriptor{ 0 }

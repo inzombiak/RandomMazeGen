@@ -1,34 +1,34 @@
 #include "Math.h"
 
-float sfmath::Dot(const sf::Vector2f& v1, const sf::Vector2f& v2)
+float sfmath::Dot(const MazeDefs::Vector2f& v1, const MazeDefs::Vector2f& v2)
 {
 	return v1.x * v2.x + v1.y * v2.y;
 }
 
-float sfmath::Dot(const sf::Vector3f& v1, const sf::Vector3f& v2)
+float sfmath::Dot(const MazeDefs::Vector3f& v1, const MazeDefs::Vector3f& v2)
 {
 	return v1.x * v2.x + v1.y * v2.y + v1.z * v2.z;
 }
 
-float sfmath::Length2(const sf::Vector2f& v)
+float sfmath::Length2(const MazeDefs::Vector2f& v)
 {
 	return (v.x * v.x + v.y  * v.y);
 }
-float sfmath::Length(const sf::Vector2f& v)
+float sfmath::Length(const MazeDefs::Vector2f& v)
 {
 	return sqrt(Length2(v));
 }
 
-float sfmath::Length2(const sf::Vector3f& v)
+float sfmath::Length2(const MazeDefs::Vector3f& v)
 {
 	return (v.x * v.x + v.y  * v.y + v.z * v.z);
 }
-float sfmath::Length(const sf::Vector3f& v)
+float sfmath::Length(const MazeDefs::Vector3f& v)
 {
 	return sqrt(Length2(v));
 }
 
-float sfmath::Cross(const sf::Vector2f& v1, const sf::Vector2f& v2)
+float sfmath::Cross(const MazeDefs::Vector2f& v1, const MazeDefs::Vector2f& v2)
 {
 	float result = (v1.x * v2.y) - (v1.y * v2.x);
 
@@ -37,9 +37,9 @@ float sfmath::Cross(const sf::Vector2f& v1, const sf::Vector2f& v2)
 	return result;
 }
 
-sf::Vector3f sfmath::Cross3D(const sf::Vector3f& v1, const sf::Vector3f& v2)
+MazeDefs::Vector3f sfmath::Cross3D(const MazeDefs::Vector3f& v1, const MazeDefs::Vector3f& v2)
 {
-	sf::Vector3f result;
+	MazeDefs::Vector3f result;
 
 	result.x = v1.y * v2.z - v1.z * v2.y;
 	result.y = v1.z * v2.x - v1.x * v2.z;
@@ -48,7 +48,7 @@ sf::Vector3f sfmath::Cross3D(const sf::Vector3f& v1, const sf::Vector3f& v2)
 	return result;
 }
 
-bool sfmath::SameSideOfLine(const sf::Vector2f& a, const sf::Vector2f& b, const sf::Vector2f& p1, const sf::Vector2f& p2)
+bool sfmath::SameSideOfLine(const MazeDefs::Vector2f& a, const MazeDefs::Vector2f& b, const MazeDefs::Vector2f& p1, const MazeDefs::Vector2f& p2)
 {
 	float cp1 = Cross(b - a, p1 - a);
 	float cp2 = Cross(b - a, p2 - a);
@@ -57,7 +57,7 @@ bool sfmath::SameSideOfLine(const sf::Vector2f& a, const sf::Vector2f& b, const 
 
 }
 
-bool sfmath::PointInTriangle(const sf::Vector2f& p0, const sf::Vector2f& p1, const sf::Vector2f& p2, const sf::Vector2f& p)
+bool sfmath::PointInTriangle(const MazeDefs::Vector2f& p0, const MazeDefs::Vector2f& p1, const MazeDefs::Vector2f& p2, const MazeDefs::Vector2f& p)
 {
 	float s = p0.y*p2.x - p0.x*p2.y + (p2.y - p0.y)*p.x + (p0.x - p2.x)*p.y;
 	float t = p0.x*p1.y - p0.y*p1.x + (p0.y - p1.y)*p.x + (p1.x - p0.x)*p.y;
@@ -75,14 +75,14 @@ bool sfmath::PointInTriangle(const sf::Vector2f& p0, const sf::Vector2f& p1, con
 	return s > 0 && t > 0 && (s + t) <= A;
 }
 
-bool sfmath::LineLineIntersect(const sf::Vector2f vA, const sf::Vector2f vB, const sf::Vector2f uA, const sf::Vector2f uB, sf::Vector2f& intersectPoint)
+bool sfmath::LineLineIntersect(const MazeDefs::Vector2f vA, const MazeDefs::Vector2f vB, const MazeDefs::Vector2f uA, const MazeDefs::Vector2f uB, MazeDefs::Vector2f& intersectPoint)
 {
-	sf::Vector2f vDir = (vB - vA);
-	sf::Vector2f uDir = (uB - uA);
+	MazeDefs::Vector2f vDir = (vB - vA);
+	MazeDefs::Vector2f uDir = (uB - uA);
 
 	//Cross product of the directions
 	float dirCross = Cross(vDir, uDir);
-	sf::Vector2f originDiff = uA - vA;
+	MazeDefs::Vector2f originDiff = uA - vA;
 
 	if (dirCross == 0 && Cross(originDiff, vDir) == 0)
 	{
@@ -120,18 +120,18 @@ bool sfmath::LineLineIntersect(const sf::Vector2f vA, const sf::Vector2f vB, con
 	return false;
 }
 
-bool sfmath::RayLineIntersect(const Ray& ray, const sf::Vector2f a, const sf::Vector2f b)
+bool sfmath::RayLineIntersect(const Ray& ray, const MazeDefs::Vector2f a, const MazeDefs::Vector2f b)
 {
 	//Read this http://stackoverflow.com/questions/563198/how-do-you-detect-where-two-line-segments-intersect/565282#565282
 	//The direction of the line, normalized
-	sf::Vector2f lineDir = b - a;
+	MazeDefs::Vector2f lineDir = b - a;
 
 	//Cross product of the directions
 	float dirCross = Cross(ray.direction, lineDir);
 	if (dirCross == 0)
 		return false;
 
-	sf::Vector2f originDiff = a - ray.origin;
+	MazeDefs::Vector2f originDiff = a - ray.origin;
 	float t = (Cross(originDiff, lineDir)) / dirCross;
 	float u = (Cross(originDiff, ray.direction)) / dirCross;
 
@@ -139,9 +139,9 @@ bool sfmath::RayLineIntersect(const Ray& ray, const sf::Vector2f a, const sf::Ve
 	return ((t >= 0) & (u >= 0) & (u <= 1));
 }
 
-bool sfmath::IsReflex(const sf::Vector2f& p, const sf::Vector2f& prev, const sf::Vector2f& next, bool counterClockwise)
+bool sfmath::IsReflex(const MazeDefs::Vector2f& p, const MazeDefs::Vector2f& prev, const MazeDefs::Vector2f& next, bool counterClockwise)
 {
-	sf::Vector2f vec1, vec2;
+	MazeDefs::Vector2f vec1, vec2;
 	float angle;
 	vec1 = prev - p;
 	vec2 = next - p;
@@ -154,9 +154,9 @@ bool sfmath::IsReflex(const sf::Vector2f& p, const sf::Vector2f& prev, const sf:
 	return true;
 }
 
-std::vector<sf::Vector2f> sfmath::InvertShape(const std::vector<sf::Vector2f>& vertices, sf::Vector2f origin)
+std::vector<MazeDefs::Vector2f> sfmath::InvertShape(const std::vector<MazeDefs::Vector2f>& vertices, MazeDefs::Vector2f origin)
 {
-	std::vector<sf::Vector2f> result;
+	std::vector<MazeDefs::Vector2f> result;
 	result.reserve(vertices.size());
 	for (unsigned int i = 0; i < vertices.size(); ++i)
 	{
@@ -171,32 +171,32 @@ int sfmath::Mod(int i, int base)
 
 }
 
-float sfmath::Angle(const sf::Vector2f& v1, const sf::Vector2f& v2)
+float sfmath::Angle(const MazeDefs::Vector2f& v1, const MazeDefs::Vector2f& v2)
 {
 	return atan2(sfmath::Cross(v1, v2), sfmath::Dot(v1, v2));
 }
 
-sf::Vector2f sfmath::Normalize(const sf::Vector2f& vec)
+MazeDefs::Vector2f sfmath::Normalize(const MazeDefs::Vector2f& vec)
 {
 	return vec / Length(vec);
 }
 
-sf::Vector3f sfmath::Normalize(const sf::Vector3f& vec)
+MazeDefs::Vector3f sfmath::Normalize(const MazeDefs::Vector3f& vec)
 {
 	return vec / Length(vec);
 }
 
-bool sfmath::SameDirection(const sf::Vector2f& a, const sf::Vector2f& b)
+bool sfmath::SameDirection(const MazeDefs::Vector2f& a, const MazeDefs::Vector2f& b)
 {
 	return (sfmath::Dot(a, b) > 0);
 }
 
-bool sfmath::SameDirection(const sf::Vector3f& a, const sf::Vector3f& b)
+bool sfmath::SameDirection(const MazeDefs::Vector3f& a, const MazeDefs::Vector3f& b)
 {
 	return (sfmath::Dot(a, b) > 0);
 }
 
-sfmath::Simplex sfmath::GetSimplex(const std::vector<sf::Vector2f>& verticesA, const std::vector<sf::Vector2f>& verticesB, const sf::Vector2f& dir)
+sfmath::Simplex sfmath::GetSimplex(const std::vector<MazeDefs::Vector2f>& verticesA, const std::vector<MazeDefs::Vector2f>& verticesB, const MazeDefs::Vector2f& dir)
 {
 	Simplex result;
 	result.aSupp = GetSupportPoint(verticesA, dir);
@@ -207,10 +207,10 @@ sfmath::Simplex sfmath::GetSimplex(const std::vector<sf::Vector2f>& verticesA, c
 	return  result; 
 }
 
-sf::Vector2f sfmath::GetSupportPoint(const std::vector<sf::Vector2f>& vertices, const sf::Vector2f& dir)
+MazeDefs::Vector2f sfmath::GetSupportPoint(const std::vector<MazeDefs::Vector2f>& vertices, const MazeDefs::Vector2f& dir)
 {
 	float max = -FLT_MAX;
-	sf::Vector2f result;
+	MazeDefs::Vector2f result;
 	float dot;
 
 	for (int i = 0; i < vertices.size(); ++i)
@@ -226,7 +226,7 @@ sf::Vector2f sfmath::GetSupportPoint(const std::vector<sf::Vector2f>& vertices, 
 	return result;
 }
 
-sf::Vector2f sfmath::ProjectOntoVector(const sf::Vector2f& vec, const sf::Vector2f& target)
+MazeDefs::Vector2f sfmath::ProjectOntoVector(const MazeDefs::Vector2f& vec, const MazeDefs::Vector2f& target)
 {
 	return ((Dot(vec, target)) * target) / Length2(target);
 }

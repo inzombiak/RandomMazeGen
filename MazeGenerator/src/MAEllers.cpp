@@ -1,14 +1,16 @@
 #include "MAEllers.h"
+#include "MazeGenPriv.h"
+
 #include <algorithm>
 #include <random>       
 #include <chrono> 
 #include <thread>
 
-using namespace GameDefs;
+using namespace MazeDefs;
 
-void MAEllers::GenerateMaze(std::vector<std::vector<Tile>>& tiles, const GenerateType& genType, unsigned seed, int sleepDuration)
+void MAEllers::GenerateMaze(const TileHolder& tiles, const GenerateType& genType, unsigned seed, int sleepDuration)
 {
-	if (tiles.size() < 1)
+	if (tiles.GetRowCount() < 1)
 		return;
 
 	{
@@ -21,12 +23,12 @@ void MAEllers::GenerateMaze(std::vector<std::vector<Tile>>& tiles, const Generat
 	m_seed = seed;
 	m_randomNumGen.seed(m_seed);
 	m_tiles = &tiles;
-	m_rowCount = (int)(*m_tiles).size();
-	m_columnCount = (int)(*m_tiles)[0].size();
+	m_rowCount = tiles.GetRowCount();
+	m_columnCount = tiles.GetColumnCount();
 	m_rowSets.resize(m_columnCount, std::make_pair(std::make_pair(-1, -1), -1));
 
 
-	if (genType == GameDefs::Step)
+	if (genType == MazeDefs::Step)
 		GenerateByStep();
 	else
 		GenerateFull();
@@ -78,8 +80,7 @@ bool MAEllers::CompareAndMergeSets(const std::pair<int, int>& first, const std::
 		if (indices.first == first.first)
 			m_rowSets[minSetTiles[i].second].second = maxSetIndex;
 
-		(*m_tiles)[indices.first][indices.second].SetID(maxSetIndex);
-		(*m_tiles)[indices.first][indices.second].SetColor(SetIDManagerSingleton::Instance().GetSetColor(maxSetIndex, m_seed));
+		(*m_tiles)(indices.first, indices.second).SetID(maxSetIndex);
 	}
 
 	maxIt->second.insert(maxIt->second.end(), minSetTiles.begin(), minSetTiles.end());
@@ -95,7 +96,7 @@ void MAEllers::InitalizeRow(int row)
 	int id;
 	for (int j = 0; j < m_columnCount; ++j)
 	{
-		if ((*m_tiles)[row][j].GetType() == GameDefs::Room)
+		if ((*m_tiles)(row, j).GetType() == MazeDefs::Room)
 		{
 			m_rowSets[j].first = INVALID_INDICES;
 			m_rowSets[j].second = -1;
@@ -103,13 +104,12 @@ void MAEllers::InitalizeRow(int row)
 		}
 			
 		if (m_rowSets[j].second == -1)
-			id = m_rowSets[j].second = GameDefs::SetIDManagerSingleton::Instance().GetNextSetID();
+			id = m_rowSets[j].second = SetIDManagerSingleton::Instance().GetNextSetID();
 		else
 			id = m_rowSets[j].second;
 
-		(*m_tiles)[row][j].SetType(TileType::Passage);
-		(*m_tiles)[row][j].SetID(id);
-		(*m_tiles)[row][j].SetColor(SetIDManagerSingleton::Instance().GetSetColor(id, m_seed));
+		(*m_tiles)(row, j).SetType(TileType::Passage);
+		(*m_tiles)(row, j).SetID(id);
 		m_rowSets[j].first = std::make_pair(row, j);
 
 
@@ -124,15 +124,15 @@ void MAEllers::MergeColumns(int row)
 	{
 		if (m_rowSets[0].second != m_rowSets[1].second)
 		{
-			(*m_tiles)[row][0].AddDirection(PassageDirection::East);
-			(*m_tiles)[row][1].AddDirection(PassageDirection::West);
+			(*m_tiles)(row, 0).AddDirection(PassageDirection::East);
+			(*m_tiles)(row, 1).AddDirection(PassageDirection::West);
 			CompareAndMergeSets(std::make_pair(row, 0), std::make_pair(row, 1));
 		}
 
 		if (m_rowSets[m_columnCount - 1].second != m_rowSets[m_columnCount - 2].second)
 		{
-			(*m_tiles)[row][m_columnCount - 1].AddDirection(PassageDirection::West);
-			(*m_tiles)[row][m_columnCount - 2].AddDirection(PassageDirection::East);
+			(*m_tiles)(row, m_columnCount - 1).AddDirection(PassageDirection::West);
+			(*m_tiles)(row, m_columnCount - 2).AddDirection(PassageDirection::East);
 			CompareAndMergeSets(std::make_pair(row, m_columnCount - 1), std::make_pair(row, m_columnCount - 2));
 		}
 
@@ -149,8 +149,8 @@ void MAEllers::MergeColumns(int row)
 				continue;
 
 			//Otherwise connect
-			(*m_tiles)[current.first][current.second].AddDirection(PassageDirection::East);
-			(*m_tiles)[next.first][next.second].AddDirection(PassageDirection::West);
+			(*m_tiles)(current.first, current.second).AddDirection(PassageDirection::East);
+			(*m_tiles)(next.first, next.second).AddDirection(PassageDirection::West);
 		}
 		return;
 	}
@@ -167,8 +167,8 @@ void MAEllers::MergeColumns(int row)
 		if (current != INVALID_INDICES && next != INVALID_INDICES &&
 			CompareAndMergeSets(current, next))
 		{
-			(*m_tiles)[row][0].AddDirection(PassageDirection::East);
-			(*m_tiles)[row][1].AddDirection(PassageDirection::West);
+			(*m_tiles)(row, 0).AddDirection(PassageDirection::East);
+			(*m_tiles)(row, 1).AddDirection(PassageDirection::West);
 		}
 	}
 
@@ -181,8 +181,8 @@ void MAEllers::MergeColumns(int row)
 		if (current != INVALID_INDICES && next != INVALID_INDICES &&
 			CompareAndMergeSets(current, next))
 		{
-			(*m_tiles)[row][m_columnCount - 1].AddDirection(PassageDirection::West);
-			(*m_tiles)[row][m_columnCount - 2].AddDirection(PassageDirection::East);
+			(*m_tiles)(row, m_columnCount - 1).AddDirection(PassageDirection::West);
+			(*m_tiles)(row, m_columnCount - 2).AddDirection(PassageDirection::East);
 		}
 	}
 
@@ -201,8 +201,8 @@ void MAEllers::MergeColumns(int row)
 			continue;
 		if (CompareAndMergeSets(current, next))
 		{
-			(*m_tiles)[current.first][current.second].AddDirection(DIRECTIONS[directionIndex]);
-			(*m_tiles)[next.first][next.second].AddDirection(OPPOSITE_DIRECTIONS[directionIndex]);
+			(*m_tiles)(current.first, current.second).AddDirection(DIRECTIONS[directionIndex]);
+			(*m_tiles)(next.first, next.second).AddDirection(OPPOSITE_DIRECTIONS[directionIndex]);
 		}
 	}
 }
@@ -225,11 +225,11 @@ void MAEllers::MakeVerticalCuts(int row)
 		{
 			current = m_rowSets[j].first;
 
-			if (current == INVALID_INDICES || (*m_tiles)[current.first + 1][current.second].GetType() != TileType::Empty)
+			if (current == INVALID_INDICES || (*m_tiles)(current.first + 1, current.second).GetType() != TileType::Empty)
 				continue;
 
-			(*m_tiles)[current.first][current.second].AddDirection(PassageDirection::South);
-			(*m_tiles)[current.first + 1][current.second].AddDirection(PassageDirection::North);
+			(*m_tiles)(current.first, current.second).AddDirection(PassageDirection::South);
+			(*m_tiles)(current.first + 1, current.second).AddDirection(PassageDirection::North);
 		}
 		else
 			m_rowSets[j].second = -1;
@@ -264,7 +264,7 @@ void MAEllers::InitalizeRowByStep(int row)
 		}
 		
 		std::this_thread::sleep_for(std::chrono::milliseconds(m_sleepDuration));
-		if ((*m_tiles)[row][j].GetType() == GameDefs::Room)
+		if ((*m_tiles)(row, j).GetType() == MazeDefs::Room)
 		{
 			m_rowSets[j].first = INVALID_INDICES;
 			m_rowSets[j].second = -1;
@@ -272,13 +272,12 @@ void MAEllers::InitalizeRowByStep(int row)
 		}
 
 		if (m_rowSets[j].second == -1)
-			id = m_rowSets[j].second = GameDefs::SetIDManagerSingleton::Instance().GetNextSetID();
+			id = m_rowSets[j].second = SetIDManagerSingleton::Instance().GetNextSetID();
 		else
 			id = m_rowSets[j].second;
 
-		(*m_tiles)[row][j].SetType(TileType::Passage);
-		(*m_tiles)[row][j].SetID(id);
-		(*m_tiles)[row][j].SetColor(SetIDManagerSingleton::Instance().GetSetColor(id, m_seed));
+		(*m_tiles)(row, j).SetType(TileType::Passage);
+		(*m_tiles)(row, j).SetID(id);
 		m_rowSets[j].first = std::make_pair(row, j);
 
 
@@ -293,15 +292,15 @@ void MAEllers::MergeColumnsByStep(int row)
 	{
 		if (m_rowSets[0].second != m_rowSets[1].second)
 		{
-			(*m_tiles)[row][0].AddDirection(PassageDirection::East);
-			(*m_tiles)[row][1].AddDirection(PassageDirection::West);
+			(*m_tiles)(row, 0).AddDirection(PassageDirection::East);
+			(*m_tiles)(row, 1).AddDirection(PassageDirection::West);
 			CompareAndMergeSets(std::make_pair(row, 0), std::make_pair(row, 1));
 		}
 
 		if (m_rowSets[m_columnCount - 1].second != m_rowSets[m_columnCount - 2].second)
 		{
-			(*m_tiles)[row][m_columnCount - 1].AddDirection(PassageDirection::West);
-			(*m_tiles)[row][m_columnCount - 2].AddDirection(PassageDirection::East);
+			(*m_tiles)(row, m_columnCount - 1).AddDirection(PassageDirection::West);
+			(*m_tiles)(row, m_columnCount - 2).AddDirection(PassageDirection::East);
 			CompareAndMergeSets(std::make_pair(row, m_columnCount - 1), std::make_pair(row, m_columnCount - 2));
 		}
 
@@ -318,8 +317,8 @@ void MAEllers::MergeColumnsByStep(int row)
 				continue;
 
 			//Otherwise connect
-			(*m_tiles)[current.first][current.second].AddDirection(PassageDirection::East);
-			(*m_tiles)[next.first][next.second].AddDirection(PassageDirection::West);
+			(*m_tiles)(current.first, current.second).AddDirection(PassageDirection::East);
+			(*m_tiles)(next.first, next.second).AddDirection(PassageDirection::West);
 		}
 		return;
 	}
@@ -336,8 +335,8 @@ void MAEllers::MergeColumnsByStep(int row)
 		if (current != INVALID_INDICES && next != INVALID_INDICES &&
 			CompareAndMergeSets(current, next))
 		{
-			(*m_tiles)[row][0].AddDirection(PassageDirection::East);
-			(*m_tiles)[row][1].AddDirection(PassageDirection::West);
+			(*m_tiles)(row, 0).AddDirection(PassageDirection::East);
+			(*m_tiles)(row, 1).AddDirection(PassageDirection::West);
 		}
 	}
 
@@ -350,8 +349,8 @@ void MAEllers::MergeColumnsByStep(int row)
 		if (current != INVALID_INDICES && next != INVALID_INDICES &&
 			CompareAndMergeSets(current, next))
 		{
-			(*m_tiles)[row][m_columnCount - 1].AddDirection(PassageDirection::West);
-			(*m_tiles)[row][m_columnCount - 2].AddDirection(PassageDirection::East);
+			(*m_tiles)(row, m_columnCount - 1).AddDirection(PassageDirection::West);
+			(*m_tiles)(row, m_columnCount - 2).AddDirection(PassageDirection::East);
 		}
 	}
 
@@ -377,8 +376,8 @@ void MAEllers::MergeColumnsByStep(int row)
 			continue;
 		if (CompareAndMergeSets(current, next))
 		{
-			(*m_tiles)[current.first][current.second].AddDirection(DIRECTIONS[directionIndex]);
-			(*m_tiles)[next.first][next.second].AddDirection(OPPOSITE_DIRECTIONS[directionIndex]);
+			(*m_tiles)(current.first, current.second).AddDirection(DIRECTIONS[directionIndex]);
+			(*m_tiles)(next.first, next.second).AddDirection(OPPOSITE_DIRECTIONS[directionIndex]);
 		}
 	}
 }
@@ -407,11 +406,11 @@ void MAEllers::MakeVerticalCutsByStep(int row)
 		{
 			current = m_rowSets[j].first;
 
-			if (current == INVALID_INDICES || (*m_tiles)[current.first + 1][current.second].GetType() != TileType::Empty)
+			if (current == INVALID_INDICES || (*m_tiles)(current.first + 1, current.second).GetType() != TileType::Empty)
 				continue;
 
-			(*m_tiles)[current.first][current.second].AddDirection(PassageDirection::South);
-			(*m_tiles)[current.first + 1][current.second].AddDirection(PassageDirection::North);
+			(*m_tiles)(current.first, current.second).AddDirection(PassageDirection::South);
+			(*m_tiles)(current.first + 1, current.second).AddDirection(PassageDirection::North);
 		}
 		else
 			m_rowSets[j].second = -1;

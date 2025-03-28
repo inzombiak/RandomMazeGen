@@ -5,6 +5,8 @@ VisualStudioVersion = 17.11.35208.52
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "RandomGen", "RandomGen\RandomGen.vcxproj", "{688DE3AA-034A-4993-A75F-DA84608B5490}"
 EndProject
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "MazeGenerator", "MazeGenerator\MazeGenerator.vcxproj", "{36D706EB-EE95-4E4A-83C4-8B2D3774ECE0}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Win32 = Debug|Win32
@@ -21,8 +23,19 @@ Global
 		{688DE3AA-034A-4993-A75F-DA84608B5490}.Release|Win32.Build.0 = Release|Win32
 		{688DE3AA-034A-4993-A75F-DA84608B5490}.Release|x64.ActiveCfg = Release|x64
 		{688DE3AA-034A-4993-A75F-DA84608B5490}.Release|x64.Build.0 = Release|x64
+		{36D706EB-EE95-4E4A-83C4-8B2D3774ECE0}.Debug|Win32.ActiveCfg = Debug|Win32
+		{36D706EB-EE95-4E4A-83C4-8B2D3774ECE0}.Debug|Win32.Build.0 = Debug|Win32
+		{36D706EB-EE95-4E4A-83C4-8B2D3774ECE0}.Debug|x64.ActiveCfg = Debug|x64
+		{36D706EB-EE95-4E4A-83C4-8B2D3774ECE0}.Debug|x64.Build.0 = Debug|x64
+		{36D706EB-EE95-4E4A-83C4-8B2D3774ECE0}.Release|Win32.ActiveCfg = Release|Win32
+		{36D706EB-EE95-4E4A-83C4-8B2D3774ECE0}.Release|Win32.Build.0 = Release|Win32
+		{36D706EB-EE95-4E4A-83C4-8B2D3774ECE0}.Release|x64.ActiveCfg = Release|x64
+		{36D706EB-EE95-4E4A-83C4-8B2D3774ECE0}.Release|x64.Build.0 = Release|x64
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
+	EndGlobalSection
+	GlobalSection(ExtensibilityGlobals) = postSolution
+		SolutionGuid = {058944D8-7B2F-49D7-9445-C2189F5344EC}
 	EndGlobalSection
 EndGlobal

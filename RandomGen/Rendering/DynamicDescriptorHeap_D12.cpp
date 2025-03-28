@@ -1,9 +1,11 @@
 #include "DynamicDescriptorHeap_D12.h"
 
-#include "../GameDefs.h"
+#include "../AppDefs.h"
 #include "RootSignature_D12.h"
 #include "CommandList_D12.h"
 #include "Renderer_D12.h"
+
+#include <stdexcept>
 
 DynamicDescriptorHeap_D12::DynamicDescriptorHeap_D12(D3D12_DESCRIPTOR_HEAP_TYPE heapType, uint32_t numDescriptorsPerHeap)
     : m_descriptorHeapType(heapType)

@@ -2,9 +2,13 @@
 
 #include "Rendering/Window.h"
 #include "Rendering/Renderer_D12.h"
-#include "GridManager.h"
+#include "MazeGenDefs.h"
 
 #include <iostream>
+#ifndef M_PI
+#define M_PI 3.14159265358979323846
+#endif
+
 
 using namespace DirectX;
 static VertexInput BOX_VERTICES[24] = {
@@ -71,7 +75,6 @@ App::App(const std::wstring& name, int width, int height, bool vSync, HINSTANCE 
     , m_vSync(vSync)
     , m_hInstance(hInstance)
     , m_contentLoaded(false)
-    , m_gridManager(std::make_shared<GridManager>())
 {
     m_cameraPos    = XMVectorSet(-17, 26.7f, 16, 1);
     m_sunPos       = XMVectorSet(0, 38.7f, 29, 1);
@@ -122,7 +125,7 @@ bool App::LoadContent() {
 
     RENDERER->PopulateVertexBuffer(BOX_VERTICES, _countof(BOX_VERTICES));
     RENDERER->PopulateIndexBuffer(BOX_INDICES, _countof(BOX_INDICES));
-    m_gridManager->GenerateMap(m_width, m_height, m_rows, m_columns);
+    MazeDefs::GenerateMap(m_width, m_height, m_rows, m_columns);
     RENDERER->BuildPipelineState(L"vertex_basic.cso", L"pixel_basic.cso");
     RENDERER->BuildShadowPipelineState(L"vertex_shadow.cso", L"pixel_shadow.cso");
     RENDERER->LoadTextures();
@@ -188,7 +191,10 @@ void App::OnUpdate(UpdateEventArgs& e)
     auto camRight = orientation.r[0];
     auto camUp = orientation.r[1];
     auto camFwd = orientation.r[2];
-    RENDERER->CreateSRVForBoxes(m_gridManager->GetTiles(), 0);
+
+    int rows, cols;
+    const Tile* tiles = MazeDefs::GetGeneratedTiles(&rows, &cols);
+    RENDERER->CreateSRVForBoxes(tiles, rows, cols, 0);
 
     if (RENDERER && RENDERER->GUIInitialized()) {
         ImGui_ImplDX12_NewFrame();
@@ -197,11 +203,11 @@ void App::OnUpdate(UpdateEventArgs& e)
         ImGui::Begin("Controls");
         if (ImGui::CollapsingHeader("Map Generation"))
         {
-            ImGui::Combo("Maze Algorithm", &m_mazeAlgorithm, GameDefs::MazeAlgorithmLabels, 2);
-            m_gridManager->SetMazeAlgorithm(GameDefs::MazeAlgorithm(m_mazeAlgorithm));
+            ImGui::Combo("Maze Algorithm", &m_mazeAlgorithm, MazeDefs::MazeAlgorithmLabels, 2);
+            MazeDefs::SetMazeGenerationAlgorithm(MazeDefs::MazeAlgorithm(m_mazeAlgorithm));
 
-            ImGui::Combo("Generation Type", &m_generationType, GameDefs::GenerateTypeLabels, 2);
-            m_gridManager->SetMazeGenerateType(GameDefs::GenerateType(m_generationType));
+            ImGui::Combo("Generation Type", &m_generationType, MazeDefs::GenerateTypeLabels, 2);
+            MazeDefs::SetMazeGenerationType(MazeDefs::GenerateType(m_generationType));
 
             ImGui::PushItemWidth(100);
             ImGui::InputInt("Rows", &m_rows);
@@ -212,7 +218,7 @@ void App::OnUpdate(UpdateEventArgs& e)
             ImGui::SameLine();
             bool regen = ImGui::Button("Regenerate");
             if (regen)
-                m_gridManager->GenerateMap(m_width, m_height, m_rows, m_columns);
+                MazeDefs::GenerateMap(m_width, m_height, m_rows, m_columns);
 
         }
 
@@ -285,10 +291,10 @@ void App::OnMouseMoved(class MouseMotionEventArgs& e)
     if (GUIActive())
         return;
 
-    Globals::INPUT_STATE.mousePos = sf::Vector2i(e.X, e.Y);
+    Globals::INPUT_STATE.mousePos = std::pair<int, int>(e.X, e.Y);
     if (Globals::INPUT_STATE.mouseBtnState & MK_RBUTTON) {
-        int dx = Globals::INPUT_STATE.mousePos.x - Globals::INPUT_STATE.lastMouseDownPos.x;
-        int dy = Globals::INPUT_STATE.mousePos.y - Globals::INPUT_STATE.lastMouseDownPos.y;
+        int dx = Globals::INPUT_STATE.mousePos.first - Globals::INPUT_STATE.lastMouseDownPos.first;
+        int dy = Globals::INPUT_STATE.mousePos.second - Globals::INPUT_STATE.lastMouseDownPos.second;
 
         m_camAngles[1] += dx * Globals::CAM_ROT_SPEED;
         m_camAngles[0] += dy * Globals::CAM_ROT_SPEED;

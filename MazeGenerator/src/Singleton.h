@@ -9,7 +9,7 @@
 
 typedef void(__cdecl *atexit_pfn_t)();
 
-namespace Private
+namespace SingletonPrivate
 {
 	class LifetimeTracker
 	{
@@ -77,36 +77,6 @@ namespace Private
 namespace LifetimePolicies
 {
 	typedef atexit_pfn_t AtExitFn();
-
-	template<typename T, typename Destroyer>
-	void SetLongevity(T* pObject, unsigned int longevity, Destroyer d)
-	{
-		using namespace Private;
-
-		if (pTrackerArray == 0)
-			pTrackerArray = new TrackerArray;
-
-		std::auto_ptr<LifetimeTracker> p(new ConcreteLifetimeTracker<T, Destroyer>(pObject, longevity, d));
-
-		//Sort heap
-		TrackerArray:: pos = std::upper_bound(
-			pTrackerArray->begin(),
-			pTrackerArray->end(),
-			p.get(),
-			LifetimeTracker::Compare);
-
-		pTrackerArray->insert(pos, p.get());
-		p.release();
-		std::atexit(AtExitFun);
-	}
-
-	template <typename T>
-	void SetLongevity(T* pObject, unsigned int longevity,
-		typename Private::Deleter<T>::Type d = Private::Deleter<T>::Delete)
-	{
-		SetLongevity<T, typename Private::Deleter<T>::Type>(pDynObject, longevity, d);
-	}
-
 
 	template <class T>
 	struct DefaultLifetime
@@ -187,117 +157,6 @@ namespace LifetimePolicies
 	bool DeletableSingleton<T>::m_needCallback = true;
 
 }
-
-namespace LongevityLifetimes
-{
-	template <unsigned int Longevity, class T>
-	class SingletonFixedLongevity
-	{
-	public:
-		virtual ~SingletonFixedLongevity() {}
-
-		static void ScheduleDestruction(T* pObj, atexit_pfn_t pFun)
-		{
-			Private::Adapter<T> adapter = { pFun };
-			SetLongevity(pObj, GetLongevity(pObj), adapter);
-		}
-
-		static void OnDeadReference()
-		{
-			throw std::logic_error("Dead Reference Detected");
-		}
-	};
-
-	template <class T>
-	struct DieLast : SingletonFixedLongevity <0xFFFFFFFF, T>
-	{};
-
-	template <class T>
-	struct DieDirectlyBeforeLast : SingletonFixedLongevity<0xFFFFFFFF - 1, T>
-	{};
-
-	template <class T>
-	struct DieFirst : SingletonFixedLongevity<0, T>
-	{};
-
-	class FollowIntoDeath
-	{
-		template<class T>
-		class Followers
-		{
-			typedef std::vector<atexit_pfn_t> Container;
-			typedef typename Container::iterator iterator;
-			static Container* m_followers;
-
-		public:
-			static void Init()
-			{
-				static bool done = false;
-				if (!done)
-				{
-					m_followers = new Container;
-					done = true;
-				}
-			}
-
-			static void AddFollower(atexit_pfn_t ae)
-			{
-				Init();
-				m_followers->push_back(ae);
-			}
-
-			static void DestroyFollowers()
-			{
-				Init();
-				for (iterator it = m_followers->begin(); it != m_followers->end(); ++it)
-					(*it)();
-				delete m_followers;
-			}
-		};
-	public:
-		template<template <class> class Lifetime>
-		struct With
-		{
-			template<class Master>
-			struct AsMasterLifetime
-			{
-				static void ScheduleDestruction(Master* pObj, atexit_pfn_t pFun)
-				{
-					Followers<Master>::Init();
-					Lifetime<Master>::ScheduleDestruction(pObj, pFun);
-					Lifetime<Followers<Master> >::ScheduleDestruction(0, Followers<Master>::DestroyFollowers);
-				}
-
-				static void OnDeadReference()
-				{
-					throw std::logic_error("Dead Reference Detected");
-				}
-			};
-		};
-
-		template<class Master>
-		struct AfterMaster
-		{
-			template<class F>
-			struct IsDestroyed
-			{
-				static void ScheduleDestruction(F*, atexit_pfn_t pFun)
-				{
-					Followers<Master>::AddFollower(pFun);
-				}
-
-				static void OnDeadReference()
-				{
-					throw std::logic_error("Dead Reference Detected");
-				}
-			};
-		};
-	};
-
-	template<class T>
-	typename FollowIntoDeath::Followers<T>::Container*
-	FollowIntoDeath::Followers<T>::m_followers = 0;
-};
 
 namespace CreationPolicies
 {

@@ -2,7 +2,7 @@
 
 #include "Renderer_D12.h"
 #include "DX12_Helpers.h"
-#include "../GameDefs.h"
+#include "../AppDefs.h"
 
 #include "d3dx12/d3dx12.h"
 

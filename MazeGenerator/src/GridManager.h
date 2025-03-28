@@ -2,7 +2,7 @@
 #define GRID_MANAGER_H
 
 #include "Tile.h"
-#include "IMazeAlgorithm.h"
+#include "MazeGenPriv.h"
 
 #include <vector>
 #include <queue>
@@ -18,7 +18,6 @@ class GridManager
 {
 
 public:
-	GridManager() {}
 	~GridManager() { }
 	enum SimulationPhase
 	{
@@ -31,35 +30,29 @@ public:
 
 	void GenerateMap(int windowWidth, int windowHeight, unsigned int rows, unsigned int columns);
 	void RandomizeMap();
-	void SetMazeAlgorithm(GameDefs::MazeAlgorithm algo);
-	void SetMazeGenerateType(GameDefs::GenerateType type);
+	void SetMazeAlgorithm(MazeDefs::MazeAlgorithm algo);
+	void SetMazeGenerateType(MazeDefs::GenerateType type);
 	void Close();
-	void Draw(sf::RenderWindow& rw);
 
-	const std::vector<std::vector<Tile>>& GetTiles() const;
+	const Tile* GetTiles(int& rows, int& columns);
 
 private:
 	void Terminate();
 
-	GridManager(const GridManager&obj) {}
-
 	//Step 1: Generates rooms
-	const std::vector<sf::IntRect>& GenerateRooms();
+	const std::vector<MazeDefs::IntRect>& GenerateRooms();
 	//Step 2: Generates maze
 	void GenerateMaze();
 	void GenerateMazeWorker();
 	void GenerateMazeWorkerByStep();
 	//Step 3: Connect them
 	void ConnectMap();
-	void ConnectMapWorker(const std::vector<sf::IntRect>& rooms);
-	void ConnectMapWorkerByStep(std::vector<sf::IntRect> rooms);
+	void ConnectMapWorker(const std::vector<MazeDefs::IntRect>& rooms);
+	void ConnectMapWorkerByStep(std::vector<MazeDefs::IntRect> rooms);
 	//Step 4: Remove dead ends
 	void RemoveDeadEnds();
 	void RemoveDeadEndsWorker();
 	void RemoveDeadEndsWorkerByStep();
-
-	//TODO: Should asssign to a pointer not to m_currentShape(which should be a pointer)
-	bool GetShapeContainingPoint(const sf::Vector2f& point);
 
 	int m_windowHeight;
 	int m_windowWidth;
@@ -72,16 +65,14 @@ private:
 	int m_seed;
 	int m_removeDeadEndsPercentage = 75;
 
-	const sf::Color BORDER_COLOR = sf::Color::Black;
-
 	volatile std::atomic<bool> m_terminated;
 
 	SimulationPhase m_simPhase;
-	GameDefs::MazeAlgorithm m_mazeAlgorithm = GameDefs::RecursiveBacktracker;
-	GameDefs::MazeAlgorithm m_prevMazeAlgo;
+	MazeDefs::MazeAlgorithm m_mazeAlgorithm = MazeDefs::RecursiveBacktracker;
+	MazeDefs::MazeAlgorithm m_prevMazeAlgo;
 
-	GameDefs::GenerateType m_mazeGenerateType = GameDefs::Full;
-	GameDefs::GenerateType m_prevMazeAlgoType = GameDefs::Full;
+	MazeDefs::GenerateType m_mazeGenerateType = MazeDefs::Full;
+	MazeDefs::GenerateType m_prevMazeAlgoType = MazeDefs::Full;
 
 	std::thread m_mazeConnectorThread;
 	std::thread m_removeDeadEndsThread;
@@ -94,9 +85,9 @@ private:
 	std::mutex m_removeDeadEndsCVMutex;
 	std::atomic<bool> m_removeDeadEnds = true;
 
-	std::vector<std::vector<Tile>> m_tiles;
+	TileHolder m_tiles;
 
-	std::vector<sf::IntRect> m_rooms;
+	std::vector<MazeDefs::IntRect> m_rooms;
 };
 
 #endif

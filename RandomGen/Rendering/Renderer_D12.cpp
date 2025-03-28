@@ -9,7 +9,8 @@
 #include "Texture_D12.h"
 
 #include "Window.h"
-#include "../Tile.h"
+#include "Tile.h"
+#include "MazeGenDefs.h"
 
 using namespace DirectX;
 bool CheckTearingSupport()
@@ -513,7 +514,7 @@ void Renderer_D12::LoadTextures() {
 	commandList->LoadTexture(L"Dirt.dds", m_dirtTexture);
 }
 
-void Renderer_D12::CreateSRVForBoxes(const std::vector<std::vector<Tile>>& tiles, double t) {
+void Renderer_D12::CreateSRVForBoxes(const Tile* tiles, int rows, int columns, double t) {
 
 	m_numInstances = 0;
 	std::vector<XMMATRIX>		mvpMatrices;
@@ -522,12 +523,13 @@ void Renderer_D12::CreateSRVForBoxes(const std::vector<std::vector<Tile>>& tiles
 	int x = 0;
 	int y = 0;
 	int z = 0;
-	for (int i = 0; i < tiles.size(); ++i) {
+	for (int i = 0; i < rows; ++i) {
 		x = 0;
-		for (int j = 0; j < tiles[i].size(); ++j) {
+		for (int j = 0; j < columns; ++j) {
 			y = 0;
 			int height = 1;
-			if (tiles[i][j].GetType() == GameDefs::TileType::Empty) {
+
+			if (tiles[i * columns + j].GetType() == MazeDefs::TileType::Empty) {
 				x += 2;
 				continue;
 			}
@@ -540,13 +542,13 @@ void Renderer_D12::CreateSRVForBoxes(const std::vector<std::vector<Tile>>& tiles
 			}
 
 			for (int p = 0; p < 4; ++p) {
-				if (!tiles[i][j].HasDirection(GameDefs::DIRECTIONS[p])) {
+				if (!tiles[i * columns + j].HasDirection(MazeDefs::DIRECTIONS[p])) {
 					float wallX = (float)x;
 					float wallZ = (float)z;
 					float scaleX = 1;
 					float scaleZ = 1;
 
-					auto delta = GameDefs::DIRECTION_CHANGES[p];
+					auto delta = MazeDefs::DIRECTION_CHANGES[p];
 					wallX += delta.second;
 					wallZ += delta.first;
 

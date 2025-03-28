@@ -1,5 +1,7 @@
 #include "GridManager.h"
 
+#include "MazeGenPriv.h"
+
 #include "MAEllers.h"
 #include "MARecursiveBacktracker.h"
 
@@ -9,12 +11,10 @@
 
 #include "DeadEndRemover.h"
 
-#include "Math.h"
-
 #include <iostream>
 #include <chrono>     
 
-using namespace GameDefs;
+using namespace MazeDefs;
 
 typedef SingletonHolder<MAEllers, CreationPolicies::CreateWithNew, LifetimePolicies::DefaultLifetime> MAEllersSingleton;
 typedef SingletonHolder<MARecursiveBacktracker, CreationPolicies::CreateWithNew, LifetimePolicies::DefaultLifetime> MARecursiveBacktrackerSingleton;
@@ -32,25 +32,17 @@ void GridManager::GenerateMap(int windowWidth, int windowHeight, unsigned int ro
 	m_tileWidth = (float)(m_windowWidth) / (float)m_columnCount;
 	m_tileHeight = (float)(m_windowHeight) / (float)m_rowCount;
 
-	RoomGeneratorSingleton::Instance().SetRoomHorizontalBounds(sf::Vector2i(2, m_rowCount / 5));
-	RoomGeneratorSingleton::Instance().SetRoomVerticalBounds(sf::Vector2i(2, m_rowCount / 5));
+	RoomGeneratorSingleton::Instance().SetRoomHorizontalBounds(MazeDefs::Vector2i(2, m_rowCount / 5));
+	RoomGeneratorSingleton::Instance().SetRoomVerticalBounds(MazeDefs::Vector2i(2, m_rowCount / 5));
 	RoomGeneratorSingleton::Instance().SetPlacementAttemptCount(rows*columns/10);
-	m_tiles.clear();
-	m_tiles.reserve(m_rowCount);
-	std::vector<Tile> row;
-	sf::RectangleShape newTile(sf::Vector2f(m_tileWidth, m_tileHeight));
-	newTile.setOutlineThickness(0);
-
-	row.resize(m_columnCount, Tile(newTile, TileType::Empty, BORDER_WIDTH, BORDER_COLOR));
-
+	
+	m_tiles.Reset(m_rowCount, m_columnCount);
 	for (int i = 0; i < m_rowCount; ++i)
 	{
 		for (int j = 0; j < m_columnCount; ++j)
 		{
-			row[j].SetPosition(sf::Vector2f(m_tileWidth * j, m_tileHeight  * i));
+			m_tiles(i, j).SetPosition(MazeDefs::Vector2f(m_tileWidth * j, m_tileHeight  * i));
 		}
-
-		m_tiles.push_back(row);
 	}
 
 	RandomizeMap();
@@ -86,19 +78,10 @@ void GridManager::Terminate()
 	DeadEndRemoverSingleton::Instance().TerminateGeneration();
 }
 
-void GridManager::Draw(sf::RenderWindow& rw)
-{
-	for (int i = 0; i < m_rowCount; ++i)
-	{
-		for (int j = 0; j < m_columnCount; ++j)
-		{
-			m_tiles[i][j].Draw(rw);
-		}
-	}
-}
-
-const std::vector<std::vector<Tile>>& GridManager::GetTiles() const {
-	return m_tiles;
+const Tile* GridManager::GetTiles(int& rows, int& columns) {
+	rows = m_rowCount;
+	columns = m_columnCount;
+	return m_tiles.GetData();
 }
 
 void GridManager::RandomizeMap()
@@ -117,7 +100,7 @@ void GridManager::RandomizeMap()
 	{
 		for (int j = 0; j < m_columnCount; ++j)
 		{
-			m_tiles[i][j].Reset();
+			m_tiles(i, j).Reset();
 		}
 	}
 
@@ -165,7 +148,7 @@ void GridManager::SetMazeGenerateType(GenerateType type)
 	m_mazeGenerateType = type;
 }
 
-const std::vector<sf::IntRect>& GridManager::GenerateRooms()
+const std::vector<MazeDefs::IntRect>& GridManager::GenerateRooms()
 {
 	return RoomGeneratorSingleton::Instance().GenerateRoom(m_tiles, m_mazeGenerateType, m_seed, m_threadSleepTime);
 }
@@ -230,12 +213,12 @@ void GridManager::ConnectMap()
 	}
 
 }
-void GridManager::ConnectMapWorker(const std::vector<sf::IntRect>& rooms)
+void GridManager::ConnectMapWorker(const std::vector<MazeDefs::IntRect>& rooms)
 {
 	MazeConnectorSingleton::Instance().ConnectMaze(rooms, m_tiles, m_mazeGenerateType, m_seed, m_threadSleepTime);
 }
 
-void GridManager::ConnectMapWorkerByStep(std::vector<sf::IntRect> rooms)
+void GridManager::ConnectMapWorkerByStep(std::vector<MazeDefs::IntRect> rooms)
 {
 	if (m_terminated)
 		return;

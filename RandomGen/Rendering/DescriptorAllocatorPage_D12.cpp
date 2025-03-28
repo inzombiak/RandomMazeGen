@@ -1,7 +1,7 @@
 #include "DescriptorAllocatorPage_D12.h"
 #include "Renderer_D12.h"
 
-#include "../GameDefs.h"
+#include "../AppDefs.h"
 
 DescriptorAllocatorPage_D12::DescriptorAllocatorPage_D12(D3D12_DESCRIPTOR_HEAP_TYPE type, uint32_t numDescriptors)
     : m_heapType(type)

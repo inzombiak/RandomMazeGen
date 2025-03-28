@@ -55,6 +55,7 @@ class Texture_D12;
 #include "imgui_impl_dx12.h"
 #include "imgui_impl_win32.h"
 //@ZGTODO merge this with the decriptor alocator
+class Tile;
 struct ExampleDescriptorHeapAllocator
 {
 	ID3D12DescriptorHeap* Heap = nullptr;
@@ -114,7 +115,7 @@ class Renderer_D12 {
 		void PopulateIndexBuffer(const WORD *data, size_t count);
 		void BuildPipelineState(const std::wstring& vertexShaderName, const std::wstring& pixelShaderName);
 		void BuildShadowPipelineState(const std::wstring& vertexShaderName, const std::wstring& pixelShaderName);
-		void CreateSRVForBoxes(const std::vector<std::vector<Tile>>& tiles, double t);
+		void CreateSRVForBoxes(const Tile* tiles, int rows, int columns, double t);
 		void LoadTextures();
 		// Resize the depth buffer to match the size of the client area.
 		void ResizeDepthBuffer(int width, int height);

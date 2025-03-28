@@ -104,15 +104,15 @@
       <WarningLevel>Level3</WarningLevel>
       <Optimization>Disabled</Optimization>
       <PreprocessorDefinitions>SFML_STATIC;WIN32;_DEBUG;_CONSOLE;_LIB;%(PreprocessorDefinitions)</PreprocessorDefinitions>
-      <AdditionalIncludeDirectories>Extern\imgui\backends;Extern\imgui;C:\DevLibs\SFML-2.6.1\include;</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>Extern\imgui\backends;Extern\imgui;C:\Users\zgara\Documents\GitHub\RandomMazeGen\MazeGenerator\include</AdditionalIncludeDirectories>
       <RuntimeLibrary>MultiThreadedDebugDLL</RuntimeLibrary>
       <LanguageStandard>stdcpp17</LanguageStandard>
     </ClCompile>
     <Link>
       <SubSystem>Windows</SubSystem>
       <GenerateDebugInformation>true</GenerateDebugInformation>
-      <AdditionalDependencies>sfml-graphics-s-d.lib;sfml-system-s-d.lib;sfml-window-s-d.lib;opengl32.lib;freetype.lib;winmm.lib;gdi32.lib;kernel32.lib;user32.lib;winspool.lib;comdlg32.lib;advapi32.lib;shell32.lib;ole32.lib;oleaut32.lib;uuid.lib;odbc32.lib;odbccp32.lib;%(AdditionalDependencies);DXGI.lib;d3d12.lib;d3dcompiler.lib;dxguid.lib</AdditionalDependencies>
-      <AdditionalLibraryDirectories>C:\DevLibs\SFML-2.6.1\lib;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
+      <AdditionalDependencies>MazeGenerator.lib;opengl32.lib;winmm.lib;gdi32.lib;kernel32.lib;user32.lib;winspool.lib;comdlg32.lib;advapi32.lib;shell32.lib;ole32.lib;oleaut32.lib;uuid.lib;odbc32.lib;odbccp32.lib;%(AdditionalDependencies);DXGI.lib;d3d12.lib;d3dcompiler.lib;dxguid.lib</AdditionalDependencies>
+      <AdditionalLibraryDirectories>C:\Users\zgara\Documents\GitHub\RandomMazeGen\x64\Debug;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
       <EntryPointSymbol>
       </EntryPointSymbol>
     </Link>
@@ -162,7 +162,6 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
-    <ClCompile Include="DeadEndRemover.cpp" />
     <ClCompile Include="App.cpp" />
     <ClCompile Include="Extern\DDSTextureLoader\DDSTextureLoader11.cpp" />
     <ClCompile Include="Extern\DDSTextureLoader\DDSTextureLoader12.cpp" />
@@ -195,12 +194,7 @@
     <ClCompile Include="Extern\imgui\imgui_widgets.cpp" />
     <ClCompile Include="Extern\imgui\misc\cpp\imgui_stdlib.cpp" />
     <ClCompile Include="HighResolutionClock.cpp" />
-    <ClCompile Include="MAEllers.cpp" />
-    <ClCompile Include="MARecursiveBacktracker.cpp" />
-    <ClCompile Include="MazeConnector.cpp" />
-    <ClCompile Include="GridManager.cpp" />
     <ClCompile Include="main.cpp" />
-    <ClCompile Include="Math.cpp" />
     <ClCompile Include="Rendering\CommandList_D12.cpp" />
     <ClCompile Include="Rendering\CommandQueue_D12.cpp" />
     <ClCompile Include="Rendering\DescriptorAllocation_D12.cpp" />
@@ -212,12 +206,10 @@
     <ClCompile Include="Rendering\Texture_D12.cpp" />
     <ClCompile Include="Rendering\UploadBuffer_D12.cpp" />
     <ClCompile Include="Rendering\Window.cpp" />
-    <ClCompile Include="RoomGenerator.cpp" />
-    <ClCompile Include="Tile.cpp" />
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="DeadEndRemover.h" />
     <ClInclude Include="App.h" />
+    <ClInclude Include="AppDefs.h" />
     <ClInclude Include="Events.h" />
     <ClInclude Include="Extern\DDSTextureLoader\DDSTextureLoader11.h" />
     <ClInclude Include="Extern\DDSTextureLoader\DDSTextureLoader12.h" />
@@ -238,16 +230,8 @@
     <ClInclude Include="Extern\imgui\imstb_textedit.h" />
     <ClInclude Include="Extern\imgui\imstb_truetype.h" />
     <ClInclude Include="Extern\imgui\misc\cpp\imgui_stdlib.h" />
-    <ClInclude Include="GameDefs.h" />
     <ClInclude Include="HighResolutionClock.h" />
-    <ClInclude Include="IMazeAlgorithm.h" />
-    <ClInclude Include="IThreadedSolver.h" />
     <ClInclude Include="KeyCodes.h" />
-    <ClInclude Include="MAEllers.h" />
-    <ClInclude Include="MARecursiveBacktracker.h" />
-    <ClInclude Include="MazeConnector.h" />
-    <ClInclude Include="GridManager.h" />
-    <ClInclude Include="Math.h" />
     <ClInclude Include="Rendering\CommandList_D12.h" />
     <ClInclude Include="Rendering\CommandQueue_D12.h" />
     <ClInclude Include="Rendering\d3dx12\d3d12.h" />
@@ -285,9 +269,6 @@
     <ClInclude Include="Rendering\Texture_D12.h" />
     <ClInclude Include="Rendering\UploadBuffer_D12.h" />
     <ClInclude Include="Rendering\Window.h" />
-    <ClInclude Include="RoomGenerator.h" />
-    <ClInclude Include="Singleton.h" />
-    <ClInclude Include="Tile.h" />
   </ItemGroup>
   <ItemGroup>
     <FxCompile Include="Resources\Shaders\pixel_basic.hlsl">

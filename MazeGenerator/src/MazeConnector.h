@@ -8,8 +8,8 @@ class MazeConnector : public IThreadedSolver
 {
 
 public:
+	void ConnectMaze(const std::vector<MazeDefs::IntRect>& rooms, const TileHolder& tiles, const MazeDefs::GenerateType& genType, unsigned seed, int sleepDuration);
 
-	void ConnectMaze(const std::vector<sf::IntRect>& rooms, std::vector<std::vector<Tile>>& tiles, const GameDefs::GenerateType& genType, unsigned seed, int sleepDuration);
 private:
 
 	//Allows full to run faster
@@ -22,18 +22,16 @@ private:
 	void FloodSet(const std::pair<int, int>& indices, int id);
 	void FloodSetByStep(const std::pair<int, int>& indices, int id);
 
-	std::vector<sf::IntRect> m_rooms;
-	std::vector<std::vector<Tile>>* m_tiles;
+	std::vector<MazeDefs::IntRect> m_rooms;
+	const TileHolder* m_tiles;
 
 	int m_rowCount;
 	int m_columnCount;
 	int m_seed;
 	int m_sleepDuration;
 	//For step generation
-	//TODO: STATIC MAY CAUSE ISSUES
 
-
-	GameDefs::GenerateType m_generateType;
+	MazeDefs::GenerateType m_generateType;
 	std::default_random_engine m_randomNumGen;
 	std::uniform_int_distribution<int> m_distribution;
 };

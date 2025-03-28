@@ -18,7 +18,7 @@
 #undef CreateWindow
 #endif
 
-#include "../GameDefs.h"
+#include "../AppDefs.h"
 #include "../Events.h"
 #include <assert.h>
 

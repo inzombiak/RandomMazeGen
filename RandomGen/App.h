@@ -11,7 +11,6 @@
 #include <Windows.h>
 #include <shellapi.h>
 
-class GridManager;
 class App : public std::enable_shared_from_this<App>
 {
 public:
@@ -105,7 +104,6 @@ protected:
      */
     void OnWindowDestroy();
 private:
-    std::shared_ptr<GridManager> m_gridManager;
 
     HINSTANCE m_hInstance;
 
@@ -114,7 +112,7 @@ private:
 
     int m_rows = 16;
     int m_columns = 16;
-    int m_generationType = 0;
+    int m_generationType = 1;
     int m_mazeAlgorithm = 0;
 
     float m_fov = 45.0;

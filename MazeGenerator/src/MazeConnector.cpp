@@ -1,14 +1,16 @@
 #include "MazeConnector.h"
 
+#include "MazeGenPriv.h"
+
 #include <thread>
 #include <set>
 
-using namespace GameDefs;
+using namespace MazeDefs;
 
-void MazeConnector::ConnectMaze(const std::vector<sf::IntRect>& rooms, std::vector<std::vector<Tile>>& tiles, const GameDefs::GenerateType& genType, unsigned seed, int sleepDuration)
+void MazeConnector::ConnectMaze(const std::vector<MazeDefs::IntRect>& rooms, const TileHolder& tiles, const MazeDefs::GenerateType& genType, unsigned seed, int sleepDuration)
 {
 	m_rooms = rooms;
-	m_rowCount = (int)tiles.size();
+	m_rowCount = tiles.GetRowCount();
 	if (m_rowCount < 1 || m_rooms.size() < 1)
 		return;
 	{
@@ -20,7 +22,7 @@ void MazeConnector::ConnectMaze(const std::vector<sf::IntRect>& rooms, std::vect
 	m_randomNumGen.seed(seed);
 	m_tiles = &tiles;
 	m_seed = seed;
-	m_columnCount = (int)(*m_tiles)[0].size();
+	m_columnCount = tiles.GetColumnCount();
 
 	if (genType == Step)
 	{
@@ -81,19 +83,18 @@ void MazeConnector::ConnectRoomFull(int index)
 		nextTileIndices.first = tileIndices.first + DIRECTION_CHANGES[dirIndex].first;
 		nextTileIndices.second = tileIndices.second + DIRECTION_CHANGES[dirIndex].second;
 
-		currID = (*m_tiles)[tileIndices.first][tileIndices.second].GetID();
-		nextID = (*m_tiles)[nextTileIndices.first][nextTileIndices.second].GetID();
+		currID = (*m_tiles)(tileIndices.first, tileIndices.second).GetID();
+		nextID = (*m_tiles)(nextTileIndices.first, nextTileIndices.second).GetID();
 		if (nextID == currID)
 			continue;
 
 		//Open it up
-		(*m_tiles)[tileIndices.first][tileIndices.second].AddDirection(GameDefs::DIRECTIONS[dirIndex]);
-		(*m_tiles)[nextTileIndices.first][nextTileIndices.second].AddDirection(GameDefs::OPPOSITE_DIRECTIONS[dirIndex]);
-	//(*m_tiles)[tileIndices.first][tileIndices.second].SetBorder(GameDefs::DIRECTIONS[dirIndex], 4, sf::Color::Yellow);
-		(*m_tiles)[nextTileIndices.first][nextTileIndices.second].SetBorder(GameDefs::OPPOSITE_DIRECTIONS[dirIndex], 4, sf::Color::Yellow);
+		(*m_tiles)(tileIndices.first, tileIndices.second).AddDirection(MazeDefs::DIRECTIONS[dirIndex]);
+		(*m_tiles)(nextTileIndices.first, nextTileIndices.second).AddDirection(MazeDefs::OPPOSITE_DIRECTIONS[dirIndex]);
+	//(*m_tiles)(tileIndices.first, tileIndices.second).SetBorder(MazeDefs::DIRECTIONS[dirIndex], 4, sf::Color::Yellow);
 
 		//Flood it cause pretty
-		FloodSet(nextTileIndices, (*m_tiles)[tileIndices.first][tileIndices.second].GetID());
+		FloodSet(nextTileIndices, (*m_tiles)(tileIndices.first, tileIndices.second).GetID());
 		//Flood it cause pretty
 		if (SetIDManagerSingleton::Instance().GetSetMemberCount(currID) > SetIDManagerSingleton::Instance().GetSetMemberCount(nextID))
 			FloodSet(nextTileIndices, currID);
@@ -112,18 +113,17 @@ void MazeConnector::ConnectRoomFull(int index)
 		dirIndex = possibleDoors[j].second;
 		nextTileIndices.first = tileIndices.first + DIRECTION_CHANGES[dirIndex].first;
 		nextTileIndices.second = tileIndices.second + DIRECTION_CHANGES[dirIndex].second;
-		currID = (*m_tiles)[tileIndices.first][tileIndices.second].GetID();
-		nextID = (*m_tiles)[nextTileIndices.first][nextTileIndices.second].GetID();
+		currID = (*m_tiles)(tileIndices.first, tileIndices.second).GetID();
+		nextID = (*m_tiles)(nextTileIndices.first, nextTileIndices.second).GetID();
 
 		if (m_distribution(m_randomNumGen) == 0 ||
 			nextID != currID)
 		{
 
 			//Open it up
-			(*m_tiles)[tileIndices.first][tileIndices.second].AddDirection(GameDefs::DIRECTIONS[dirIndex]);
-			(*m_tiles)[nextTileIndices.first][nextTileIndices.second].AddDirection(GameDefs::OPPOSITE_DIRECTIONS[dirIndex]);
-			//(*m_tiles)[tileIndices.first][tileIndices.second].SetBorder(GameDefs::DIRECTIONS[dirIndex], 4, sf::Color::Yellow);
-			(*m_tiles)[nextTileIndices.first][nextTileIndices.second].SetBorder(GameDefs::OPPOSITE_DIRECTIONS[dirIndex], 4, sf::Color::Yellow);
+			(*m_tiles)(tileIndices.first, tileIndices.second).AddDirection(MazeDefs::DIRECTIONS[dirIndex]);
+			(*m_tiles)(nextTileIndices.first, nextTileIndices.second).AddDirection(MazeDefs::OPPOSITE_DIRECTIONS[dirIndex]);
+			//(*m_tiles)(tileIndices.first, tileIndices.second).SetBorder(MazeDefs::DIRECTIONS[dirIndex], 4, sf::Color::Yellow);
 			//Flood it cause pretty
 			if (SetIDManagerSingleton::Instance().GetSetMemberCount(currID) > SetIDManagerSingleton::Instance().GetSetMemberCount(nextID))
 				FloodSet(nextTileIndices, currID);
@@ -137,16 +137,15 @@ void MazeConnector::ConnectRoomFull(int index)
 void MazeConnector::FloodSet(const std::pair<int, int>& indices, int id)
 {
 	if (indices.first < 0 || indices.first >= m_rowCount
-		|| indices.second < 0 || indices.second >= m_columnCount || (*m_tiles)[indices.first][indices.second].GetID() == id)
+		|| indices.second < 0 || indices.second >= m_columnCount || (*m_tiles)(indices.first, indices.second).GetID() == id)
 		return;
 
 	std::pair<int, int> nextIndices;
-	(*m_tiles)[indices.first][indices.second].SetID(id);
-	(*m_tiles)[indices.first][indices.second].SetColor(SetIDManagerSingleton::Instance().GetSetColor(id, m_seed));
+	(*m_tiles)(indices.first, indices.second).SetID(id);
 
 	for (int i = 0; i < 4; ++i)
 	{
-		if ((*m_tiles)[indices.first][indices.second].HasDirection(DIRECTIONS[i]))
+		if ((*m_tiles)(indices.first, indices.second).HasDirection(DIRECTIONS[i]))
 		{
 			nextIndices.first = indices.first + DIRECTION_CHANGES[i].first;
 			nextIndices.second = indices.second + DIRECTION_CHANGES[i].second;
@@ -237,17 +236,15 @@ void MazeConnector::ConnectRoomByStep(int index)
 		dirIndex = possibleDoors[j].second;
 		nextTileIndices.first = tileIndices.first + DIRECTION_CHANGES[dirIndex].first;
 		nextTileIndices.second = tileIndices.second + DIRECTION_CHANGES[dirIndex].second;
-		currID = (*m_tiles)[tileIndices.first][tileIndices.second].GetID();
-		nextID = (*m_tiles)[nextTileIndices.first][nextTileIndices.second].GetID();
+		currID = (*m_tiles)(tileIndices.first, tileIndices.second).GetID();
+		nextID = (*m_tiles)(nextTileIndices.first, nextTileIndices.second).GetID();
 
 		if (nextID == currID)
 			continue;
 
 		//Open it up
-		(*m_tiles)[tileIndices.first][tileIndices.second].AddDirection(GameDefs::DIRECTIONS[dirIndex]);
-		(*m_tiles)[nextTileIndices.first][nextTileIndices.second].AddDirection(GameDefs::OPPOSITE_DIRECTIONS[dirIndex]);
-		(*m_tiles)[tileIndices.first][tileIndices.second].SetBorder(GameDefs::DIRECTIONS[dirIndex], 4, sf::Color::Yellow);
-		(*m_tiles)[nextTileIndices.first][nextTileIndices.second].SetBorder(GameDefs::OPPOSITE_DIRECTIONS[dirIndex], 4, sf::Color::Yellow);
+		(*m_tiles)(tileIndices.first, tileIndices.second).AddDirection(MazeDefs::DIRECTIONS[dirIndex]);
+		(*m_tiles)(nextTileIndices.first, nextTileIndices.second).AddDirection(MazeDefs::OPPOSITE_DIRECTIONS[dirIndex]);
 
 		//Flood it cause pretty
 		if (SetIDManagerSingleton::Instance().GetSetMemberCount(currID) > SetIDManagerSingleton::Instance().GetSetMemberCount(nextID))
@@ -274,17 +271,17 @@ void MazeConnector::ConnectRoomByStep(int index)
 		dirIndex = possibleDoors[j].second;
 		nextTileIndices.first = tileIndices.first + DIRECTION_CHANGES[dirIndex].first;
 		nextTileIndices.second = tileIndices.second + DIRECTION_CHANGES[dirIndex].second;
-		currID = (*m_tiles)[tileIndices.first][tileIndices.second].GetID();
-		nextID = (*m_tiles)[nextTileIndices.first][nextTileIndices.second].GetID();
+		currID = (*m_tiles)(tileIndices.first, tileIndices.second).GetID();
+		nextID = (*m_tiles)(nextTileIndices.first, nextTileIndices.second).GetID();
 		if (m_distribution(m_randomNumGen) == 0 ||
 			nextID != currID)
 		{
 
 			//Open it up
-			(*m_tiles)[tileIndices.first][tileIndices.second].AddDirection(GameDefs::DIRECTIONS[dirIndex]);
-			(*m_tiles)[nextTileIndices.first][nextTileIndices.second].AddDirection(GameDefs::OPPOSITE_DIRECTIONS[dirIndex]);
-			//(*m_tiles)[tileIndices.first][tileIndices.second].SetBorder(GameDefs::DIRECTIONS[dirIndex], 4, sf::Color::Yellow);
-			//(*m_tiles)[nextTileIndices.first][nextTileIndices.second].SetBorder(GameDefs::OPPOSITE_DIRECTIONS[dirIndex], 4, sf::Color::Yellow);
+			(*m_tiles)(tileIndices.first, tileIndices.second).AddDirection(MazeDefs::DIRECTIONS[dirIndex]);
+			(*m_tiles)(nextTileIndices.first, nextTileIndices.second).AddDirection(MazeDefs::OPPOSITE_DIRECTIONS[dirIndex]);
+			//(*m_tiles)(tileIndices.first, tileIndices.second).SetBorder(MazeDefs::DIRECTIONS[dirIndex], 4, sf::Color::Yellow);
+			//(*m_tiles)(nextTileIndices.first, nextTileIndices.second).SetBorder(MazeDefs::OPPOSITE_DIRECTIONS[dirIndex], 4, sf::Color::Yellow);
 
 			//Flood it cause pretty
 			if (SetIDManagerSingleton::Instance().GetSetMemberCount(currID) > SetIDManagerSingleton::Instance().GetSetMemberCount(nextID))
@@ -304,12 +301,11 @@ void MazeConnector::FloodSetByStep(const std::pair<int, int>& indices, int id)
 	}
 
 	if (indices.first < 0 || indices.first >= m_rowCount
-		|| indices.second < 0 || indices.second >= m_columnCount || (*m_tiles)[indices.first][indices.second].GetID() == id)
+		|| indices.second < 0 || indices.second >= m_columnCount || (*m_tiles)(indices.first, indices.second).GetID() == id)
 		return;
 
 	std::pair<int, int> nextIndices;
-	(*m_tiles)[indices.first][indices.second].SetID(id);
-	(*m_tiles)[indices.first][indices.second].SetColor(SetIDManagerSingleton::Instance().GetSetColor(id, m_seed));
+	(*m_tiles)(indices.first, indices.second).SetID(id);
 
 	for (int i = 0; i < 4; ++i)
 	{
@@ -319,7 +315,7 @@ void MazeConnector::FloodSetByStep(const std::pair<int, int>& indices, int id)
 			return;
 		}
 
-		if ((*m_tiles)[indices.first][indices.second].HasDirection(DIRECTIONS[i]))
+		if ((*m_tiles)(indices.first, indices.second).HasDirection(DIRECTIONS[i]))
 		{
 			nextIndices.first = indices.first + DIRECTION_CHANGES[i].first;
 			nextIndices.second = indices.second + DIRECTION_CHANGES[i].second;

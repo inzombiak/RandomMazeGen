@@ -1,11 +1,13 @@
 #include "RoomGenerator.h"
 
-using namespace GameDefs;
+#include "MazeGenPriv.h"
 
-const std::vector<sf::IntRect>& RoomGenerator::GenerateRoom(std::vector<std::vector<Tile>>& tiles, const GenerateType& genType, unsigned seed, int sleepDuration)
+using namespace MazeDefs;
+
+const std::vector<MazeDefs::IntRect>& RoomGenerator::GenerateRoom(const TileHolder& tiles, const GenerateType& genType, unsigned seed, int sleepDuration)
 {
 	m_rooms.clear();
-	m_rowCount = (int)tiles.size();
+	m_rowCount = tiles.GetRowCount();
 	if (m_rowCount < 1)
 		return m_rooms;
 
@@ -19,7 +21,7 @@ const std::vector<sf::IntRect>& RoomGenerator::GenerateRoom(std::vector<std::vec
 	m_randomNumGen.seed(seed);
 	m_tiles = &tiles;
 	m_seed = seed;
-	m_columnCount = (int)(*m_tiles)[0].size();
+	m_columnCount = tiles.GetColumnCount();
 
 	if (genType == Step)
 		GenerateByStep();
@@ -47,7 +49,7 @@ void RoomGenerator::GenerateFull()
 	while (attempts > 0)
 	{
 		attempts--;
-		sf::IntRect room;
+		MazeDefs::IntRect room;
 		room.width = roomHorizontal(m_randomNumGen);
 		room.height = roomVertical(m_randomNumGen);
 		room.left = roomX(m_randomNumGen);
@@ -96,10 +98,9 @@ void RoomGenerator::GenerateFull()
 				{
 					dirs = dirs & ~PassageDirection::East;
 				}
-				(*m_tiles)[i][j].SetType(TileType::Room);
-				(*m_tiles)[i][j].SetDirection(dirs);
-				(*m_tiles)[i][j].SetID(setID);
-				(*m_tiles)[i][j].SetColor(SetIDManagerSingleton::Instance().GetSetColor(setID, m_seed));
+				(*m_tiles)(i, j).SetType(TileType::Room);
+				(*m_tiles)(i, j).SetDirection(dirs);
+				(*m_tiles)(i, j).SetID(setID);
 			}
 		}
 
@@ -119,22 +120,22 @@ void RoomGenerator::GenerateByStep()
 	GenerateFull();
 }
 
-void RoomGenerator::SetRoomHorizontalBounds(const sf::Vector2i& newHorizBounds)
+void RoomGenerator::SetRoomHorizontalBounds(const MazeDefs::Vector2i& newHorizBounds)
 {
 	std::unique_lock<std::mutex> lock(m_horizontalMutex);
 	m_horizontalBounds = newHorizBounds;
 }
-sf::Vector2i RoomGenerator::GetRoomHorizontalBounds()
+MazeDefs::Vector2i RoomGenerator::GetRoomHorizontalBounds()
 {
 	std::unique_lock<std::mutex> lock(m_horizontalMutex);
 	return m_horizontalBounds;
 }
-void RoomGenerator::SetRoomVerticalBounds(const sf::Vector2i& newVertBounds)
+void RoomGenerator::SetRoomVerticalBounds(const MazeDefs::Vector2i& newVertBounds)
 {
 	std::unique_lock<std::mutex> lock(m_verticalMutex);
 	m_verticalBounds = newVertBounds;
 }
-sf::Vector2i RoomGenerator::GetRoomVerticalBounds()
+MazeDefs::Vector2i RoomGenerator::GetRoomVerticalBounds()
 {
 	std::unique_lock<std::mutex> lock(m_verticalMutex);
 	return m_verticalBounds;
