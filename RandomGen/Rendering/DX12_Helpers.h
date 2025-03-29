@@ -33,6 +33,8 @@
 #include <cstdint>
 #include <functional>
 
+#include <stdexcept>
+#include <string>
 #define WIN32_LEAN_AND_MEAN
 #include <Windows.h> // For HRESULT
 
@@ -42,7 +44,10 @@ inline void ThrowIfFailed(HRESULT hr)
 {
     if (FAILED(hr))
     {
-        throw std::exception();
+        char buffer[512];
+        sprintf_s(buffer, "Error: %16X\n", hr);
+        OutputDebugStringA(buffer);
+        throw std::runtime_error("Failed with code: " + std::to_string(hr));
     }
 }
 

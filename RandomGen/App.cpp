@@ -230,12 +230,12 @@ void App::OnUpdate(UpdateEventArgs& e)
 
             // Convert the current sun position to an angle in the ZY plane
             float angle = GetAngleOnZYPlane(m_sunPos);
-            float timeOfDay = ((angle / M_PI) + 1) * 12.f;
+            float timeOfDay = ((angle / (float)M_PI) + 1) * 12.f;
             // Use ImGui slider to modify the angle (range from -PI to +PI)
             ImGui::SliderFloat("Sun Angle 6AM-6PM", &timeOfDay, 6, 18);
             //timeOfDay += 5 * dt;
             
-            angle = (timeOfDay - 12) * M_PI / 12.f;
+            angle = (timeOfDay - 12) * (float)M_PI / 12.f;
 
 
             // Convert the angle back to an XYZ position
