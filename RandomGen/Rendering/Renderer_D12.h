@@ -15,6 +15,8 @@
 using namespace Microsoft::WRL;
 
 #include "CommandQueue_D12.h"
+#include "MazeGenDefs.h"
+
 struct VertexInput
 {
 	DirectX::XMFLOAT3 position;
@@ -115,7 +117,7 @@ class Renderer_D12 {
 		void PopulateIndexBuffer(const WORD *data, size_t count);
 		void BuildPipelineState(const std::wstring& vertexShaderName, const std::wstring& pixelShaderName);
 		void BuildShadowPipelineState(const std::wstring& vertexShaderName, const std::wstring& pixelShaderName);
-		void CreateSRVForBoxes(const Tile* tiles, int rows, int columns, double t);
+		void CreateSRVForBoxes(const std::vector<std::vector<MazeDefs::TileProperties>>& tiles, int rows, int columns, double t);
 		void LoadTextures();
 		// Resize the depth buffer to match the size of the client area.
 		void ResizeDepthBuffer(int width, int height);

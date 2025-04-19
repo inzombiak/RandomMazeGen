@@ -35,6 +35,7 @@ public:
 	void Close();
 
 	const Tile* GetTiles(int& rows, int& columns);
+	MazeDefs::TileProperties GetTileProperties(int row, int col);
 
 private:
 	void Terminate();

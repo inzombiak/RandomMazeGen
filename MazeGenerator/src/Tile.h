@@ -2,7 +2,7 @@
 #define TILE_H
 
 #include "MazeGenDefs.h"
-
+#include "MazeGenPriv.h"
 
 #include<map>
 
@@ -16,9 +16,11 @@ public:
 	void SetDirection(const MazeDefs::PassageDirection& dir);
 	void AddDirection(const MazeDefs::PassageDirection& dir);
 	void RemoveDirection(const MazeDefs::PassageDirection& dir);
-	MAZEGENLIB_API bool HasDirection(const MazeDefs::PassageDirection& dir) const;
+	bool HasDirection(const MazeDefs::PassageDirection& dir) const;
+	MazeDefs::PassageDirection GetPassageDirections() const;
 	std::vector<int> GetPassageDirectionIndices();
-	MAZEGENLIB_API MazeDefs::TileType GetType() const;
+
+	MazeDefs::TileType GetType() const;
 	void SetType(const MazeDefs::TileType& type);
 	MazeDefs::Vector2f GetPosition() const;
 	void SetPosition(const MazeDefs::Vector2f& newPosition);

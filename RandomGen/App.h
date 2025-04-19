@@ -2,10 +2,12 @@
 
 #include "Events.h"
 #include "HighResolutionClock.h"
+#include "MazeGenDefs.h"
 #include <DirectXMath.h>
 
 #include <memory>
 #include <string>
+#include <vector>
 
 #define WIN32_LEAN_AND_MEAN
 #include <Windows.h>
@@ -125,4 +127,6 @@ private:
     int m_height;
     bool m_vSync;
     bool m_contentLoaded;
+
+    std::vector<std::vector<MazeDefs::TileProperties>> m_tileProperties;
 };

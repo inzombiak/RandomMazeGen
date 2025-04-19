@@ -84,6 +84,22 @@ const Tile* GridManager::GetTiles(int& rows, int& columns) {
 	return m_tiles.GetData();
 }
 
+
+MazeDefs::TileProperties GridManager::GetTileProperties(int row, int col) {
+	MazeDefs::TileProperties props;
+
+	if (row >= m_rowCount || row < 0 ||
+		col >= m_columnCount || col < 0) {
+		std::cout << "Invalid indices, row: " << row << " , col: " << col << std::endl;
+		return props;
+	}
+
+	props.type = m_tiles(row, col).GetType();
+	props.directions = m_tiles(row, col).GetPassageDirections();
+
+	return props;
+}
+
 void GridManager::RandomizeMap()
 {
 	if (m_prevMazeAlgoType == Step)

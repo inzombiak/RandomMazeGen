@@ -1,4 +1,4 @@
-<?xml version="1.0" encoding="utf-8"?>
+﻿<?xml version="1.0" encoding="utf-8"?>
 <Project DefaultTargets="Build" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
   <ItemGroup Label="ProjectConfigurations">
     <ProjectConfiguration Include="Debug|Win32">
@@ -149,8 +149,6 @@
   </ItemDefinitionGroup>
   <ItemGroup>
     <ClInclude Include="include\MazeGenDefs.h" />
-    <ClInclude Include="include\Tile.h" />
-    <ClInclude Include="MazeGenPriv.h" />
     <ClInclude Include="src\DeadEndRemover.h" />
     <ClInclude Include="src\GridManager.h" />
     <ClInclude Include="src\IMazeAlgorithm.h" />
@@ -158,8 +156,10 @@
     <ClInclude Include="src\MAEllers.h" />
     <ClInclude Include="src\MARecursiveBacktracker.h" />
     <ClInclude Include="src\MazeConnector.h" />
+    <ClInclude Include="src\MazeGenPriv.h" />
     <ClInclude Include="src\RoomGenerator.h" />
     <ClInclude Include="src\Singleton.h" />
+    <ClInclude Include="src\Tile.h" />
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="src\DeadEndRemover.cpp" />

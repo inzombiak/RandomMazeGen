@@ -108,6 +108,11 @@ bool App::Initialize()
         return false;
     }
 
+    m_tileProperties.resize(m_rows);
+    for (int i = 0; i < m_rows; ++i) {
+        m_tileProperties[i].resize(m_columns);
+    }
+
     GAME_WINDOW = std::make_shared<Window>(m_hInstance);
     GAME_WINDOW->RegisterCallbacks(shared_from_this());
     RENDERER = std::make_shared<Renderer_D12>();
@@ -125,7 +130,7 @@ bool App::LoadContent() {
 
     RENDERER->PopulateVertexBuffer(BOX_VERTICES, _countof(BOX_VERTICES));
     RENDERER->PopulateIndexBuffer(BOX_INDICES, _countof(BOX_INDICES));
-    MazeDefs::GenerateMap(m_width, m_height, m_rows, m_columns);
+    GenerateMap(m_width, m_height, m_rows, m_columns);
     RENDERER->BuildPipelineState(L"vertex_basic.cso", L"pixel_basic.cso");
     RENDERER->BuildShadowPipelineState(L"vertex_shadow.cso", L"pixel_shadow.cso");
     RENDERER->LoadTextures();
@@ -192,9 +197,13 @@ void App::OnUpdate(UpdateEventArgs& e)
     auto camUp = orientation.r[1];
     auto camFwd = orientation.r[2];
 
-    int rows, cols;
-    const Tile* tiles = MazeDefs::GetGeneratedTiles(&rows, &cols);
-    RENDERER->CreateSRVForBoxes(tiles, rows, cols, 0);
+    for (int i = 0; i < m_rows; ++i) {
+        for (int j = 0; j < m_columns; ++j) {
+            m_tileProperties[i][j] = GetTilePropertiesAtIndices(i, j);
+        }
+    }
+
+    RENDERER->CreateSRVForBoxes(m_tileProperties, m_rows, m_columns, 0);
 
     if (RENDERER && RENDERER->GUIInitialized()) {
         ImGui_ImplDX12_NewFrame();
@@ -204,10 +213,10 @@ void App::OnUpdate(UpdateEventArgs& e)
         if (ImGui::CollapsingHeader("Map Generation"))
         {
             ImGui::Combo("Maze Algorithm", &m_mazeAlgorithm, MazeDefs::MazeAlgorithmLabels, 2);
-            MazeDefs::SetMazeGenerationAlgorithm(MazeDefs::MazeAlgorithm(m_mazeAlgorithm));
+            SetMazeGenerationAlgorithm(MazeDefs::MazeAlgorithm(m_mazeAlgorithm));
 
             ImGui::Combo("Generation Type", &m_generationType, MazeDefs::GenerateTypeLabels, 2);
-            MazeDefs::SetMazeGenerationType(MazeDefs::GenerateType(m_generationType));
+            SetMazeGenerationType(MazeDefs::GenerateType(m_generationType));
 
             ImGui::PushItemWidth(100);
             ImGui::InputInt("Rows", &m_rows);
@@ -217,9 +226,13 @@ void App::OnUpdate(UpdateEventArgs& e)
             m_columns = std::clamp(m_columns, 10, 100);
             ImGui::SameLine();
             bool regen = ImGui::Button("Regenerate");
-            if (regen)
-                MazeDefs::GenerateMap(m_width, m_height, m_rows, m_columns);
-
+            if (regen) {
+                m_tileProperties.resize(m_rows);
+                for (int i = 0; i < m_rows; ++i) {
+                    m_tileProperties[i].resize(m_columns);
+                }
+                GenerateMap(m_width, m_height, m_rows, m_columns);
+            }
         }
 
         if (ImGui::CollapsingHeader("Atmosphere")) {

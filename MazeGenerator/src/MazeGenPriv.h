@@ -2,6 +2,48 @@
 
 #include "Singleton.h"
 
+namespace MazeDefs {
+	struct Vector2f {
+		Vector2f() {
+			x = 0;
+			y = 0;
+		}
+		Vector2f(float _x, float _y) {
+			x = _x;
+			y = _y;
+		}
+		float x, y;
+	};
+
+	struct Vector2i {
+		Vector2i() {
+			x = 0;
+			y = 0;
+		}
+		Vector2i(int _x, int _y) {
+			x = _x;
+			y = _y;
+		}
+		int x, y;
+	};
+
+	struct IntRect {
+		int top, left, width, height;
+		bool intersects(const IntRect& other) {
+			if (left + width < other.left)
+				return false;
+			if (left > other.left + other.width)
+				return false;
+			if (top + height < other.top)
+				return false;
+			if (top > other.top + other.height)
+				return false;
+
+			return true;
+		}
+	};
+}
+
 namespace Private
 {
 	class SetIDManager

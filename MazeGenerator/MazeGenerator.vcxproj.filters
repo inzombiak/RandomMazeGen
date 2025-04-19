@@ -42,16 +42,16 @@
     <ClInclude Include="include\MazeGenDefs.h">
       <Filter>Header Files\include</Filter>
     </ClInclude>
-    <ClInclude Include="MazeGenPriv.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
     <ClInclude Include="src\GridManager.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="include\Tile.h">
-      <Filter>Header Files\include</Filter>
-    </ClInclude>
     <ClInclude Include="src\Singleton.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="src\Tile.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="src\MazeGenPriv.h">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>

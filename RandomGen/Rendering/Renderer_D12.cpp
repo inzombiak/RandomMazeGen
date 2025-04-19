@@ -9,7 +9,6 @@
 #include "Texture_D12.h"
 
 #include "Window.h"
-#include "Tile.h"
 #include "MazeGenDefs.h"
 
 using namespace DirectX;
@@ -514,7 +513,7 @@ void Renderer_D12::LoadTextures() {
 	commandList->LoadTexture(L"Dirt.dds", m_dirtTexture);
 }
 
-void Renderer_D12::CreateSRVForBoxes(const Tile* tiles, int rows, int columns, double t) {
+void Renderer_D12::CreateSRVForBoxes(const std::vector<std::vector<MazeDefs::TileProperties>>& tiles, int rows, int columns, double t) {
 
 	m_numInstances = 0;
 	std::vector<XMMATRIX>		mvpMatrices;
@@ -529,7 +528,7 @@ void Renderer_D12::CreateSRVForBoxes(const Tile* tiles, int rows, int columns, d
 			y = 0;
 			int height = 1;
 
-			if (tiles[i * columns + j].GetType() == MazeDefs::TileType::Empty) {
+			if (tiles [i][j].type == MazeDefs::TileType::Empty) {
 				x += 2;
 				continue;
 			}
@@ -540,9 +539,8 @@ void Renderer_D12::CreateSRVForBoxes(const Tile* tiles, int rows, int columns, d
 				peds.push_back({ 0 });
 				y += 2;
 			}
-
 			for (int p = 0; p < 4; ++p) {
-				if (!tiles[i * columns + j].HasDirection(MazeDefs::DIRECTIONS[p])) {
+				if ((tiles[i][j].directions & MazeDefs::DIRECTIONS[p]) != MazeDefs::DIRECTIONS[p]) {
 					float wallX = (float)x;
 					float wallZ = (float)z;
 					float scaleX = 1;

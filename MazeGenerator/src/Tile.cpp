@@ -30,6 +30,9 @@ bool Tile::HasDirection(const PassageDirection& dir) const
 {
 	return (m_direction & dir) == dir;
 }
+MazeDefs::PassageDirection Tile::GetPassageDirections() const {
+	return m_direction;
+}
 std::vector<int> Tile::GetPassageDirectionIndices()
 {
 	std::vector<int> result;
