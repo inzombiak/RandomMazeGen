@@ -49,6 +49,9 @@ void GridManager::GenerateMap(int windowWidth, int windowHeight, unsigned int ro
 
 	m_prevMazeAlgo = m_mazeAlgorithm;
 	m_prevMazeAlgoType = m_mazeGenerateType;
+
+	// Mark as dirty after generation
+	m_isDirty = true;
 }
 
 void GridManager::Terminate()
@@ -98,6 +101,23 @@ MazeDefs::TileProperties GridManager::GetTileProperties(int row, int col) {
 	props.directions = m_tiles(row, col).GetPassageDirections();
 
 	return props;
+}
+
+void GridManager::GetAllTileProperties(MazeDefs::TileProperties* buffer, unsigned int bufferSize) {
+	unsigned int expectedSize = m_rowCount * m_columnCount;
+	if (buffer == nullptr || bufferSize < expectedSize) {
+		std::cout << "Invalid buffer or size. Expected: " << expectedSize << ", Got: " << bufferSize << std::endl;
+		return;
+	}
+
+	// Copy all tile properties in row-major order
+	for (int i = 0; i < m_rowCount; ++i) {
+		for (int j = 0; j < m_columnCount; ++j) {
+			int index = i * m_columnCount + j;
+			buffer[index].type = m_tiles(i, j).GetType();
+			buffer[index].directions = m_tiles(i, j).GetPassageDirections();
+		}
+	}
 }
 
 void GridManager::RandomizeMap()
@@ -183,25 +203,47 @@ void GridManager::GenerateMaze()
 void GridManager::GenerateMazeWorker()
 {
 	auto start = std::chrono::high_resolution_clock::now();
-	if (m_mazeAlgorithm == MazeAlgorithm::RecursiveBacktracker)
+
+	// Set dirty callback so algorithm can notify when tiles change
+	auto dirtyCallback = [this]() { this->SetDirtyFlag(); };
+
+	if (m_mazeAlgorithm == MazeAlgorithm::RecursiveBacktracker) {
+		MARecursiveBacktrackerSingleton::Instance().SetDirtyCallback(dirtyCallback);
 		MARecursiveBacktrackerSingleton::Instance().GenerateMaze(m_tiles, m_mazeGenerateType, m_seed, m_threadSleepTime);
-	else
+	} else {
+		MAEllersSingleton::Instance().SetDirtyCallback(dirtyCallback);
 		MAEllersSingleton::Instance().GenerateMaze(m_tiles, m_mazeGenerateType, m_seed, m_threadSleepTime);
+	}
+
 	auto finish = std::chrono::high_resolution_clock::now();
 	std::chrono::duration<double> elapsed = finish - start;
 	std::cout << "Maze generation elapsed time: " << elapsed.count() << std::endl;
+
+	// Mark maze as dirty after generation
+	m_isDirty = true;
 }
 void GridManager::GenerateMazeWorkerByStep()
 {
 
 	auto start = std::chrono::high_resolution_clock::now();
-	if (m_mazeAlgorithm == MazeAlgorithm::RecursiveBacktracker)
+
+	// Set dirty callback so algorithm can notify when tiles change during stepping
+	auto dirtyCallback = [this]() { this->SetDirtyFlag(); };
+
+	if (m_mazeAlgorithm == MazeAlgorithm::RecursiveBacktracker) {
+		MARecursiveBacktrackerSingleton::Instance().SetDirtyCallback(dirtyCallback);
 		MARecursiveBacktrackerSingleton::Instance().GenerateMaze(m_tiles, m_mazeGenerateType, m_seed, m_threadSleepTime);
-	else
+	} else {
+		MAEllersSingleton::Instance().SetDirtyCallback(dirtyCallback);
 		MAEllersSingleton::Instance().GenerateMaze(m_tiles, m_mazeGenerateType, m_seed, m_threadSleepTime);
+	}
+
 	auto finish = std::chrono::high_resolution_clock::now();
 	std::chrono::duration<double> elapsed = finish - start;
 	std::cout << "Maze generation elapsed time: " << elapsed.count() << std::endl;
+
+	// Mark maze as dirty after each step
+	m_isDirty = true;
 	if (m_terminated)
 		return;
 	{
@@ -231,7 +273,12 @@ void GridManager::ConnectMap()
 }
 void GridManager::ConnectMapWorker(const std::vector<MazeDefs::IntRect>& rooms)
 {
+	// Set dirty callback so connector can notify when tiles change
+	auto dirtyCallback = [this]() { this->SetDirtyFlag(); };
+	MazeConnectorSingleton::Instance().SetDirtyCallback(dirtyCallback);
+
 	MazeConnectorSingleton::Instance().ConnectMaze(rooms, m_tiles, m_mazeGenerateType, m_seed, m_threadSleepTime);
+	m_isDirty = true;  // Mark dirty after connecting
 }
 
 void GridManager::ConnectMapWorkerByStep(std::vector<MazeDefs::IntRect> rooms)
@@ -248,11 +295,17 @@ void GridManager::ConnectMapWorkerByStep(std::vector<MazeDefs::IntRect> rooms)
 		return;
 
 	m_simPhase = ConnectingMap;
+
+	// Set dirty callback so connector can notify when tiles change during stepping
+	auto dirtyCallback = [this]() { this->SetDirtyFlag(); };
+	MazeConnectorSingleton::Instance().SetDirtyCallback(dirtyCallback);
+
 	auto start = std::chrono::high_resolution_clock::now();
 	MazeConnectorSingleton::Instance().ConnectMaze(rooms, m_tiles, m_mazeGenerateType, m_seed, m_threadSleepTime);
 	auto finish = std::chrono::high_resolution_clock::now();
 	std::chrono::duration<double> elapsed = finish - start;
 	std::cout << "Maze connection elapsed time: " << elapsed.count() << std::endl;
+	m_isDirty = true;  // Mark dirty after connecting
 	if (m_terminated)
 		return;
 	{
@@ -282,7 +335,12 @@ void GridManager::RemoveDeadEnds()
 
 void GridManager::RemoveDeadEndsWorker()
 {
+	// Set dirty callback so dead end remover can notify when tiles change
+	auto dirtyCallback = [this]() { this->SetDirtyFlag(); };
+	DeadEndRemoverSingleton::Instance().SetDirtyCallback(dirtyCallback);
+
 	DeadEndRemoverSingleton::Instance().RemoveDeadEnds(m_tiles, m_mazeGenerateType, m_removeDeadEndsPercentage, m_seed, m_threadSleepTime);
+	m_isDirty = true;  // Mark dirty after removing dead ends
 }
 
 void GridManager::RemoveDeadEndsWorkerByStep()
@@ -299,9 +357,16 @@ void GridManager::RemoveDeadEndsWorkerByStep()
 		return;
 
 	m_simPhase = RemovingDeadEnds;
+
+	// Set dirty callback so dead end remover can notify when tiles change during stepping
+	auto dirtyCallback = [this]() { this->SetDirtyFlag(); };
+	DeadEndRemoverSingleton::Instance().SetDirtyCallback(dirtyCallback);
+
 	auto start = std::chrono::high_resolution_clock::now();
 	DeadEndRemoverSingleton::Instance().RemoveDeadEnds(m_tiles, m_mazeGenerateType, m_removeDeadEndsPercentage, m_seed, m_threadSleepTime);
 	auto finish = std::chrono::high_resolution_clock::now();
 	std::chrono::duration<double> elapsed = finish - start;
 	std::cout << "Dead end removal elapsed time: " << elapsed.count() << std::endl;
+	m_isDirty = true;  // Mark dirty after removing dead ends
+	m_simPhase = Done;
 }

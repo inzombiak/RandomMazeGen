@@ -83,6 +83,13 @@ extern "C" {
 	MAZEGENLIB_API void SetMazeGenerationType(MazeDefs::GenerateType type);
 	MAZEGENLIB_API void SetMazeGenerationAlgorithm(MazeDefs::MazeAlgorithm algo);
 	MAZEGENLIB_API const MazeDefs::TileProperties GetTilePropertiesAtIndices(unsigned int i, unsigned int j);
+
+	// Optimization API: Check if tiles have changed since last query
+	MAZEGENLIB_API bool IsMazeDirty();
+	MAZEGENLIB_API void ClearMazeDirtyFlag();
+
+	// Batch API: Get all tiles at once (more efficient than individual calls)
+	MAZEGENLIB_API void GetAllTileProperties(MazeDefs::TileProperties* buffer, unsigned int bufferSize);
 }
 
 

@@ -180,6 +180,12 @@
     <ClCompile Include="Extern\imgui\backends\imgui_impl_win32.cpp">
       <Filter>Header Files\Extern\imgui</Filter>
     </ClCompile>
+    <ClCompile Include="Rendering\RootSignatureBuilder.cpp">
+      <Filter>Source Files\Rendering\D12</Filter>
+    </ClCompile>
+    <ClCompile Include="Rendering\ShaderReflection.cpp">
+      <Filter>Source Files\Rendering\D12</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Rendering\d3dx12\d3d12.h">
@@ -364,6 +370,12 @@
     </ClInclude>
     <ClInclude Include="AppDefs.h">
       <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="Rendering\RootSignatureBuilder.h">
+      <Filter>Header Files\Rendering\D12</Filter>
+    </ClInclude>
+    <ClInclude Include="Rendering\ShaderReflection.h">
+      <Filter>Header Files\Rendering\D12</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>

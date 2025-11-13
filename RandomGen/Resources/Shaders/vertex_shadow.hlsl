@@ -17,7 +17,7 @@ struct ViewProjection
 {
     matrix VP;
 };
-ConstantBuffer<ViewProjection> ViewProjectionCB : register(b0);
+ConstantBuffer<ViewProjection> ViewProjectionCB_Const : register(b0);
 
 struct VertexOutput
 {
@@ -29,7 +29,7 @@ VertexOutput main(VertexInput input)
 {
     VertexOutput output;
     output.hpos = mul(ModelSB[input.instanceid].M, float4(input.position, 1.0f));
-    output.hpos = mul(ViewProjectionCB.VP, output.hpos);
+    output.hpos = mul(ViewProjectionCB_Const.VP, output.hpos);
     output.color = float4(input.color, 1.0f);
     return output;
 }

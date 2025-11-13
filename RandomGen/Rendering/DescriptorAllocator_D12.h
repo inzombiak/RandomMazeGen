@@ -35,7 +35,8 @@ private:
     using DescriptorHeapPool = std::vector<std::shared_ptr<DescriptorAllocatorPage_D12>>;
 
     // Create a new heap with a specific number of descriptors.
-    std::shared_ptr<DescriptorAllocatorPage_D12> CreateAllocatorPage();
+    // If numDescriptors is 0, uses m_numDescriptorsPerHeap.
+    std::shared_ptr<DescriptorAllocatorPage_D12> CreateAllocatorPage(uint32_t numDescriptors = 0);
 
     D3D12_DESCRIPTOR_HEAP_TYPE m_heapType;
     uint32_t m_numDescriptorsPerHeap;

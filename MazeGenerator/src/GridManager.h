@@ -37,6 +37,12 @@ public:
 	const Tile* GetTiles(int& rows, int& columns);
 	MazeDefs::TileProperties GetTileProperties(int row, int col);
 
+	// Optimization API
+	bool IsDirty() const { return m_isDirty; }
+	void ClearDirtyFlag() { m_isDirty = false; }
+	void SetDirtyFlag() { m_isDirty = true; }
+	void GetAllTileProperties(MazeDefs::TileProperties* buffer, unsigned int bufferSize);
+
 private:
 	void Terminate();
 
@@ -89,6 +95,9 @@ private:
 	TileHolder m_tiles;
 
 	std::vector<MazeDefs::IntRect> m_rooms;
+
+	// Dirty flag to track if maze has changed
+	std::atomic<bool> m_isDirty = true;  // Start dirty so first render works
 };
 
 #endif

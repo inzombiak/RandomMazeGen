@@ -55,7 +55,11 @@ void DynamicDescriptorHeap_D12::ParseRootSignature(const RootSignature_D12& root
     }
 
     // Make sure the maximum number of descriptors per descriptor heap has not been exceeded.
-    assert(currentOffset <= m_numDescriptorsPerHeap && "The root signature requires more than the maximum number of descriptors per descriptor heap. Consider increasing the maximum number of descriptors per descriptor heap.");
+    // This check is enforced in both debug and release builds to prevent runtime errors.
+    if (currentOffset > m_numDescriptorsPerHeap)
+    {
+        throw std::runtime_error("The root signature requires more than the maximum number of descriptors per descriptor heap. Consider increasing the maximum number of descriptors per descriptor heap.");
+    }
 }
 
 void DynamicDescriptorHeap_D12::StageDescriptors(uint32_t rootParameterIndex, uint32_t offset, uint32_t numDescriptors, const D3D12_CPU_DESCRIPTOR_HANDLE srcDescriptor)
@@ -112,6 +116,13 @@ Microsoft::WRL::ComPtr<ID3D12DescriptorHeap> DynamicDescriptorHeap_D12::RequestD
     }
     else
     {
+        // Enforce a maximum number of descriptor heaps to prevent runaway allocation
+        constexpr size_t MAX_DESCRIPTOR_HEAPS = 32;
+        if (m_descriptorHeapPool.size() >= MAX_DESCRIPTOR_HEAPS)
+        {
+            throw std::runtime_error("Exceeded maximum number of descriptor heaps. This may indicate a missing Reset() call or excessive descriptor usage.");
+        }
+
         descriptorHeap = CreateDescriptorHeap();
         m_descriptorHeapPool.push(descriptorHeap);
     }
@@ -130,6 +141,10 @@ Microsoft::WRL::ComPtr<ID3D12DescriptorHeap> DynamicDescriptorHeap_D12::CreateDe
 
     Microsoft::WRL::ComPtr<ID3D12DescriptorHeap> descriptorHeap;
     ThrowIfFailed(device->CreateDescriptorHeap(&descriptorHeapDesc, IID_PPV_ARGS(&descriptorHeap)));
+
+    // Name the heap for debugging in PIX/NSight
+    std::wstring heapName = L"Dynamic Descriptor Heap #" + std::to_wstring(m_descriptorHeapPool.size());
+    descriptorHeap->SetName(heapName.c_str());
 
     return descriptorHeap;
 }

@@ -15,6 +15,11 @@ DescriptorAllocatorPage_D12::DescriptorAllocatorPage_D12(D3D12_DESCRIPTOR_HEAP_T
 
     ThrowIfFailed(device->CreateDescriptorHeap(&heapDesc, IID_PPV_ARGS(&m_d3d12DescriptorHeap)));
 
+    // Name the heap for debugging in PIX/NSight
+    const wchar_t* heapTypeNames[] = { L"CBV_SRV_UAV", L"Sampler", L"RTV", L"DSV" };
+    std::wstring heapName = std::wstring(heapTypeNames[m_heapType]) + L" Descriptor Heap (" + std::to_wstring(numDescriptors) + L" descriptors)";
+    m_d3d12DescriptorHeap->SetName(heapName.c_str());
+
     m_baseDescriptor = m_d3d12DescriptorHeap->GetCPUDescriptorHandleForHeapStart();
     m_descriptorHandleIncrementSize = device->GetDescriptorHandleIncrementSize(m_heapType);
     m_numFreeHandles = m_numDescriptorsInHeap;

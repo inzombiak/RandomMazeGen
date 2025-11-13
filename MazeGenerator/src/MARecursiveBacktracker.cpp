@@ -141,15 +141,18 @@ void MARecursiveBacktracker::CarvePassageByStep(int startI, int startJ)
 		nextI = startI + MazeDefs::DIRECTION_CHANGES[index].first;
 		nextJ = startJ + MazeDefs::DIRECTION_CHANGES[index].second;
 
-		if (nextI >= 0 && nextI < m_rowCount && 
-			nextJ >= 0 && nextJ < m_columnCount && 
+		if (nextI >= 0 && nextI < m_rowCount &&
+			nextJ >= 0 && nextJ < m_columnCount &&
 			(*m_tiles)(nextI, nextJ).GetType() == TileType::Empty)
 		{
 			(*m_tiles)(nextI, nextJ).AddDirection(MazeDefs::OPPOSITE_DIRECTIONS[index]);
 			(*m_tiles)(startI, startJ).AddDirection(MazeDefs::DIRECTIONS[index]);
 			id = SetIDManagerSingleton::Instance().GetCurrentSetID();
 			(*m_tiles)(nextI, nextJ).SetType(TileType::Passage);
-			(*m_tiles)(nextI, nextJ).SetID(id);			
+			(*m_tiles)(nextI, nextJ).SetID(id);
+
+			// Notify that tiles have changed (for dirty flag optimization)
+			NotifyTilesModified();
 
 			CarvePassageByStep(nextI, nextJ);
 		}

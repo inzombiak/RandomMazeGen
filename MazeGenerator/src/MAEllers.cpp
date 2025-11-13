@@ -112,6 +112,8 @@ void MAEllers::InitalizeRow(int row)
 		(*m_tiles)(row, j).SetID(id);
 		m_rowSets[j].first = std::make_pair(row, j);
 
+		// Notify that tiles have changed (for dirty flag optimization)
+		NotifyTilesModified();
 
 		m_setToIndices[id].push_back(m_rowSets[j].first);
 
@@ -126,6 +128,7 @@ void MAEllers::MergeColumns(int row)
 		{
 			(*m_tiles)(row, 0).AddDirection(PassageDirection::East);
 			(*m_tiles)(row, 1).AddDirection(PassageDirection::West);
+			NotifyTilesModified();
 			CompareAndMergeSets(std::make_pair(row, 0), std::make_pair(row, 1));
 		}
 
@@ -133,6 +136,7 @@ void MAEllers::MergeColumns(int row)
 		{
 			(*m_tiles)(row, m_columnCount - 1).AddDirection(PassageDirection::West);
 			(*m_tiles)(row, m_columnCount - 2).AddDirection(PassageDirection::East);
+			NotifyTilesModified();
 			CompareAndMergeSets(std::make_pair(row, m_columnCount - 1), std::make_pair(row, m_columnCount - 2));
 		}
 
@@ -151,6 +155,7 @@ void MAEllers::MergeColumns(int row)
 			//Otherwise connect
 			(*m_tiles)(current.first, current.second).AddDirection(PassageDirection::East);
 			(*m_tiles)(next.first, next.second).AddDirection(PassageDirection::West);
+			NotifyTilesModified();
 		}
 		return;
 	}
@@ -169,6 +174,7 @@ void MAEllers::MergeColumns(int row)
 		{
 			(*m_tiles)(row, 0).AddDirection(PassageDirection::East);
 			(*m_tiles)(row, 1).AddDirection(PassageDirection::West);
+			NotifyTilesModified();
 		}
 	}
 
@@ -183,6 +189,7 @@ void MAEllers::MergeColumns(int row)
 		{
 			(*m_tiles)(row, m_columnCount - 1).AddDirection(PassageDirection::West);
 			(*m_tiles)(row, m_columnCount - 2).AddDirection(PassageDirection::East);
+			NotifyTilesModified();
 		}
 	}
 
@@ -203,6 +210,7 @@ void MAEllers::MergeColumns(int row)
 		{
 			(*m_tiles)(current.first, current.second).AddDirection(DIRECTIONS[directionIndex]);
 			(*m_tiles)(next.first, next.second).AddDirection(OPPOSITE_DIRECTIONS[directionIndex]);
+			NotifyTilesModified();
 		}
 	}
 }
@@ -230,6 +238,7 @@ void MAEllers::MakeVerticalCuts(int row)
 
 			(*m_tiles)(current.first, current.second).AddDirection(PassageDirection::South);
 			(*m_tiles)(current.first + 1, current.second).AddDirection(PassageDirection::North);
+			NotifyTilesModified();
 		}
 		else
 			m_rowSets[j].second = -1;
@@ -280,6 +289,8 @@ void MAEllers::InitalizeRowByStep(int row)
 		(*m_tiles)(row, j).SetID(id);
 		m_rowSets[j].first = std::make_pair(row, j);
 
+		// Notify that tiles have changed (for dirty flag optimization)
+		NotifyTilesModified();
 
 		m_setToIndices[id].push_back(m_rowSets[j].first);
 
@@ -294,6 +305,7 @@ void MAEllers::MergeColumnsByStep(int row)
 		{
 			(*m_tiles)(row, 0).AddDirection(PassageDirection::East);
 			(*m_tiles)(row, 1).AddDirection(PassageDirection::West);
+			NotifyTilesModified();
 			CompareAndMergeSets(std::make_pair(row, 0), std::make_pair(row, 1));
 		}
 
@@ -301,6 +313,7 @@ void MAEllers::MergeColumnsByStep(int row)
 		{
 			(*m_tiles)(row, m_columnCount - 1).AddDirection(PassageDirection::West);
 			(*m_tiles)(row, m_columnCount - 2).AddDirection(PassageDirection::East);
+			NotifyTilesModified();
 			CompareAndMergeSets(std::make_pair(row, m_columnCount - 1), std::make_pair(row, m_columnCount - 2));
 		}
 
@@ -319,6 +332,7 @@ void MAEllers::MergeColumnsByStep(int row)
 			//Otherwise connect
 			(*m_tiles)(current.first, current.second).AddDirection(PassageDirection::East);
 			(*m_tiles)(next.first, next.second).AddDirection(PassageDirection::West);
+			NotifyTilesModified();
 		}
 		return;
 	}
@@ -337,6 +351,7 @@ void MAEllers::MergeColumnsByStep(int row)
 		{
 			(*m_tiles)(row, 0).AddDirection(PassageDirection::East);
 			(*m_tiles)(row, 1).AddDirection(PassageDirection::West);
+			NotifyTilesModified();
 		}
 	}
 
@@ -351,6 +366,7 @@ void MAEllers::MergeColumnsByStep(int row)
 		{
 			(*m_tiles)(row, m_columnCount - 1).AddDirection(PassageDirection::West);
 			(*m_tiles)(row, m_columnCount - 2).AddDirection(PassageDirection::East);
+			NotifyTilesModified();
 		}
 	}
 
@@ -378,6 +394,7 @@ void MAEllers::MergeColumnsByStep(int row)
 		{
 			(*m_tiles)(current.first, current.second).AddDirection(DIRECTIONS[directionIndex]);
 			(*m_tiles)(next.first, next.second).AddDirection(OPPOSITE_DIRECTIONS[directionIndex]);
+			NotifyTilesModified();
 		}
 	}
 }
@@ -411,6 +428,7 @@ void MAEllers::MakeVerticalCutsByStep(int row)
 
 			(*m_tiles)(current.first, current.second).AddDirection(PassageDirection::South);
 			(*m_tiles)(current.first + 1, current.second).AddDirection(PassageDirection::North);
+			NotifyTilesModified();
 		}
 		else
 			m_rowSets[j].second = -1;

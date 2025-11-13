@@ -16,6 +16,8 @@ using namespace Microsoft::WRL;
 
 #include "CommandQueue_D12.h"
 #include "MazeGenDefs.h"
+#include "ShaderReflection.h"
+#include "RootSignatureBuilder.h"
 
 struct VertexInput
 {
@@ -86,8 +88,18 @@ struct ExampleDescriptorHeapAllocator
 	}
 	void Alloc(D3D12_CPU_DESCRIPTOR_HANDLE* out_cpu_desc_handle, D3D12_GPU_DESCRIPTOR_HANDLE* out_gpu_desc_handle)
 	{
+		// Validate that we have descriptors available
+		if (FreeIndices.empty())
+		{
+			throw std::runtime_error("ImGui descriptor heap is full. Increase IMGUI_HEAP_SIZE or fix descriptor leak.");
+		}
+
 		int idx = FreeIndices.back();
 		FreeIndices.pop_back();
+
+		// Validate index is within heap bounds
+		assert(idx >= 0 && idx < (int)Heap->GetDesc().NumDescriptors && "ImGui descriptor index out of bounds");
+
 		out_cpu_desc_handle->ptr = HeapStartCpu.ptr + (idx * HeapHandleIncrement);
 		out_gpu_desc_handle->ptr = HeapStartGpu.ptr + (idx * HeapHandleIncrement);
 	}
@@ -95,6 +107,13 @@ struct ExampleDescriptorHeapAllocator
 	{
 		int cpu_idx = (int)((out_cpu_desc_handle.ptr - HeapStartCpu.ptr) / HeapHandleIncrement);
 		int gpu_idx = (int)((out_gpu_desc_handle.ptr - HeapStartGpu.ptr) / HeapHandleIncrement);
+
+		// Validate that CPU and GPU indices match (they should always be the same)
+		assert(cpu_idx == gpu_idx && "ImGui CPU and GPU descriptor indices don't match");
+
+		// Validate index is within heap bounds
+		assert(cpu_idx >= 0 && cpu_idx < (int)Heap->GetDesc().NumDescriptors && "ImGui descriptor index out of bounds");
+
 		FreeIndices.push_back(cpu_idx);
 	}
 };
@@ -140,6 +159,14 @@ class Renderer_D12 {
 		Renderer_D12& operator=(const Renderer_D12&) = delete;
 
 		static const uint8_t NUM_BACKBUFFER_FRAMES = 3;
+
+		// Shader reflection and automatic pipeline state
+		Rendering::ShaderMetadata m_vertexShaderMetadata;
+		Rendering::ShaderMetadata m_pixelShaderMetadata;
+		Rendering::ShaderMetadata m_shadowVertexShaderMetadata;
+		Rendering::ShaderMetadata m_shadowPixelShaderMetadata;
+		Rendering::RootSignatureBuilder m_mainRootSigBuilder;
+		Rendering::RootSignatureBuilder m_shadowRootSigBuilder;
 
 		UINT		m_currentBufferIdx;
 

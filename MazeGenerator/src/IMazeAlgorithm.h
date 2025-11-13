@@ -10,6 +10,7 @@ public:
 	virtual ~IMazeAlgorithm() {};
 
 	virtual void GenerateMaze(const TileHolder& tiles, const MazeDefs::GenerateType& genType, unsigned seed, int sleepDuration) = 0;
+
 protected:
 	//Allows full to run faster
 	virtual void GenerateFull() = 0;

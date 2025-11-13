@@ -91,6 +91,7 @@ void MazeConnector::ConnectRoomFull(int index)
 		//Open it up
 		(*m_tiles)(tileIndices.first, tileIndices.second).AddDirection(MazeDefs::DIRECTIONS[dirIndex]);
 		(*m_tiles)(nextTileIndices.first, nextTileIndices.second).AddDirection(MazeDefs::OPPOSITE_DIRECTIONS[dirIndex]);
+		NotifyTilesModified();
 	//(*m_tiles)(tileIndices.first, tileIndices.second).SetBorder(MazeDefs::DIRECTIONS[dirIndex], 4, sf::Color::Yellow);
 
 		//Flood it cause pretty
@@ -245,6 +246,7 @@ void MazeConnector::ConnectRoomByStep(int index)
 		//Open it up
 		(*m_tiles)(tileIndices.first, tileIndices.second).AddDirection(MazeDefs::DIRECTIONS[dirIndex]);
 		(*m_tiles)(nextTileIndices.first, nextTileIndices.second).AddDirection(MazeDefs::OPPOSITE_DIRECTIONS[dirIndex]);
+		NotifyTilesModified();
 
 		//Flood it cause pretty
 		if (SetIDManagerSingleton::Instance().GetSetMemberCount(currID) > SetIDManagerSingleton::Instance().GetSetMemberCount(nextID))

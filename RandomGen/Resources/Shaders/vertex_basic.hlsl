@@ -24,7 +24,7 @@ struct SceneData
     matrix camVP;
     matrix sunVP; 
 };
-ConstantBuffer<SceneData> SceneDataCB : register(b0);
+ConstantBuffer<SceneData> SceneDataCB : register(b1);
 
 struct VertexOutput
 {   

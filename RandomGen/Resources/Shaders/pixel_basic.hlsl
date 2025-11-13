@@ -8,7 +8,7 @@ struct PixelInput
     uint   instanceid : SV_InstanceID;
 };
 
-cbuffer LightingPos : register(b0)
+cbuffer LightingPos_Const : register(b0)
 {
     float4 lightPos;
     float4 viewPos;

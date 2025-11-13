@@ -39,8 +39,11 @@ DescriptorAllocation_D12 DescriptorAllocator_D12::Allocate(uint32_t numDescripto
     // No available heap could satisfy the requested number of descriptors.
     if (allocation.IsNull())
     {
-        m_numDescriptorsPerHeap = max(m_numDescriptorsPerHeap, numDescriptors);
-        auto newPage = CreateAllocatorPage();
+        // Create a page large enough for this allocation, but don't permanently
+        // increase the default page size. This prevents memory waste from one
+        // large allocation causing all future pages to be oversized.
+        auto pageSize = max(m_numDescriptorsPerHeap, numDescriptors);
+        auto newPage = CreateAllocatorPage(pageSize);
 
         allocation = newPage->Allocate(numDescriptors);
     }
@@ -65,11 +68,14 @@ void DescriptorAllocator_D12::ReleaseStaleDescriptors(uint64_t frameNumber)
     }
 }
 
-std::shared_ptr<DescriptorAllocatorPage_D12> DescriptorAllocator_D12::CreateAllocatorPage()
+std::shared_ptr<DescriptorAllocatorPage_D12> DescriptorAllocator_D12::CreateAllocatorPage(uint32_t numDescriptors)
 {
-    //auto newPage = std::make_shared<DescriptorAllocatorPage_D12>(m_heapType, m_numDescriptorsPerHeap);
+    // If numDescriptors is 0, use the default page size
+    if (numDescriptors == 0) {
+        numDescriptors = m_numDescriptorsPerHeap;
+    }
 
-    m_heapPool.emplace_back(std::make_shared<DescriptorAllocatorPage_D12>(m_heapType, m_numDescriptorsPerHeap));
+    m_heapPool.emplace_back(std::make_shared<DescriptorAllocatorPage_D12>(m_heapType, numDescriptors));
     m_availableHeaps.insert(m_heapPool.size() - 1);
 
     return m_heapPool.back();

@@ -197,13 +197,49 @@ void App::OnUpdate(UpdateEventArgs& e)
     auto camUp = orientation.r[1];
     auto camFwd = orientation.r[2];
 
-    for (int i = 0; i < m_rows; ++i) {
-        for (int j = 0; j < m_columns; ++j) {
-            m_tileProperties[i][j] = GetTilePropertiesAtIndices(i, j);
+    // OPTIMIZATION: Only query and upload tiles if maze has changed
+    // Both Full and Step modes now use the dirty flag system
+    // Step mode adds frame rate throttling to limit updates to ~60fps for smooth visualization
+    static auto lastStepQuery = std::chrono::high_resolution_clock::now();
+    const int STEP_QUERY_INTERVAL_MS = 16; // ~60fps max for step visualization
+
+    bool shouldQuery = false;
+
+    // Check if maze is dirty (tiles have changed)
+    if (IsMazeDirty()) {
+        // In Step mode, also check frame rate throttling to avoid excessive updates
+        if (m_generationType == MazeDefs::Step) {
+            auto now = std::chrono::high_resolution_clock::now();
+            auto elapsed = std::chrono::duration_cast<std::chrono::milliseconds>(now - lastStepQuery).count();
+            if (elapsed >= STEP_QUERY_INTERVAL_MS) {
+                shouldQuery = true;
+                lastStepQuery = now;
+            }
+        } else {
+            // Full mode: query immediately when dirty
+            shouldQuery = true;
         }
     }
 
-    RENDERER->CreateSRVForBoxes(m_tileProperties, m_rows, m_columns, 0);
+    if (shouldQuery) {
+        // Use batch API for efficiency (single DLL call instead of rows*columns calls)
+        // Note: m_tileProperties is a 2D vector, so we need a temporary contiguous buffer
+        std::vector<MazeDefs::TileProperties> tempBuffer(m_rows * m_columns);
+        GetAllTileProperties(tempBuffer.data(), m_rows * m_columns);
+
+        // Copy from temp buffer to 2D structure
+        for (int i = 0; i < m_rows; ++i) {
+            for (int j = 0; j < m_columns; ++j) {
+                m_tileProperties[i][j] = tempBuffer[i * m_columns + j];
+            }
+        }
+
+        // Upload to GPU
+        RENDERER->CreateSRVForBoxes(m_tileProperties, m_rows, m_columns, 0);
+
+        // Clear dirty flag after sync for both modes
+        ClearMazeDirtyFlag();
+    }
 
     if (RENDERER && RENDERER->GUIInitialized()) {
         ImGui_ImplDX12_NewFrame();

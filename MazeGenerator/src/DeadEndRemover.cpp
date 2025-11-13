@@ -64,6 +64,7 @@ void DeadEndRemover::RemoveDeadEnd(int i, int j)
 		return;
 
 	(*m_tiles)(nextI, nextJ).RemoveDirection(OPPOSITE_DIRECTIONS[tilePassageIndices[0]]);
+	NotifyTilesModified();
 
 	RemoveDeadEnd(nextI, nextJ);
 }
@@ -136,6 +137,7 @@ void DeadEndRemover::RemoveDeadEndByStep(int i, int j)
 		return;
 
 	(*m_tiles)(nextI, nextJ).RemoveDirection(OPPOSITE_DIRECTIONS[tilePassageIndices[0]]);
+	NotifyTilesModified();
 	std::this_thread::sleep_for(std::chrono::milliseconds(m_sleepDuration));
 
 	if (!CanGenerate())

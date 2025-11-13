@@ -19,3 +19,15 @@ extern "C" MAZEGENLIB_API void SetMazeGenerationAlgorithm(MazeDefs::MazeAlgorith
 extern "C" MAZEGENLIB_API const MazeDefs::TileProperties GetTilePropertiesAtIndices(unsigned int i, unsigned int j) {
 	return GridManagerSingleton::Instance().GetTileProperties(i, j);
 }
+
+extern "C" MAZEGENLIB_API bool IsMazeDirty() {
+	return GridManagerSingleton::Instance().IsDirty();
+}
+
+extern "C" MAZEGENLIB_API void ClearMazeDirtyFlag() {
+	GridManagerSingleton::Instance().ClearDirtyFlag();
+}
+
+extern "C" MAZEGENLIB_API void GetAllTileProperties(MazeDefs::TileProperties* buffer, unsigned int bufferSize) {
+	GridManagerSingleton::Instance().GetAllTileProperties(buffer, bufferSize);
+}

@@ -72,12 +72,14 @@
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
     <LinkIncremental>true</LinkIncremental>
+    <OutDir>$(SolutionDir)$(Platform)\$(Configuration)\</OutDir>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
     <LinkIncremental>false</LinkIncremental>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
     <LinkIncremental>false</LinkIncremental>
+    <OutDir>$(SolutionDir)$(Platform)\$(Configuration)\</OutDir>
   </PropertyGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
     <ClCompile>
@@ -207,6 +209,8 @@
     <ClCompile Include="Rendering\DynamicDescriptorHeap_D12.cpp" />
     <ClCompile Include="Rendering\Renderer_D12.cpp" />
     <ClCompile Include="Rendering\RootSignature_D12.cpp" />
+    <ClCompile Include="Rendering\RootSignatureBuilder.cpp" />
+    <ClCompile Include="Rendering\ShaderReflection.cpp" />
     <ClCompile Include="Rendering\Texture_D12.cpp" />
     <ClCompile Include="Rendering\UploadBuffer_D12.cpp" />
     <ClCompile Include="Rendering\Window.cpp" />
@@ -270,6 +274,8 @@
     <ClInclude Include="Rendering\RenderDefs.h" />
     <ClInclude Include="Rendering\Renderer_D12.h" />
     <ClInclude Include="Rendering\RootSignature_D12.h" />
+    <ClInclude Include="Rendering\RootSignatureBuilder.h" />
+    <ClInclude Include="Rendering\ShaderReflection.h" />
     <ClInclude Include="Rendering\Texture_D12.h" />
     <ClInclude Include="Rendering\UploadBuffer_D12.h" />
     <ClInclude Include="Rendering\Window.h" />
