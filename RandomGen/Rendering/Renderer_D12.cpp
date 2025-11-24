@@ -649,7 +649,6 @@ void Renderer_D12::BuildPipelineState(const std::wstring& vertexShaderName, cons
 	ComPtr<ID3DBlob> pixelShaderBlob;
 	ThrowIfFailed(D3DReadFileToBlob(pixelShaderName.data(), &pixelShaderBlob));
 
-	// ========== NEW: AUTOMATIC SHADER REFLECTION ==========
 	// Reflect shaders to extract metadata
 	Rendering::ShaderReflector reflector;
 	if (!reflector.ReflectShader(vertexShaderBlob.Get(), m_vertexShaderMetadata)) {

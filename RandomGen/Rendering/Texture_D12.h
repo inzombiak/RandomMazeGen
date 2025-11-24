@@ -17,6 +17,7 @@ public:
 
 	void SetReady(bool ready);
 	bool IsReady() const;
+
 private:
 	bool m_ready;
 

@@ -4,7 +4,8 @@ struct PixelInput
 };
 
 
-float4 main(PixelInput input) : SV_Target
+void main(PixelInput input)
 {
-    return input.color;
+    //return input.color;
+    return;
 }

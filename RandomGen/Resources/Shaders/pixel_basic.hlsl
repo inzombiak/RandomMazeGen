@@ -25,16 +25,11 @@ Texture2D wallTexture : register(t2);
 Texture2D grassTexture : register(t3);
 Texture2D dirtTexture : register(t4);
 Texture2D shadowTexture : register(t5);
-SamplerState TextureSampler : register(s0)
-{
-    Filter = MIN_MAG_MIP_LINEAR;
-    AddressU = Wrap;
-    AddressV = Wrap;
-};
+SamplerState TextureSampler : register(s0);
 
 SamplerComparisonState ShadowSampler : register(s1);
 
-float ShadowCalculation(float4 fragPosLightSpace)
+float ShadowCalculation(float3 surfaceNormal, float4 fragPosLightSpace, float3 lightDir)
 {
      // perform perspective divide
     float3 projCoords = fragPosLightSpace.xyz / fragPosLightSpace.w;
@@ -46,20 +41,19 @@ float ShadowCalculation(float4 fragPosLightSpace)
     // get depth of current fragment from light's perspective
     float currentDepth = projCoords.z;
     // check whether current frag pos is in shadow
-    float bias = 0.001;
-    //float shadow = z - bias > closestDepth ? 1.0 : 0.0;
+    float bias = max(0.0005 * (1.0 - dot(surfaceNormal, lightDir)), 0.0001);
 
     float shadow = 0.0;
     for (int x = -1; x <= 1; ++x)
     {
         for (int y = -1; y <= 1; ++y)
         {
-            shadow += 1 - shadowTexture.SampleCmpLevelZero(ShadowSampler, float2(projCoords.x, 1 - projCoords.y) + float2(x, y) * shadowTexelSize, z - bias).r;
+            shadow += shadowTexture.SampleCmpLevelZero(ShadowSampler, float2(projCoords.x, 1 - projCoords.y) + float2(x, y) * shadowTexelSize, z - bias).r;
         }
     }
     shadow /= 9.0;
-    
-    return shadow;
+
+    return 1 - shadow;
 }
 
 float4 main(PixelInput input) : SV_Target
@@ -108,9 +102,7 @@ float4 main(PixelInput input) : SV_Target
     float closestDepth = shadowTexture.Sample(TextureSampler, float2(projCoords.x, 1 - projCoords.y)).r;
     // get depth of current fragment from light's perspective
     float currentDepth = projCoords.z;
-    // check whether current frag pos is in shadow
-    float bias = 0.001;
-    float shadow = ShadowCalculation(input.sunPos);
+    float shadow = ShadowCalculation(normal, input.sunPos, lightDir);
     
     float3 lighting = (ambient + (1.0 - shadow) * (diffuse + specular)) * color.xyz;
     

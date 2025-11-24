@@ -21,8 +21,8 @@ ConstantBuffer<ViewProjection> ViewProjectionCB_Const : register(b0);
 
 struct VertexOutput
 {
-    float4 color : COLOR;
-    float4 hpos  : SV_Position;
+    float4 color   : COLOR;
+    float4 hpos    : SV_Position;
 };
 
 VertexOutput main(VertexInput input)
@@ -31,5 +31,6 @@ VertexOutput main(VertexInput input)
     output.hpos = mul(ModelSB[input.instanceid].M, float4(input.position, 1.0f));
     output.hpos = mul(ViewProjectionCB_Const.VP, output.hpos);
     output.color = float4(input.color, 1.0f);
+    
     return output;
 }
