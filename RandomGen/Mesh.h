@@ -15,6 +15,7 @@ private:
 
 	Material* m_material;
 
+	
 };
 
 #endif
