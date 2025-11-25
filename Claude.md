@@ -1628,4 +1628,126 @@ This architecture can be extended to other DirectX 12 projects or adapted to Vul
 
 ---
 
+## Math Library: GLM Instead of DirectX Math
+
+The project uses **GLM (OpenGL Mathematics)** for all vector and matrix operations instead of DirectX Math. This provides cross-platform compatibility while maintaining DirectX 12 rendering.
+
+### GLM Configuration
+
+**Critical Defines (must be set before including GLM):**
+```cpp
+#define GLM_FORCE_LEFT_HANDED        // Use DirectX left-handed coordinate system
+#define GLM_FORCE_DEPTH_ZERO_TO_ONE  // Use DirectX [0,1] depth range (not OpenGL's [-1,1])
+#include <glm/glm.hpp>
+#include <glm/gtc/matrix_transform.hpp>
+#include <glm/gtc/quaternion.hpp>
+#include <glm/gtc/type_ptr.hpp>
+```
+
+**Where defined:**
+- [App.h:8-9](RandomGen/App.h#L8-L9)
+- [Renderer_D12.h:9-10](RandomGen/Rendering/Renderer_D12.h#L9-L10)
+- [RenderDefs.h:17](RandomGen/Rendering/RenderDefs.h#L17) (includes glm.hpp for VertexInput)
+
+### Type Mappings
+
+| DirectX Math Type | GLM Equivalent | Size | Notes |
+|-------------------|----------------|------|-------|
+| `XMFLOAT2` | `glm::vec2` | 8 bytes | Direct replacement |
+| `XMFLOAT3` | `glm::vec3` | 12 bytes | **No padding** (unlike HLSL float3 which is 16-byte aligned in constant buffers) |
+| `XMFLOAT4` | `glm::vec4` | 16 bytes | Direct replacement |
+| `XMMATRIX` | `glm::mat4` | 64 bytes | Column-major storage (vs DirectX Math's row-major) |
+| `XMVECTOR` | `glm::vec3` or `glm::vec4` | 12 or 16 bytes | Use vec3 for positions, vec4 when w-component needed |
+
+### Function Mappings
+
+| DirectX Math Function | GLM Equivalent |
+|----------------------|----------------|
+| `XMMatrixTranslation(x,y,z)` | `glm::translate(glm::mat4(1.0f), glm::vec3(x,y,z))` |
+| `XMMatrixScaling(x,y,z)` | `glm::scale(glm::mat4(1.0f), glm::vec3(x,y,z))` |
+| `XMMatrixRotationQuaternion(q)` | `glm::mat4_cast(q)` |
+| `XMMatrixLookAtLH(eye,at,up)` | `glm::lookAtLH(eye, at, up)` |
+| `XMMatrixPerspectiveFovLH(fov,asp,n,f)` | `glm::perspectiveFovLH(fov, width, height, n, f)` |
+| `XMMatrixOrthographicLH(w,h,n,f)` | `glm::orthoLH(-w/2, w/2, -h/2, h/2, n, f)` |
+| `XMMatrixMultiply(a,b)` | `a * b` (operator overload) |
+| `XMQuaternionRotationRollPitchYaw(p,y,r)` | `glm::quat(glm::vec3(p,y,r))` |
+| `XMVector3Cross(a,b)` | `glm::cross(a,b)` |
+| `XMVector3Length(v)` | `glm::length(v)` |
+| `XMVector4Normalize(v)` | `glm::normalize(v)` |
+| `XMConvertToRadians(deg)` | `glm::radians(deg)` |
+| `XMStoreFloat3(dest,src)` | Direct assignment: `*dest = glm::vec3(src)` |
+| `XMStoreFloat4(dest,src)` | Direct assignment: `*dest = src` |
+| `XMVerifyCPUSupport()` | **Removed** (not needed for GLM) |
+
+### Matrix Storage and HLSL Compatibility
+
+**Important:** GLM uses **column-major** matrix storage (OpenGL convention), while HLSL shaders expect **row-major** matrices by default.
+
+**Current Implementation:**
+- Matrices are stored column-major in C++ (GLM's default)
+- HLSL shaders use default row-major layout
+- Matrix multiplication: `proj * view` (column-major order)
+- **Memory layout matches** because `GLM_FORCE_LEFT_HANDED` + `GLM_FORCE_DEPTH_ZERO_TO_ONE` configure GLM to produce DirectX-compatible matrices
+- Uploaded to GPU via direct `memcpy` (no transposition needed)
+
+**Key structures using GLM:**
+
+```cpp
+struct SceneData {
+    glm::mat4 camVP;   // Camera view-projection
+    glm::mat4 sunVP;   // Sun view-projection (for shadow mapping)
+    glm::mat4 PAD[2];  // Padding to 256 bytes for constant buffer alignment
+};
+static_assert(sizeof(SceneData) == 256);
+
+struct LightingData {
+    glm::vec4 sunPos;           // Sun position (w=1)
+    glm::vec4 camPos;           // Camera position (w=1)
+    glm::vec2 invShadowTexSize; // 1.0 / shadow texture dimensions
+};
+
+struct VertexInput {
+    glm::vec3 position;  // Vertex position
+    glm::vec3 color;     // Vertex color
+    glm::vec3 normal;    // Vertex normal
+    glm::vec3 uv;        // UV coordinates (z = face identifier)
+};
+static_assert(sizeof(VertexInput) == 48);
+```
+
+### Conversion Notes
+
+**Files Modified:**
+- [App.h](RandomGen/App.h) - Camera position, angles, sun position
+- [App.cpp](RandomGen/App.cpp) - Camera math, quaternion calculations, static vertex data
+- [Renderer_D12.h](RandomGen/Rendering/Renderer_D12.h) - Structure definitions, UpdateMVP signature
+- [Renderer_D12.cpp](RandomGen/Rendering/Renderer_D12.cpp) - Matrix calculations, instance data generation
+- [RenderDefs.h](RandomGen/Rendering/RenderDefs.h) - VertexInput structure
+
+**Key Changes:**
+1. **Removed** `#include <DirectXMath.h>` and `using namespace DirectX;`
+2. **Added** GLM includes with proper defines
+3. **Replaced** all XMFLOAT types with glm::vec types
+4. **Replaced** all XMMATRIX with glm::mat4
+5. **Updated** all DirectX Math function calls to GLM equivalents
+6. **Removed** XMVerifyCPUSupportCheck() (not needed)
+7. **Added** static_assert checks for structure sizes
+
+**Performance:**
+- GLM provides SIMD optimizations on supported platforms
+- With proper compiler flags, performance is comparable to DirectX Math
+- Memory layout is compatible with DirectX 12 constant buffers
+
+**Why GLM:**
+- **Cross-platform**: Works on Windows, Linux, macOS
+- **Header-only**: Simpler build integration
+- **Familiar API**: Similar to GLSL, easier for OpenGL developers
+- **Well-maintained**: Active development and widespread use
+- **DirectX-compatible**: With proper defines, generates DirectX-compatible matrices
+
+**Future Portability:**
+Using GLM instead of DirectX Math makes it easier to port the renderer to Vulkan or OpenGL in the future, as only the rendering backend would need changes—the math library stays the same.
+
+---
+
 — End of `Claude.md`
