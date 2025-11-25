@@ -1,3 +1,5 @@
+#ifndef RENDER_DEFS
+#define RENDER_DEFS
 #define _KB(x) (x * 1024)
 #define _MB(x) (x * 1024 * 1024)
 
@@ -11,3 +13,15 @@
 #define _64MB _MB(64)
 #define _128MB _MB(128)
 #define _256MB _MB(256)
+
+#include <glm/glm.hpp>
+
+struct VertexInput
+{
+	glm::vec3 position;
+	glm::vec3 color;
+	glm::vec3 normal;
+	glm::vec3 uv;
+};
+
+#endif

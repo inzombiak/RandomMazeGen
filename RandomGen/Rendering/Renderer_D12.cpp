@@ -11,7 +11,14 @@
 #include "Window.h"
 #include "MazeGenDefs.h"
 
-using namespace DirectX;
+// Validate GPU structure sizes to ensure correct memory layout
+static_assert(sizeof(SceneData) == 256, "SceneData must be 256 bytes for GPU constant buffer alignment");
+static_assert(sizeof(VertexInput) == 48, "VertexInput must be 48 bytes (4 vec3s = 12 bytes each)");
+static_assert(sizeof(glm::mat4) == 64, "glm::mat4 must be 64 bytes for GPU compatibility");
+static_assert(sizeof(glm::vec3) == 12, "glm::vec3 must be 12 bytes");
+static_assert(sizeof(glm::vec4) == 16, "glm::vec4 must be 16 bytes");
+static_assert(sizeof(glm::vec2) == 8, "glm::vec2 must be 8 bytes");
+
 bool CheckTearingSupport()
 {
 	BOOL allowTearing = FALSE;
@@ -423,7 +430,7 @@ void Renderer_D12::Shadowmap() {
 		d3dCommList->OMSetRenderTargets(0, NULL, FALSE, &dsv);
 
 		// Update the MVP matrix
-		d3dCommList->SetGraphicsRoot32BitConstants(0, sizeof(XMMATRIX) / 4, &m_sceneData.sunVP, 0);
+		d3dCommList->SetGraphicsRoot32BitConstants(0, sizeof(glm::mat4) / 4, &m_sceneData.sunVP, 0);
 		d3dCommList->SetGraphicsRootShaderResourceView(1, m_modelBufferView.BufferLocation);
 		d3dCommList->DrawIndexedInstanced((UINT)m_indexCount, m_numInstances, 0, 0, 0);
 
@@ -504,8 +511,8 @@ void Renderer_D12::LoadTextures() {
 	m_device->CreateConstantBufferView(&cbvDesc, m_vpCPUHandle);
 
 	m_vpBufferView.BufferLocation = m_vpBuffer->GetGPUVirtualAddress();
-	m_vpBufferView.SizeInBytes = (UINT)(sizeof(XMMATRIX) * m_numInstances);
-	m_vpBufferView.StrideInBytes = sizeof(XMMATRIX);
+	m_vpBufferView.SizeInBytes = (UINT)(sizeof(glm::mat4) * m_numInstances);
+	m_vpBufferView.StrideInBytes = sizeof(glm::mat4);
 
 	CD3DX12_RANGE readRange(0, 0); 
 	ThrowIfFailed(m_vpBuffer->Map(0, &readRange, reinterpret_cast<void**>(&m_sceneDataBegin)));
@@ -526,7 +533,7 @@ void Renderer_D12::LoadTextures() {
 void Renderer_D12::CreateSRVForBoxes(const std::vector<std::vector<MazeDefs::TileProperties>>& tiles, int rows, int columns, double t) {
 
 	m_numInstances = 0;
-	std::vector<XMMATRIX>		mvpMatrices;
+	std::vector<glm::mat4>		mvpMatrices;
 	std::vector<PerEntityData>  peds;
 
 	int x = 0;
@@ -544,7 +551,7 @@ void Renderer_D12::CreateSRVForBoxes(const std::vector<std::vector<MazeDefs::Til
 			}
 
 			for (int h = 0; h < height; ++h) {
-				XMMATRIX modelMat = XMMatrixTranslation((float)x, (float)y, (float)z);
+				glm::mat4 modelMat = glm::translate(glm::mat4(1.0f), glm::vec3((float)x, (float)y, (float)z));
 				mvpMatrices.push_back(modelMat);
 				peds.push_back({ 0 });
 				y += 2;
@@ -563,8 +570,8 @@ void Renderer_D12::CreateSRVForBoxes(const std::vector<std::vector<MazeDefs::Til
 					scaleX -= abs(delta.second) * 0.9f;
 					scaleZ -= abs(delta.first) * 0.9f;
 
-					XMMATRIX modelMat = XMMatrixTranslation(wallX, (float)y, wallZ);
-					modelMat = XMMatrixScaling(scaleX, 1, scaleZ) * modelMat;
+					glm::mat4 modelMat = glm::translate(glm::mat4(1.0f), glm::vec3(wallX, (float)y, wallZ));
+					modelMat = modelMat * glm::scale(glm::mat4(1.0f), glm::vec3(scaleX, 1, scaleZ));
 					mvpMatrices.push_back(modelMat);
 					peds.push_back({ 1 });
 				}
@@ -582,17 +589,17 @@ void Renderer_D12::CreateSRVForBoxes(const std::vector<std::vector<MazeDefs::Til
 	{
 		D3D12_SUBRESOURCE_DATA mvpData = {};
 		mvpData.pData = mvpMatrices.data();
-		mvpData.RowPitch = sizeof(XMMATRIX) * m_numInstances;
+		mvpData.RowPitch = sizeof(glm::mat4) * m_numInstances;
 		mvpData.SlicePitch = mvpData.RowPitch;
 
 		ComPtr<ID3D12Resource> intermediateBuffer;
 		commandList->UpdateBufferResource(m_device,
 			&m_modelBuffer, &intermediateBuffer,
-			m_numInstances, sizeof(XMMATRIX), mvpMatrices.data());
+			m_numInstances, sizeof(glm::mat4), mvpMatrices.data());
 
 		m_modelBufferView.BufferLocation = m_modelBuffer->GetGPUVirtualAddress();
-		m_modelBufferView.SizeInBytes = (UINT)(sizeof(XMMATRIX) * m_numInstances);
-		m_modelBufferView.StrideInBytes = sizeof(XMMATRIX);
+		m_modelBufferView.SizeInBytes = (UINT)(sizeof(glm::mat4) * m_numInstances);
+		m_modelBufferView.StrideInBytes = sizeof(glm::mat4);
 		commandList->TrackResource(intermediateBuffer);
 
 		D3D12_SHADER_RESOURCE_VIEW_DESC srvDesc = {};
@@ -601,7 +608,7 @@ void Renderer_D12::CreateSRVForBoxes(const std::vector<std::vector<MazeDefs::Til
 		srvDesc.Shader4ComponentMapping = D3D12_DEFAULT_SHADER_4_COMPONENT_MAPPING;
 		srvDesc.Buffer.FirstElement = 0;
 		srvDesc.Buffer.NumElements = m_numInstances;
-		srvDesc.Buffer.StructureByteStride = sizeof(XMMATRIX);
+		srvDesc.Buffer.StructureByteStride = sizeof(glm::mat4);
 		srvDesc.Buffer.Flags = D3D12_BUFFER_SRV_FLAG_NONE;
 
 		m_modelCPUHandle = m_shaderResources->GetDescriptorHandle(0);
@@ -913,32 +920,32 @@ void Renderer_D12::ResizeDepthBuffer(int width, int height) {
 	m_device->CreateShaderResourceView(m_shadowTexture->GetResource().Get(), &srvDesc,
 		m_shadowTexture->GetCPUHandle());
 
-	m_lightingData.invShadowTexSize = XMFLOAT2(1.f / width, 1.f / height);
+	m_lightingData.invShadowTexSize = glm::vec2(1.f / width, 1.f / height);
 }
 
-void Renderer_D12::UpdateMVP(float fov, DirectX::XMVECTOR camPos, DirectX::XMVECTOR camFwd, DirectX::XMVECTOR camRight, DirectX::XMVECTOR camUp, XMVECTOR sunPos) {
+void Renderer_D12::UpdateMVP(float fov, glm::vec3 camPos, glm::vec3 camFwd, glm::vec3 camRight, glm::vec3 camUp, glm::vec4 sunPos) {
 	// Update the view matrix.
-	XMStoreFloat4(&m_lightingData.camPos, camPos);
-	XMVECTOR upDirection = XMVector3Cross(camFwd, camRight);
-	auto view = XMMatrixLookAtLH(camPos, camPos + camFwd, upDirection);
+	m_lightingData.camPos = glm::vec4(camPos, 1.0f);
+	glm::vec3 upDirection = glm::cross(camFwd, camRight);
+	auto view = glm::lookAtLH(camPos, camPos + camFwd, upDirection);
 
 	// Update the projection matrix.
 	float aspectRatio = GAME_WINDOW->GetWidth() / static_cast<float>(GAME_WINDOW->GetHeight());
-	auto proj = XMMatrixPerspectiveFovLH(XMConvertToRadians(fov), aspectRatio, 0.1f, 100.0f);
+	auto proj = glm::perspectiveFovLH(glm::radians(fov), (float)GAME_WINDOW->GetWidth(), (float)GAME_WINDOW->GetHeight(), 0.1f, 100.0f);
 
-	m_sceneData.camVP = XMMatrixMultiply(view, proj);
+	m_sceneData.camVP = proj * view;
 
 	//Sun
-	XMVECTOR lookAtPos = XMVectorSet(m_worldWidth / 2.f, 0, m_worldWidth / 2.f, 1.f);
-	XMVECTOR sunDir = XMVector4Normalize(lookAtPos - sunPos);
-	const XMVECTOR rightDirection = XMVector3Cross(XMVectorSet(0.f, 1.f, 0.f, 0.f), sunDir);
-	upDirection = XMVector3Cross(sunDir, rightDirection);
-	view = XMMatrixLookAtLH(sunPos, sunPos + sunDir, upDirection);
+	glm::vec3 lookAtPos = glm::vec3(m_worldWidth / 2.f, 0, m_worldWidth / 2.f);
+	glm::vec3 sunDir = glm::normalize(glm::vec3(lookAtPos - glm::vec3(sunPos)));
+	const glm::vec3 rightDirection = glm::cross(glm::vec3(0.f, 1.f, 0.f), sunDir);
+	upDirection = glm::cross(sunDir, rightDirection);
+	view = glm::lookAtLH(glm::vec3(sunPos), glm::vec3(sunPos) + sunDir, upDirection);
 	// Update the projection matrix.
-	proj = XMMatrixOrthographicLH(m_worldWidth * 1.5, m_worldWidth * 1.5, 0.1f, 100.0f);
-	m_sceneData.sunVP = XMMatrixMultiply(view, proj);
+	proj = glm::orthoLH(-m_worldWidth * 0.75f, m_worldWidth * 0.75f, -m_worldWidth * 0.75f, m_worldWidth * 0.75f, 0.1f, 100.0f);
+	m_sceneData.sunVP = proj * view;
 
-	XMStoreFloat4(&m_lightingData.sunPos, sunPos);
+	m_lightingData.sunPos = sunPos;
 	memcpy(m_sceneDataBegin, &m_sceneData, sizeof(m_sceneData));
 }
 

@@ -3,7 +3,14 @@
 #include "Events.h"
 #include "HighResolutionClock.h"
 #include "MazeGenDefs.h"
-#include <DirectXMath.h>
+
+// GLM Math library
+#define GLM_FORCE_LEFT_HANDED
+#define GLM_FORCE_DEPTH_ZERO_TO_ONE
+#include <glm/glm.hpp>
+#include <glm/gtc/matrix_transform.hpp>
+#include <glm/gtc/quaternion.hpp>
+#include <glm/gtc/type_ptr.hpp>
 
 #include <memory>
 #include <string>
@@ -118,9 +125,9 @@ private:
     int m_mazeAlgorithm = 0;
 
     float m_fov = 45.0;
-    DirectX::XMVECTOR m_cameraPos;
-    float m_camAngles[3];
-    DirectX::XMVECTOR m_sunPos;
+    glm::vec3 m_cameraPos;
+    glm::vec3 m_camAngles;
+    glm::vec4 m_sunPos;
 
     std::wstring m_name;
     int m_width;

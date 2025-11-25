@@ -106,7 +106,7 @@
       <WarningLevel>Level3</WarningLevel>
       <Optimization>Disabled</Optimization>
       <PreprocessorDefinitions>WIN32;_DEBUG;_CONSOLE;_LIB;%(PreprocessorDefinitions)</PreprocessorDefinitions>
-      <AdditionalIncludeDirectories>Extern\imgui\backends;Extern\imgui;$(SolutionDir)MazeGenerator\include;$(SolutionDir)MazeGenerator\include</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>Extern\imgui\backends;Extern\imgui;$(SolutionDir)\include;$(SolutionDir)MazeGenerator\include;$(SolutionDir)include\glm$(SolutionDir)include\glm$(SolutionDir)MazeGenerator\include</AdditionalIncludeDirectories>
       <RuntimeLibrary>MultiThreadedDebugDLL</RuntimeLibrary>
       <LanguageStandard>stdcpp17</LanguageStandard>
     </ClCompile>
@@ -149,7 +149,7 @@
       <FunctionLevelLinking>true</FunctionLevelLinking>
       <IntrinsicFunctions>true</IntrinsicFunctions>
       <PreprocessorDefinitions>SFML_STATIC;WIN32;NDEBUG;_CONSOLE;_LIB;%(PreprocessorDefinitions)</PreprocessorDefinitions>
-      <AdditionalIncludeDirectories>Extern\imgui\backends;Extern\imgui;$(SolutionDir)MazeGenerator\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>Extern\imgui\backends;Extern\imgui;$(SolutionDir)\include;$(SolutionDir)MazeGenerator\include;$(SolutionDir)include\glm$(SolutionDir)include\glm%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <RuntimeLibrary>MultiThreaded</RuntimeLibrary>
       <LanguageStandard>stdcpp17</LanguageStandard>
     </ClCompile>
@@ -201,8 +201,6 @@
     <ClCompile Include="Extern\imgui\misc\cpp\imgui_stdlib.cpp" />
     <ClCompile Include="HighResolutionClock.cpp" />
     <ClCompile Include="main.cpp" />
-    <ClCompile Include="Material.cpp" />
-    <ClCompile Include="Mesh.cpp" />
     <ClCompile Include="Rendering\CommandList_D12.cpp" />
     <ClCompile Include="Rendering\CommandQueue_D12.cpp" />
     <ClCompile Include="Rendering\DescriptorAllocation_D12.cpp" />
@@ -242,8 +240,7 @@
     <ClInclude Include="Extern\imgui\misc\cpp\imgui_stdlib.h" />
     <ClInclude Include="HighResolutionClock.h" />
     <ClInclude Include="KeyCodes.h" />
-    <ClInclude Include="Material.h" />
-    <ClInclude Include="Mesh.h" />
+    <ClInclude Include="Renderable.h" />
     <ClInclude Include="Rendering\CommandList_D12.h" />
     <ClInclude Include="Rendering\CommandQueue_D12.h" />
     <ClInclude Include="Rendering\d3dx12\d3d12.h" />

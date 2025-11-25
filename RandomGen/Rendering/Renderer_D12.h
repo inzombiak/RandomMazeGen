@@ -4,7 +4,14 @@
 // DirectX 12 specific headers.
 #include <dxgi1_6.h>
 #include <d3dcompiler.h>
-#include <DirectXMath.h>
+
+// GLM Math library
+#define GLM_FORCE_LEFT_HANDED
+#define GLM_FORCE_DEPTH_ZERO_TO_ONE
+#include <glm/glm.hpp>
+#include <glm/gtc/matrix_transform.hpp>
+#include <glm/gtc/quaternion.hpp>
+#include <glm/gtc/type_ptr.hpp>
 
 // D3D12 extension library.
 #include "d3dx12/d3dx12.h"
@@ -16,16 +23,9 @@ using namespace Microsoft::WRL;
 
 #include "CommandQueue_D12.h"
 #include "MazeGenDefs.h"
+#include "RenderDefs.h"
 #include "ShaderReflection.h"
 #include "RootSignatureBuilder.h"
-
-struct VertexInput
-{
-	DirectX::XMFLOAT3 position;
-	DirectX::XMFLOAT3 color;
-	DirectX::XMFLOAT3 normal;
-	DirectX::XMFLOAT3 uv;
-};
 
 struct PerEntityData
 {
@@ -34,16 +34,16 @@ struct PerEntityData
 
 struct SceneData
 {
-	DirectX::XMMATRIX camVP;
-	DirectX::XMMATRIX sunVP;
+	glm::mat4 camVP;
+	glm::mat4 sunVP;
 
-	DirectX::XMMATRIX PAD[2];
+	glm::mat4 PAD[2];
 };
 
 struct LightingData {
-	DirectX::XMFLOAT4 sunPos;
-	DirectX::XMFLOAT4 camPos;
-	DirectX::XMFLOAT2 invShadowTexSize;
+	glm::vec4 sunPos;
+	glm::vec4 camPos;
+	glm::vec2 invShadowTexSize;
 };
 
 
@@ -141,7 +141,7 @@ class Renderer_D12 {
 		// Resize the depth buffer to match the size of the client area.
 		void ResizeDepthBuffer(int width, int height);
 
-		void UpdateMVP(float fov, DirectX::XMVECTOR camPos, DirectX::XMVECTOR camFwd, DirectX::XMVECTOR camRight, DirectX::XMVECTOR camUp, DirectX::XMVECTOR sunPos);
+		void UpdateMVP(float fov, glm::vec3 camPos, glm::vec3 camFwd, glm::vec3 camRight, glm::vec3 camUp, glm::vec4 sunPos);
 
 		ComPtr<ID3D12Device2> GetDevice() const;
 		uint64_t GetCurrentFrameCount() const;

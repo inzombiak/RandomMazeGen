@@ -10,43 +10,42 @@
 #endif
 
 
-using namespace DirectX;
 static VertexInput BOX_VERTICES[24] = {
     //Size Za
-    { XMFLOAT3(-1.0f, -1.0f, -1.0f), XMFLOAT3(0.0f, 0.0f, 0.0f), XMFLOAT3(0.0f, 0.0f, -1.0f), XMFLOAT3(0.0f, 0.0f, 0.0f) },
-    { XMFLOAT3(-1.0f,  1.0f, -1.0f), XMFLOAT3(0.0f, 1.0f, 0.0f), XMFLOAT3(0.0f, 0.0f, -1.0f), XMFLOAT3(0.0f, 1.0f, 0.0f) },
-    { XMFLOAT3(1.0f,  1.0f, -1.0f),  XMFLOAT3(1.0f, 1.0f, 0.0f), XMFLOAT3(0.0f, 0.0f, -1.0f), XMFLOAT3(1.0f, 1.0f, 0.0f) },
-    { XMFLOAT3(1.0f, -1.0f, -1.0f),  XMFLOAT3(1.0f, 0.0f, 0.0f), XMFLOAT3(0.0f, 0.0f, -1.0f), XMFLOAT3(1.0f, 0.0f, 0.0f) },
+    { glm::vec3(-1.0f, -1.0f, -1.0f), glm::vec3(0.0f, 0.0f, 0.0f), glm::vec3(0.0f, 0.0f, -1.0f), glm::vec3(0.0f, 0.0f, 0.0f) },
+    { glm::vec3(-1.0f,  1.0f, -1.0f), glm::vec3(0.0f, 1.0f, 0.0f), glm::vec3(0.0f, 0.0f, -1.0f), glm::vec3(0.0f, 1.0f, 0.0f) },
+    { glm::vec3(1.0f,  1.0f, -1.0f),  glm::vec3(1.0f, 1.0f, 0.0f), glm::vec3(0.0f, 0.0f, -1.0f), glm::vec3(1.0f, 1.0f, 0.0f) },
+    { glm::vec3(1.0f, -1.0f, -1.0f),  glm::vec3(1.0f, 0.0f, 0.0f), glm::vec3(0.0f, 0.0f, -1.0f), glm::vec3(1.0f, 0.0f, 0.0f) },
 
     //Size Zb
-    { XMFLOAT3(-1.0f, -1.0f,  1.0f), XMFLOAT3(0.0f, 0.0f, 1.0f), XMFLOAT3(0.0f, 0.0f, 1.0f), XMFLOAT3(1.0f, 0.0f, 0.0f) }, 
-    { XMFLOAT3(-1.0f,  1.0f,  1.0f), XMFLOAT3(0.0f, 1.0f, 1.0f), XMFLOAT3(0.0f, 0.0f, 1.0f), XMFLOAT3(1.0f, 1.0f, 0.0f) }, 
-    { XMFLOAT3(1.0f,  1.0f,  1.0f),  XMFLOAT3(1.0f, 1.0f, 1.0f), XMFLOAT3(0.0f, 0.0f, 1.0f), XMFLOAT3(0.0f, 1.0f, 0.0f) }, 
-    { XMFLOAT3(1.0f, -1.0f,  1.0f),  XMFLOAT3(1.0f, 0.0f, 1.0f), XMFLOAT3(0.0f, 0.0f, 1.0f), XMFLOAT3(0.0f, 0.0f, 0.0f) },  
+    { glm::vec3(-1.0f, -1.0f,  1.0f), glm::vec3(0.0f, 0.0f, 1.0f), glm::vec3(0.0f, 0.0f, 1.0f), glm::vec3(1.0f, 0.0f, 0.0f) },
+    { glm::vec3(-1.0f,  1.0f,  1.0f), glm::vec3(0.0f, 1.0f, 1.0f), glm::vec3(0.0f, 0.0f, 1.0f), glm::vec3(1.0f, 1.0f, 0.0f) },
+    { glm::vec3(1.0f,  1.0f,  1.0f),  glm::vec3(1.0f, 1.0f, 1.0f), glm::vec3(0.0f, 0.0f, 1.0f), glm::vec3(0.0f, 1.0f, 0.0f) },
+    { glm::vec3(1.0f, -1.0f,  1.0f),  glm::vec3(1.0f, 0.0f, 1.0f), glm::vec3(0.0f, 0.0f, 1.0f), glm::vec3(0.0f, 0.0f, 0.0f) },
 
     //Side Xa
-    { XMFLOAT3(-1.0f, -1.0f, -1.0f), XMFLOAT3(0.0f, 0.0f, 0.0f), XMFLOAT3(-1.0f, 0.0f, 0.0f), XMFLOAT3(0.0f, 0.0f, 0.0f) },
-    { XMFLOAT3(-1.0f,  1.0f, -1.0f), XMFLOAT3(0.0f, 1.0f, 0.0f), XMFLOAT3(-1.0f, 0.0f, 0.0f), XMFLOAT3(0.0f, 1.0f, 0.0f) },
-    { XMFLOAT3(-1.0f,  1.0f, 1.0f),  XMFLOAT3(1.0f, 1.0f, 0.0f), XMFLOAT3(-1.0f, 0.0f, 0.0f), XMFLOAT3(1.0f, 1.0f, 0.0f) },
-    { XMFLOAT3(-1.0f, -1.0f, 1.0f),  XMFLOAT3(1.0f, 0.0f, 0.0f), XMFLOAT3(-1.0f, 0.0f, 0.0f), XMFLOAT3(1.0f, 0.0f, 0.0f) },
+    { glm::vec3(-1.0f, -1.0f, -1.0f), glm::vec3(0.0f, 0.0f, 0.0f), glm::vec3(-1.0f, 0.0f, 0.0f), glm::vec3(0.0f, 0.0f, 0.0f) },
+    { glm::vec3(-1.0f,  1.0f, -1.0f), glm::vec3(0.0f, 1.0f, 0.0f), glm::vec3(-1.0f, 0.0f, 0.0f), glm::vec3(0.0f, 1.0f, 0.0f) },
+    { glm::vec3(-1.0f,  1.0f, 1.0f),  glm::vec3(1.0f, 1.0f, 0.0f), glm::vec3(-1.0f, 0.0f, 0.0f), glm::vec3(1.0f, 1.0f, 0.0f) },
+    { glm::vec3(-1.0f, -1.0f, 1.0f),  glm::vec3(1.0f, 0.0f, 0.0f), glm::vec3(-1.0f, 0.0f, 0.0f), glm::vec3(1.0f, 0.0f, 0.0f) },
 
     //Side Xb
-    { XMFLOAT3(1.0f, -1.0f, -1.0f), XMFLOAT3(0.0f, 0.0f, 0.0f), XMFLOAT3(1.0f, 0.0f, 0.0f), XMFLOAT3(0.0f, 0.0f, 0.0f) },
-    { XMFLOAT3(1.0f,  1.0f, -1.0f), XMFLOAT3(0.0f, 1.0f, 0.0f), XMFLOAT3(1.0f, 0.0f, 0.0f), XMFLOAT3(0.0f, 1.0f, 0.0f) },
-    { XMFLOAT3(1.0f,  1.0f, 1.0f),  XMFLOAT3(1.0f, 1.0f, 0.0f), XMFLOAT3(1.0f, 0.0f, 0.0f), XMFLOAT3(1.0f, 1.0f, 0.0f) },
-    { XMFLOAT3(1.0f, -1.0f, 1.0f),  XMFLOAT3(1.0f, 0.0f, 0.0f), XMFLOAT3(1.0f, 0.0f, 0.0f), XMFLOAT3(1.0f, 0.0f, 0.0f) },
+    { glm::vec3(1.0f, -1.0f, -1.0f), glm::vec3(0.0f, 0.0f, 0.0f), glm::vec3(1.0f, 0.0f, 0.0f), glm::vec3(0.0f, 0.0f, 0.0f) },
+    { glm::vec3(1.0f,  1.0f, -1.0f), glm::vec3(0.0f, 1.0f, 0.0f), glm::vec3(1.0f, 0.0f, 0.0f), glm::vec3(0.0f, 1.0f, 0.0f) },
+    { glm::vec3(1.0f,  1.0f, 1.0f),  glm::vec3(1.0f, 1.0f, 0.0f), glm::vec3(1.0f, 0.0f, 0.0f), glm::vec3(1.0f, 1.0f, 0.0f) },
+    { glm::vec3(1.0f, -1.0f, 1.0f),  glm::vec3(1.0f, 0.0f, 0.0f), glm::vec3(1.0f, 0.0f, 0.0f), glm::vec3(1.0f, 0.0f, 0.0f) },
 
     //Top
-    { XMFLOAT3(-1.0f,  1.0f, -1.0f), XMFLOAT3(0.6f, 1.0f, 0.0f), XMFLOAT3(0.0f, 1.0f, 0.0f), XMFLOAT3(0.0f, 0.0f, 1.0f) }, 
-    { XMFLOAT3(1.0f,  1.0f, -1.0f),  XMFLOAT3(0.6f, 1.0f, 0.0f), XMFLOAT3(0.0f, 1.0f, 0.0f), XMFLOAT3(1.0f, 0.0f, 1.0f) }, 
-    { XMFLOAT3(-1.0f,  1.0f,  1.0f), XMFLOAT3(0.6f, 1.0f, 0.0f), XMFLOAT3(0.0f, 1.0f, 0.0f), XMFLOAT3(0.0f, 1.0f, 1.0f) }, 
-    { XMFLOAT3(1.0f,  1.0f,  1.0f),  XMFLOAT3(0.6f, 1.0f, 0.0f), XMFLOAT3(0.0f, 1.0f, 0.0f), XMFLOAT3(1.0f, 1.0f, 1.0f) }, 
+    { glm::vec3(-1.0f,  1.0f, -1.0f), glm::vec3(0.6f, 1.0f, 0.0f), glm::vec3(0.0f, 1.0f, 0.0f), glm::vec3(0.0f, 0.0f, 1.0f) },
+    { glm::vec3(1.0f,  1.0f, -1.0f),  glm::vec3(0.6f, 1.0f, 0.0f), glm::vec3(0.0f, 1.0f, 0.0f), glm::vec3(1.0f, 0.0f, 1.0f) },
+    { glm::vec3(-1.0f,  1.0f,  1.0f), glm::vec3(0.6f, 1.0f, 0.0f), glm::vec3(0.0f, 1.0f, 0.0f), glm::vec3(0.0f, 1.0f, 1.0f) },
+    { glm::vec3(1.0f,  1.0f,  1.0f),  glm::vec3(0.6f, 1.0f, 0.0f), glm::vec3(0.0f, 1.0f, 0.0f), glm::vec3(1.0f, 1.0f, 1.0f) },
 
     //Bot
-    { XMFLOAT3(-1.0f, -1.0f, -1.0f), XMFLOAT3(0.6f, 1.0f, 0.0f), XMFLOAT3(0.0f, -1.0f, 0.0f), XMFLOAT3(0.0f, 0.0f, 1.0f) },
-    { XMFLOAT3(1.0f,  -1.0f, -1.0f), XMFLOAT3(0.6f, 1.0f, 0.0f), XMFLOAT3(0.0f, -1.0f, 0.0f), XMFLOAT3(1.0f, 0.0f, 1.0f) },
-    { XMFLOAT3(-1.0f, -1.0f,  1.0f), XMFLOAT3(0.6f, 1.0f, 0.0f), XMFLOAT3(0.0f, -1.0f, 0.0f), XMFLOAT3(0.0f, 1.0f, 1.0f) },
-    { XMFLOAT3(1.0f,  -1.0f,  1.0f), XMFLOAT3(0.6f, 1.0f, 0.0f), XMFLOAT3(0.0f, -1.0f, 0.0f), XMFLOAT3(1.0f, 1.0f, 1.0f) },
+    { glm::vec3(-1.0f, -1.0f, -1.0f), glm::vec3(0.6f, 1.0f, 0.0f), glm::vec3(0.0f, -1.0f, 0.0f), glm::vec3(0.0f, 0.0f, 1.0f) },
+    { glm::vec3(1.0f,  -1.0f, -1.0f), glm::vec3(0.6f, 1.0f, 0.0f), glm::vec3(0.0f, -1.0f, 0.0f), glm::vec3(1.0f, 0.0f, 1.0f) },
+    { glm::vec3(-1.0f, -1.0f,  1.0f), glm::vec3(0.6f, 1.0f, 0.0f), glm::vec3(0.0f, -1.0f, 0.0f), glm::vec3(0.0f, 1.0f, 1.0f) },
+    { glm::vec3(1.0f,  -1.0f,  1.0f), glm::vec3(0.6f, 1.0f, 0.0f), glm::vec3(0.0f, -1.0f, 0.0f), glm::vec3(1.0f, 1.0f, 1.0f) },
 };
 
 static WORD BOX_INDICES[36] =
@@ -76,11 +75,9 @@ App::App(const std::wstring& name, int width, int height, bool vSync, HINSTANCE 
     , m_hInstance(hInstance)
     , m_contentLoaded(false)
 {
-    m_cameraPos    = XMVectorSet(-17, 26.7f, 16, 1);
-    m_sunPos       = XMVectorSet(0, 38.7f, 29, 1);
-    m_camAngles[0] = 0.66f;
-    m_camAngles[1] = 1.57f;
-    m_camAngles[2] = 0;
+    m_cameraPos    = glm::vec3(-17, 26.7f, 16);
+    m_sunPos       = glm::vec4(0, 38.7f, 29, 1);
+    m_camAngles    = glm::vec3(0.66f, 1.57f, 0);
 }
 
 App::~App()
@@ -101,12 +98,6 @@ inline bool GUIActive() {
 }
 bool App::Initialize()
 {
-    // Check for DirectX Math library support.
-    if (!DirectX::XMVerifyCPUSupport())
-    {
-        MessageBoxA(NULL, "Failed to verify DirectX Math library support.", "Error", MB_OK | MB_ICONERROR);
-        return false;
-    }
 
     m_tileProperties.resize(m_rows);
     for (int i = 0; i < m_rows; ++i) {
@@ -151,21 +142,19 @@ void App::Destroy()
 }
 
 // Function to convert from XYZ position to an angle in the ZY plane
-float GetAngleOnZYPlane(const XMVECTOR& position) {
+float GetAngleOnZYPlane(const glm::vec4& position) {
     // Extract the Z and Y components of the position vector
-    XMFLOAT3 pos;
-    XMStoreFloat3(&pos, position);
-    return atan2f(pos.z, pos.y); // atan2(z, y) gives the angle in radians
+    return atan2f(position.z, position.y); // atan2(z, y) gives the angle in radians
 }
 
 // Function to convert from an angle in the ZY plane back to an XYZ position
-XMVECTOR GetPositionFromAngle(float angle, float radius = 1.0f) {
+glm::vec4 GetPositionFromAngle(float angle, float radius = 1.0f) {
     // Compute the Y and Z components based on the angle
     float y = radius * cosf(angle); // y = r * cos(angle)
     float z = radius * sinf(angle); // z = r * sin(angle)
 
-    // Return the new position as an XMVECTOR (x = 0, y, z)
-    return XMVectorSet(0.0f, y, z, 1.0f);
+    // Return the new position as a vec4 (x = 0, y, z, w = 1)
+    return glm::vec4(0.0f, y, z, 1.0f);
 }
 
 void App::OnUpdate(UpdateEventArgs& e)
@@ -190,12 +179,12 @@ void App::OnUpdate(UpdateEventArgs& e)
         totalTime = 0.0;
     }
 
-    XMVECTOR quaternion = XMQuaternionRotationRollPitchYaw(m_camAngles[0], m_camAngles[1], m_camAngles[2]);
-    XMMATRIX orientation = XMMatrixRotationQuaternion(quaternion);
+    glm::quat quaternion = glm::quat(m_camAngles);
+    glm::mat4 orientation = glm::mat4_cast(quaternion);
 
-    auto camRight = orientation.r[0];
-    auto camUp = orientation.r[1];
-    auto camFwd = orientation.r[2];
+    glm::vec3 camRight = glm::vec3(orientation[0]);
+    glm::vec3 camUp = glm::vec3(orientation[1]);
+    glm::vec3 camFwd = glm::vec3(orientation[2]);
 
     // OPTIMIZATION: Only query and upload tiles if maze has changed
     // Both Full and Step modes now use the dirty flag system
@@ -273,9 +262,7 @@ void App::OnUpdate(UpdateEventArgs& e)
 
         if (ImGui::CollapsingHeader("Atmosphere")) {
 
-            auto length = XMVector3Length(m_sunPos);
-            float radius = 0.0f;
-            XMStoreFloat(&radius, length);
+            float radius = glm::length(glm::vec3(m_sunPos));
 
             // Convert the current sun position to an angle in the ZY plane
             float angle = GetAngleOnZYPlane(m_sunPos);
@@ -298,16 +285,16 @@ void App::OnUpdate(UpdateEventArgs& e)
     if (!GUIActive()) {
 
         if (Globals::INPUT_STATE.keyStates[KeyCode::Key::W]) {
-            m_cameraPos += camFwd * Globals::CAM_PAN_SPEED * dt;
+            m_cameraPos += camFwd * Globals::CAM_PAN_SPEED * (float)dt;
         }
         if (Globals::INPUT_STATE.keyStates[KeyCode::Key::S]) {
-            m_cameraPos -= camFwd * Globals::CAM_PAN_SPEED * dt;
+            m_cameraPos -= camFwd * Globals::CAM_PAN_SPEED * (float)dt;
         }
         if (Globals::INPUT_STATE.keyStates[KeyCode::Key::D]) {
-            m_cameraPos += camRight * Globals::CAM_PAN_SPEED * dt;
+            m_cameraPos += camRight * Globals::CAM_PAN_SPEED * (float)dt;
         }
         if (Globals::INPUT_STATE.keyStates[KeyCode::Key::A]) {
-            m_cameraPos -= camRight * Globals::CAM_PAN_SPEED * dt;
+            m_cameraPos -= camRight * Globals::CAM_PAN_SPEED * (float)dt;
         }
     }
 
