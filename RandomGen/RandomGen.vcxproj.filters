@@ -186,6 +186,9 @@
     <ClCompile Include="Rendering\ShaderReflection.cpp">
       <Filter>Source Files\Rendering\D12</Filter>
     </ClCompile>
+    <ClCompile Include="Material.cpp">
+      <Filter>Source Files\Rendering\D12</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Rendering\d3dx12\d3d12.h">
@@ -378,6 +381,9 @@
       <Filter>Header Files\Rendering\D12</Filter>
     </ClInclude>
     <ClInclude Include="Renderable.h">
+      <Filter>Header Files\Rendering\D12</Filter>
+    </ClInclude>
+    <ClInclude Include="Material.h">
       <Filter>Header Files\Rendering\D12</Filter>
     </ClInclude>
   </ItemGroup>

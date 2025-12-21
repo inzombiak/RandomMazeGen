@@ -39,6 +39,12 @@ struct ShaderConstantBuffer {
     UINT variableCount;                  // Number of variables inside
 };
 
+struct ShaderRenderDefs {
+    D3D12_CULL_MODE cullMode = D3D12_CULL_MODE::D3D12_CULL_MODE_BACK;
+
+    std::vector<DXGI_FORMAT> renderTargets;
+};
+
 // Complete metadata for a single shader stage
 class ShaderMetadata {
 public:
@@ -47,6 +53,12 @@ public:
     std::vector<ShaderResourceBinding> resources;
     std::vector<ShaderInputElement> inputElements;
     std::vector<ShaderConstantBuffer> constantBuffers;
+
+    std::vector<D3D12_STATIC_SAMPLER_DESC> staticSamplers;
+
+    ShaderRenderDefs renderDefs;
+    ComPtr<ID3DBlob> shaderBlob;
+
     UINT shaderType;  // Use UINT to store D3D12_SHVER_* values (Vertex, Pixel, etc.)
 };
 
@@ -56,7 +68,7 @@ public:
     ShaderReflector() = default;
 
     // Reflect a compiled shader blob and extract metadata
-    bool ReflectShader(ID3DBlob* shaderBlob, ShaderMetadata& outMetadata);
+    bool ReflectShader(const std::wstring& shaderName, ShaderMetadata& outMetadata);
 
     // Helper: Convert D3D shader input type to string for debugging
     static const char* GetResourceTypeName(D3D_SHADER_INPUT_TYPE type);
@@ -74,6 +86,8 @@ private:
 
     // Extract constant buffer layouts
     void ReflectConstantBuffers(ID3D12ShaderReflection* reflection, ShaderMetadata& metadata);
+
+    void ReflectDecoratorComments(const std::wstring& shaderName, ShaderMetadata& outMetadata);
 
     // Determine shader visibility from shader type
     D3D12_SHADER_VISIBILITY GetVisibilityFromShaderType(UINT shaderType);

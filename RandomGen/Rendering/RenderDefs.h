@@ -24,4 +24,8 @@ struct VertexInput
 	glm::vec3 uv;
 };
 
+
+static const char* SHADER_PATH = "Resources\\Shaders\\";
+static const wchar_t* L_SHADER_PATH = L"Resources\\Shaders\\";
+
 #endif

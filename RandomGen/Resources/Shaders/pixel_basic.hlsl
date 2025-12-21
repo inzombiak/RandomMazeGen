@@ -26,8 +26,21 @@ Texture2D grassTexture : register(t3);
 Texture2D dirtTexture : register(t4);
 Texture2D shadowTexture : register(t5);
 SamplerState TextureSampler : register(s0);
-
+/*~
+    StaticSampler
+    {
+        Register: 0
+    }
+*/
 SamplerComparisonState ShadowSampler : register(s1);
+/*~
+    StaticSampler
+    {
+        Filter: CompMinMagLinearMipPoint
+        CompFunc: Less
+        Register: 1
+    }
+*/
 
 float ShadowCalculation(float3 surfaceNormal, float4 fragPosLightSpace, float3 lightDir)
 {
@@ -107,5 +120,12 @@ float4 main(PixelInput input) : SV_Target
     float3 lighting = (ambient + (1.0 - shadow) * (diffuse + specular)) * color.xyz;
     
    //return float4(z, projCoords.x, 1 - projCoords.y, projCoords.z);
-   return float4(lighting, 1.0);
+    return float4(lighting, 1.0);
 }
+
+/*~
+    RenderTargets 
+    {
+        RGBA8_UNORM
+    }
+*/

@@ -345,8 +345,8 @@ void Renderer_D12::Render() {
 	//@ZGTODO Move to CommandList_D12
 	{
 		auto d3dCommList = commandList->GetGraphicsCommandList();
-		d3dCommList->SetPipelineState(m_pipelineState.Get());
-		d3dCommList->SetGraphicsRootSignature(m_rootSignature->GetD3D12RootSignature().Get());
+		d3dCommList->SetPipelineState(m_pipelineStates[0].pipelineState.Get());
+		d3dCommList->SetGraphicsRootSignature(m_pipelineStates[0].rootSignature->GetD3D12RootSignature().Get());
 		d3dCommList->IASetPrimitiveTopology(D3D_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
 		d3dCommList->IASetVertexBuffers(0, 1, &m_vertexBufferView);
 		d3dCommList->IASetIndexBuffer(&m_indexBufferView);
@@ -359,7 +359,7 @@ void Renderer_D12::Render() {
 		// Update the MVP matrixb
 		d3dCommList->SetGraphicsRoot32BitConstants(0, sizeof(LightingData) / 4, &m_lightingData, 0);
 		d3dCommList->SetGraphicsRootConstantBufferView(1, m_vpBufferView.BufferLocation);
-		m_shaderResourceDynHeap->ParseRootSignature(*m_rootSignature.get());
+		m_shaderResourceDynHeap->ParseRootSignature(*m_pipelineStates[0].rootSignature.get());
 		m_shaderResourceDynHeap->StageDescriptors(2, 0, 4, m_shaderResources->GetDescriptorHandle(3));
 		m_shaderResourceDynHeap->CommitStagedDescriptorsForDraw(commandList);
 		d3dCommList->SetGraphicsRootShaderResourceView(3, m_modelBufferView.BufferLocation);
@@ -418,8 +418,8 @@ void Renderer_D12::Shadowmap() {
 	{
 
 		auto d3dCommList = commandList->GetGraphicsCommandList();
-		d3dCommList->SetPipelineState(m_shadowPipelineState.Get());
-		d3dCommList->SetGraphicsRootSignature(m_shadowRootSignature->GetD3D12RootSignature().Get());
+		d3dCommList->SetPipelineState(m_pipelineStates[1].pipelineState.Get());
+		d3dCommList->SetGraphicsRootSignature(m_pipelineStates[1].rootSignature->GetD3D12RootSignature().Get());
 		d3dCommList->IASetPrimitiveTopology(D3D_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
 		d3dCommList->IASetVertexBuffers(0, 1, &m_vertexBufferView);
 		d3dCommList->IASetIndexBuffer(&m_indexBufferView);
@@ -647,141 +647,24 @@ void Renderer_D12::CreateSRVForBoxes(const std::vector<std::vector<MazeDefs::Til
 	m_commQueue->WaitForFenceValue(fenceValue);
 }
 
-void Renderer_D12::BuildPipelineState(const std::wstring& vertexShaderName, const std::wstring& pixelShaderName) {
-	// Load the vertex shader.
-	ComPtr<ID3DBlob> vertexShaderBlob;
-	ThrowIfFailed(D3DReadFileToBlob(vertexShaderName.data(), &vertexShaderBlob));
+int Renderer_D12::BuildPipelineState(const std::wstring& vertexShaderName, const std::wstring& pixelShaderName) {
 
-	// Load the pixel shader.
-	ComPtr<ID3DBlob> pixelShaderBlob;
-	ThrowIfFailed(D3DReadFileToBlob(pixelShaderName.data(), &pixelShaderBlob));
+	PSOEntry entry;
 
 	// Reflect shaders to extract metadata
 	Rendering::ShaderReflector reflector;
-	if (!reflector.ReflectShader(vertexShaderBlob.Get(), m_vertexShaderMetadata)) {
-		throw std::runtime_error("Failed to reflect vertex shader");
-	}
-	if (!reflector.ReflectShader(pixelShaderBlob.Get(), m_pixelShaderMetadata)) {
-		throw std::runtime_error("Failed to reflect pixel shader");
-	}
-
-	// Build input layout automatically from vertex shader
-	std::vector<D3D12_INPUT_ELEMENT_DESC> inputLayout;
-	for (const auto& element : m_vertexShaderMetadata.inputElements) {
-		D3D12_INPUT_ELEMENT_DESC desc = {};
-		desc.SemanticName = element.semanticName.c_str();
-		desc.SemanticIndex = element.semanticIndex;
-		desc.Format = element.format;
-		desc.InputSlot = element.inputSlot;
-		desc.AlignedByteOffset = element.alignedByteOffset;
-		desc.InputSlotClass = D3D12_INPUT_CLASSIFICATION_PER_VERTEX_DATA;
-		desc.InstanceDataStepRate = 0;
-		inputLayout.push_back(desc);
-	}
-
-	// Build root signature automatically from shader metadata
-	m_mainRootSigBuilder.AddShaderStage(m_vertexShaderMetadata);
-	m_mainRootSigBuilder.AddShaderStage(m_pixelShaderMetadata);
-
-	// Add static samplers (these aren't reflected from shaders)
-	D3D12_STATIC_SAMPLER_DESC samplers[2];
-	samplers[0].Filter = D3D12_FILTER_MIN_MAG_MIP_POINT;
-	samplers[0].AddressU = D3D12_TEXTURE_ADDRESS_MODE_BORDER;
-	samplers[0].AddressV = D3D12_TEXTURE_ADDRESS_MODE_BORDER;
-	samplers[0].AddressW = D3D12_TEXTURE_ADDRESS_MODE_BORDER;
-	samplers[0].MipLODBias = 0;
-	samplers[0].MaxAnisotropy = 0;
-	samplers[0].ComparisonFunc = D3D12_COMPARISON_FUNC_NEVER;
-	samplers[0].BorderColor = D3D12_STATIC_BORDER_COLOR_TRANSPARENT_BLACK;
-	samplers[0].MinLOD = 0.0f;
-	samplers[0].MaxLOD = D3D12_FLOAT32_MAX;
-	samplers[0].ShaderRegister = 0;
-	samplers[0].RegisterSpace = 0;
-	samplers[0].ShaderVisibility = D3D12_SHADER_VISIBILITY_PIXEL;
-
-	samplers[1].Filter = D3D12_FILTER_COMPARISON_MIN_MAG_LINEAR_MIP_POINT;
-	samplers[1].AddressU = D3D12_TEXTURE_ADDRESS_MODE_BORDER;
-	samplers[1].AddressV = D3D12_TEXTURE_ADDRESS_MODE_BORDER;
-	samplers[1].AddressW = D3D12_TEXTURE_ADDRESS_MODE_BORDER;
-	samplers[1].MipLODBias = 0;
-	samplers[1].MaxAnisotropy = 0;
-	samplers[1].ComparisonFunc = D3D12_COMPARISON_FUNC_LESS;
-	samplers[1].BorderColor = D3D12_STATIC_BORDER_COLOR_TRANSPARENT_BLACK;
-	samplers[1].MinLOD = 0.0f;
-	samplers[1].MaxLOD = D3D12_FLOAT32_MAX;
-	samplers[1].ShaderRegister = 1;
-	samplers[1].RegisterSpace = 0;
-	samplers[1].ShaderVisibility = D3D12_SHADER_VISIBILITY_PIXEL;
-
-	m_mainRootSigBuilder.AddStaticSampler(samplers[0]);
-	m_mainRootSigBuilder.AddStaticSampler(samplers[1]);
-
-	// Build the root signature description - automatically matches shader requirements!
-	D3D12_ROOT_SIGNATURE_DESC1 rootSigDesc = {};
-	if (!m_mainRootSigBuilder.Build(rootSigDesc)) {
-		throw std::runtime_error("Failed to build root signature from shader metadata");
-	}
-
-	// Print the generated layout for debugging
-	m_mainRootSigBuilder.PrintLayout();
-
-	// Create RootSignature_D12 from the auto-generated description
-	m_rootSignature = std::make_shared<RootSignature_D12>(rootSigDesc);
-
-	// ========== PIPELINE STATE WITH AUTO-GENERATED COMPONENTS ==========
-	struct PipelineStateStream
-	{
-		CD3DX12_PIPELINE_STATE_STREAM_ROOT_SIGNATURE pRootSignature;
-		CD3DX12_PIPELINE_STATE_STREAM_INPUT_LAYOUT InputLayout;
-		CD3DX12_PIPELINE_STATE_STREAM_PRIMITIVE_TOPOLOGY PrimitiveTopologyType;
-		CD3DX12_PIPELINE_STATE_STREAM_VS VS;
-		CD3DX12_PIPELINE_STATE_STREAM_PS PS;
-		CD3DX12_PIPELINE_STATE_STREAM_DEPTH_STENCIL_FORMAT DSVFormat;
-		CD3DX12_PIPELINE_STATE_STREAM_RENDER_TARGET_FORMATS RTVFormats;
-	} pipelineStateStream;
-
-	D3D12_RT_FORMAT_ARRAY rtvFormats = {};
-	rtvFormats.NumRenderTargets = 1;
-	rtvFormats.RTFormats[0] = DXGI_FORMAT_R8G8B8A8_UNORM;
-
-	// Use the automatically generated root signature
-	pipelineStateStream.pRootSignature = m_rootSignature->GetD3D12RootSignature().Get();
-	// Use the automatically generated input layout
-	pipelineStateStream.InputLayout = { inputLayout.data(), static_cast<UINT>(inputLayout.size()) };
-	pipelineStateStream.PrimitiveTopologyType = D3D12_PRIMITIVE_TOPOLOGY_TYPE_TRIANGLE;
-	pipelineStateStream.VS = CD3DX12_SHADER_BYTECODE(vertexShaderBlob.Get());
-	pipelineStateStream.PS = CD3DX12_SHADER_BYTECODE(pixelShaderBlob.Get());
-	pipelineStateStream.DSVFormat = DXGI_FORMAT_D32_FLOAT;
-	pipelineStateStream.RTVFormats = rtvFormats;
-
-	D3D12_PIPELINE_STATE_STREAM_DESC pipelineStateStreamDesc = {
-		sizeof(PipelineStateStream), &pipelineStateStream
-	};
-	ThrowIfFailed(m_device->CreatePipelineState(&pipelineStateStreamDesc, IID_PPV_ARGS(&m_pipelineState)));
-}
-
-void Renderer_D12::BuildShadowPipelineState(const std::wstring& vertexShaderName, const std::wstring& pixelShaderName) {
-	// Load the vertex shader.
-	ComPtr<ID3DBlob> vertexShaderBlob;
-	ThrowIfFailed(D3DReadFileToBlob(vertexShaderName.data(), &vertexShaderBlob));
-
-	// Load the pixel shader.
-	ComPtr<ID3DBlob> pixelShaderBlob;
-	ThrowIfFailed(D3DReadFileToBlob(pixelShaderName.data(), &pixelShaderBlob));
-
-	// ========== NEW: AUTOMATIC SHADER REFLECTION FOR SHADOW PASS ==========
-	// Reflect shaders to extract metadata
-	Rendering::ShaderReflector reflector;
-	if (!reflector.ReflectShader(vertexShaderBlob.Get(), m_shadowVertexShaderMetadata)) {
+	Rendering::ShaderMetadata vertexMetadata;
+	Rendering::ShaderMetadata pixelMetadata;
+	if (!reflector.ReflectShader(vertexShaderName, vertexMetadata)) {
 		throw std::runtime_error("Failed to reflect shadow vertex shader");
 	}
-	if (!reflector.ReflectShader(pixelShaderBlob.Get(), m_shadowPixelShaderMetadata)) {
+	if (!reflector.ReflectShader(pixelShaderName, pixelMetadata)) {
 		throw std::runtime_error("Failed to reflect shadow pixel shader");
 	}
 
 	// Build input layout automatically from vertex shader
 	std::vector<D3D12_INPUT_ELEMENT_DESC> inputLayout;
-	for (const auto& element : m_shadowVertexShaderMetadata.inputElements) {
+	for (const auto& element : vertexMetadata.inputElements) {
 		D3D12_INPUT_ELEMENT_DESC desc = {};
 		desc.SemanticName = element.semanticName.c_str();
 		desc.SemanticIndex = element.semanticIndex;
@@ -793,39 +676,25 @@ void Renderer_D12::BuildShadowPipelineState(const std::wstring& vertexShaderName
 		inputLayout.push_back(desc);
 	}
 
-	// Build root signature automatically from shader metadata
-	m_shadowRootSigBuilder.AddShaderStage(m_shadowVertexShaderMetadata);
-	m_shadowRootSigBuilder.AddShaderStage(m_shadowPixelShaderMetadata);
+	Rendering::RootSignatureBuilder rootSigBuilder;
+	rootSigBuilder.AddShaderStage(vertexMetadata);
+	rootSigBuilder.AddShaderStage(pixelMetadata);
 
-	// Add static sampler (not reflected from shader)
-	D3D12_STATIC_SAMPLER_DESC sampler = {};
-	sampler.Filter = D3D12_FILTER_MIN_MAG_MIP_POINT;
-	sampler.AddressU = D3D12_TEXTURE_ADDRESS_MODE_BORDER;
-	sampler.AddressV = D3D12_TEXTURE_ADDRESS_MODE_BORDER;
-	sampler.AddressW = D3D12_TEXTURE_ADDRESS_MODE_BORDER;
-	sampler.MipLODBias = 0;
-	sampler.MaxAnisotropy = 0;
-	sampler.ComparisonFunc = D3D12_COMPARISON_FUNC_NEVER;
-	sampler.BorderColor = D3D12_STATIC_BORDER_COLOR_TRANSPARENT_BLACK;
-	sampler.MinLOD = 0.0f;
-	sampler.MaxLOD = D3D12_FLOAT32_MAX;
-	sampler.ShaderRegister = 0;
-	sampler.RegisterSpace = 0;
-	sampler.ShaderVisibility = D3D12_SHADER_VISIBILITY_PIXEL;
-
-	m_shadowRootSigBuilder.AddStaticSampler(sampler);
+	for (int i = 0; i < pixelMetadata.staticSamplers.size(); ++i) {
+		rootSigBuilder.AddStaticSampler(pixelMetadata.staticSamplers[i]);
+	}
 
 	// Build the root signature description - automatically matches shader requirements!
-	D3D12_ROOT_SIGNATURE_DESC1 shadowRootSigDesc = {};
-	if (!m_shadowRootSigBuilder.Build(shadowRootSigDesc)) {
+	D3D12_ROOT_SIGNATURE_DESC1 rootSigDesc = {};
+	if (!rootSigBuilder.Build(rootSigDesc)) {
 		throw std::runtime_error("Failed to build shadow root signature from shader metadata");
 	}
 
 	// Print the generated layout for debugging
-	m_shadowRootSigBuilder.PrintLayout();
+	rootSigBuilder.PrintLayout();
 
 	// Create RootSignature_D12 from the auto-generated description
-	m_shadowRootSignature = std::make_shared<RootSignature_D12>(shadowRootSigDesc);
+	entry.rootSignature = std::make_shared<RootSignature_D12>(rootSigDesc);
 
 	// ========== SHADOW PIPELINE STATE WITH AUTO-GENERATED COMPONENTS ==========
 	struct PipelineStateStream
@@ -840,25 +709,33 @@ void Renderer_D12::BuildShadowPipelineState(const std::wstring& vertexShaderName
 		CD3DX12_PIPELINE_STATE_STREAM_RASTERIZER Rasterizer;
 	} pipelineStateStream;
 
-	D3D12_RT_FORMAT_ARRAY rtvFormats = {};
-	rtvFormats.NumRenderTargets = 0;
-
 	// Use the automatically generated root signature
-	pipelineStateStream.pRootSignature = m_shadowRootSignature->GetD3D12RootSignature().Get();
+	pipelineStateStream.pRootSignature = entry.rootSignature->GetD3D12RootSignature().Get();
 	// Use the automatically generated input layout
 	pipelineStateStream.InputLayout = { inputLayout.data(), static_cast<UINT>(inputLayout.size()) };
 	pipelineStateStream.PrimitiveTopologyType = D3D12_PRIMITIVE_TOPOLOGY_TYPE_TRIANGLE;
-	pipelineStateStream.VS = CD3DX12_SHADER_BYTECODE(vertexShaderBlob.Get());
+	pipelineStateStream.VS = CD3DX12_SHADER_BYTECODE(vertexMetadata.shaderBlob.Get());
+	pipelineStateStream.PS = CD3DX12_SHADER_BYTECODE(pixelMetadata.shaderBlob.Get());
 	pipelineStateStream.DSVFormat = DXGI_FORMAT_D32_FLOAT;
+	D3D12_RT_FORMAT_ARRAY rtvFormats = {};
+	rtvFormats.NumRenderTargets = pixelMetadata.renderDefs.renderTargets.size();
+	for (int i = 0; i < rtvFormats.NumRenderTargets; ++i) {
+		rtvFormats.RTFormats[i] = pixelMetadata.renderDefs.renderTargets[i];
+	}
 	pipelineStateStream.RTVFormats = rtvFormats;
+
 	CD3DX12_RASTERIZER_DESC raster(D3D12_DEFAULT);
-	raster.CullMode = D3D12_CULL_MODE_BACK;
+	raster.CullMode = pixelMetadata.renderDefs.cullMode;
 	pipelineStateStream.Rasterizer = raster;
 
 	D3D12_PIPELINE_STATE_STREAM_DESC pipelineStateStreamDesc = {
 		sizeof(PipelineStateStream), &pipelineStateStream
 	};
-	ThrowIfFailed(m_device->CreatePipelineState(&pipelineStateStreamDesc, IID_PPV_ARGS(&m_shadowPipelineState)));
+	ThrowIfFailed(m_device->CreatePipelineState(&pipelineStateStreamDesc, IID_PPV_ARGS(&entry.pipelineState)));
+
+	m_pipelineStates.push_back(entry);
+
+	return m_pipelineStates.size() - 1;
 }
 
 // Resize the depth buffer to match the size of the client area.

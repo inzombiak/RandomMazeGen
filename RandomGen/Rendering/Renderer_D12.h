@@ -134,8 +134,7 @@ class Renderer_D12 {
 
 		void PopulateVertexBuffer(const VertexInput *data, size_t count);
 		void PopulateIndexBuffer(const WORD *data, size_t count);
-		void BuildPipelineState(const std::wstring& vertexShaderName, const std::wstring& pixelShaderName);
-		void BuildShadowPipelineState(const std::wstring& vertexShaderName, const std::wstring& pixelShaderName);
+		int  BuildPipelineState(const std::wstring& vertexShaderName, const std::wstring& pixelShaderName);
 		void CreateSRVForBoxes(const std::vector<std::vector<MazeDefs::TileProperties>>& tiles, int rows, int columns, double t);
 		void LoadTextures();
 		// Resize the depth buffer to match the size of the client area.
@@ -153,20 +152,18 @@ class Renderer_D12 {
 		ExampleDescriptorHeapAllocator				m_imGUIAllocator;
 
 	private:
+
+		struct PSOEntry {
+			std::shared_ptr<RootSignature_D12>  rootSignature;
+			ComPtr<ID3D12PipelineState>			pipelineState;
+		};
+
 		D3D12_CPU_DESCRIPTOR_HANDLE GetCurrentRenderTargetView() const;
 
 		Renderer_D12(const Renderer_D12&) = delete;
 		Renderer_D12& operator=(const Renderer_D12&) = delete;
 
 		static const uint8_t NUM_BACKBUFFER_FRAMES = 3;
-
-		// Shader reflection and automatic pipeline state
-		Rendering::ShaderMetadata m_vertexShaderMetadata;
-		Rendering::ShaderMetadata m_pixelShaderMetadata;
-		Rendering::ShaderMetadata m_shadowVertexShaderMetadata;
-		Rendering::ShaderMetadata m_shadowPixelShaderMetadata;
-		Rendering::RootSignatureBuilder m_mainRootSigBuilder;
-		Rendering::RootSignatureBuilder m_shadowRootSigBuilder;
 
 		UINT		m_currentBufferIdx;
 
@@ -217,11 +214,7 @@ class Renderer_D12 {
 		D3D12_VERTEX_BUFFER_VIEW m_colorBufferView;
 		// Pipeline state object.
 		
-		std::shared_ptr<RootSignature_D12>  m_rootSignature;
-		ComPtr<ID3D12PipelineState>			m_pipelineState;
-
-		std::shared_ptr<RootSignature_D12>	m_shadowRootSignature;
-		ComPtr<ID3D12PipelineState>			m_shadowPipelineState;
+		std::vector<PSOEntry> m_pipelineStates;
 
 		std::shared_ptr<Texture_D12> m_wallTexture;
 		std::shared_ptr<Texture_D12> m_grassTexture;

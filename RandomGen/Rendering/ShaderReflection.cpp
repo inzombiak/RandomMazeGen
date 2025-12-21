@@ -1,16 +1,23 @@
 #include "ShaderReflection.h"
+#include "DX12_Helpers.h"
+#include "RenderDefs.h"
 #include <cassert>
+#include <fstream>
+#include <string>
 
 namespace Rendering {
 
-bool ShaderReflector::ReflectShader(ID3DBlob* shaderBlob, ShaderMetadata& outMetadata) {
-    if (!shaderBlob) return false;
+bool ShaderReflector::ReflectShader(const std::wstring& shaderName, ShaderMetadata& outMetadata) {
+
+    ThrowIfFailed(D3DReadFileToBlob((shaderName + L".cso").data(), &outMetadata.shaderBlob));
+    
+    if (!outMetadata.shaderBlob) return false;
 
     // Create shader reflection interface
     ComPtr<ID3D12ShaderReflection> reflection;
     HRESULT hr = D3DReflect(
-        shaderBlob->GetBufferPointer(),
-        shaderBlob->GetBufferSize(),
+        outMetadata.shaderBlob->GetBufferPointer(),
+        outMetadata.shaderBlob->GetBufferSize(),
         IID_PPV_ARGS(&reflection)
     );
 
@@ -26,6 +33,8 @@ bool ShaderReflector::ReflectShader(ID3DBlob* shaderBlob, ShaderMetadata& outMet
     ReflectResources(reflection.Get(), outMetadata);
     ReflectInputSignature(reflection.Get(), outMetadata);
     ReflectConstantBuffers(reflection.Get(), outMetadata);
+
+    ReflectDecoratorComments(shaderName, outMetadata);
 
     return true;
 }
@@ -127,6 +136,107 @@ void ShaderReflector::ReflectConstantBuffers(ID3D12ShaderReflection* reflection,
         cb.variableCount = bufferDesc.Variables;
 
         metadata.constantBuffers.push_back(cb);
+    }
+}
+
+std::string GetValueInLine(std::string& line, const std::string& varName = "", char delim = ':') {
+    line.erase(std::remove(line.begin(), line.end(), ' '), line.end());
+    if (varName.size() > 0) {
+        auto namePos = line.find(varName);
+        if (namePos == std::string::npos)
+            return "";
+
+        line = line.substr(namePos +  varName.size(), line.size() - namePos);
+    }
+    line.erase(std::remove(line.begin(), line.end(), delim), line.end());
+
+    return line;
+}
+
+void ShaderReflector::ReflectDecoratorComments(const std::wstring& shaderName, ShaderMetadata& outMetadata) {
+    std::ifstream fileInput;
+    std::string line;
+    std::wstring filepath = L_SHADER_PATH + shaderName + L".hlsl";
+    // open file to search
+    fileInput.open(filepath.c_str());
+    std::string val;
+    if (fileInput.is_open()) {
+        while (!fileInput.eof()) {
+            getline(fileInput, line);
+            if (line.starts_with("/*~")) {
+                //We have a decorator
+                getline(fileInput, line);
+                int varNameIdx = std::string::npos;
+                if (line.find("StaticSampler") != std::string::npos) {
+                    D3D12_STATIC_SAMPLER_DESC sampler;
+
+                    sampler.Filter = D3D12_FILTER_MIN_MAG_MIP_POINT;
+                    sampler.ComparisonFunc = D3D12_COMPARISON_FUNC_NEVER;
+                    sampler.AddressU = D3D12_TEXTURE_ADDRESS_MODE_BORDER;
+                    sampler.AddressV = D3D12_TEXTURE_ADDRESS_MODE_BORDER;
+                    sampler.AddressW = D3D12_TEXTURE_ADDRESS_MODE_BORDER;
+                    sampler.MipLODBias = 0;
+                    sampler.MaxAnisotropy = 0;
+                    sampler.BorderColor = D3D12_STATIC_BORDER_COLOR_TRANSPARENT_BLACK;
+                    sampler.MinLOD = 0.0f;
+                    sampler.MaxLOD = D3D12_FLOAT32_MAX;
+                    sampler.ShaderRegister = 0;
+                    sampler.RegisterSpace = 0;
+                    sampler.ShaderVisibility = D3D12_SHADER_VISIBILITY_PIXEL;
+
+                    getline(fileInput, line);
+                    auto start = line.find("{");
+                    if (start != std::string::npos) {
+                        getline(fileInput, line);
+                        while (line.find("}") == std::string::npos) {
+                            if (val = GetValueInLine(line, "Register"); val.size() > 0) {
+                                sampler.ShaderRegister = std::stoi(val);
+                            }
+                            else if (val = GetValueInLine(line, "Filter"); val.size() > 0) {
+                                if (val.compare("CompMinMagLinearMipPoint") == 0) {
+                                    sampler.Filter = D3D12_FILTER_COMPARISON_MIN_MAG_LINEAR_MIP_POINT;
+                                }
+                            }
+                            else if (val = GetValueInLine(line, "CompFunc"); val.size() > 0) {
+                                if (val.compare("Less") == 0) {
+                                    sampler.ComparisonFunc = D3D12_COMPARISON_FUNC_LESS;
+                                }
+                            }
+
+                            getline(fileInput, line);
+                        }
+                    }
+
+                    outMetadata.staticSamplers.push_back(sampler);
+                }
+                else if (val = GetValueInLine(line, "CullMode"); val.size() > 0) {
+                    if (val.compare("Back") == 0) {
+                        outMetadata.renderDefs.cullMode = D3D12_CULL_MODE_BACK;
+                    }
+                    else if (val.compare("Front") == 0) {
+                        outMetadata.renderDefs.cullMode = D3D12_CULL_MODE_FRONT;
+                    }
+                    else if (val.compare("None") == 0) {
+                        outMetadata.renderDefs.cullMode = D3D12_CULL_MODE_NONE;
+                    }
+                }
+                else if (line.find("RenderTargets") != std::string::npos) {
+                    getline(fileInput, line);
+                    auto start = line.find("{");
+                    if (start != std::string::npos) {
+                        getline(fileInput, line);
+                        while (line.find("}") == std::string::npos) {
+                            val = GetValueInLine(line);
+                            if (val.compare("RGBA8_UNORM") == 0) {
+                                outMetadata.renderDefs.renderTargets.push_back(DXGI_FORMAT_R8G8B8A8_UNORM);
+                            }
+                            getline(fileInput, line);
+                        }
+                    }
+                }
+            }
+        }
+        fileInput.close();
     }
 }
 
