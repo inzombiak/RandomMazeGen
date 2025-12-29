@@ -122,8 +122,6 @@ bool App::LoadContent() {
     RENDERER->PopulateVertexBuffer(BOX_VERTICES, _countof(BOX_VERTICES));
     RENDERER->PopulateIndexBuffer(BOX_INDICES, _countof(BOX_INDICES));
     GenerateMap(m_width, m_height, m_rows, m_columns);
-    RENDERER->BuildPipelineState(L"vertex_basic", L"pixel_basic");
-    RENDERER->BuildPipelineState(L"vertex_shadow", L"pixel_shadow");
     RENDERER->LoadTextures();
     RENDERER->ResizeDepthBuffer(m_width, m_height);
 

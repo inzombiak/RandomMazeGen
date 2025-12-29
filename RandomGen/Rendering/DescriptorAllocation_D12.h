@@ -4,6 +4,7 @@
 
 #include <cstdint>
 #include <memory>
+#include <vector>
 
 class DescriptorAllocatorPage_D12;
 class DescriptorAllocation_D12
@@ -36,6 +37,9 @@ public:
     // Get the heap that this allocation came from.
     // (For internal use only).
     std::shared_ptr<DescriptorAllocatorPage_D12> GetDescriptorAllocatorPage() const;
+
+
+
 private:
     // Free the descriptor back to the heap it came from.
     void Free();
@@ -50,5 +54,56 @@ private:
     // A pointer back to the original page where this allocation came from.
     std::shared_ptr<DescriptorAllocatorPage_D12> m_page;
 };
+
+struct TextureAllocation {
+    D3D12_CPU_DESCRIPTOR_HANDLE cpuHandle;
+    uint32_t allocId = 0;
+};
+
+class TextureAllocationPage {
+public:  
+    TextureAllocationPage(DescriptorAllocation_D12& descAlloc) noexcept;
+    TextureAllocationPage(TextureAllocationPage&& descAlloc) noexcept;
+    ~TextureAllocationPage() {};
+
+    TextureAllocationPage(const TextureAllocationPage&) = delete;
+    TextureAllocationPage& operator=(const TextureAllocationPage&) = delete;
+
+    void FreeAllocation(TextureAllocation ta) {
+        if (ta.allocId >= m_memAllocation.GetNumHandles())
+            return;
+
+        m_slotFree[ta.allocId] = true;
+        if(ta.allocId < m_nextSlot)
+            m_nextSlot = ta.allocId;
+    }
+
+    TextureAllocation GetNextHandle() {
+        TextureAllocation out;
+        if (IsFull())
+            return out;
+
+        out.allocId = m_nextSlot;
+        out.cpuHandle = m_memAllocation.GetDescriptorHandle(m_nextSlot);
+        m_slotFree[m_nextSlot] = false;
+        ++m_nextSlot;
+        while (m_nextSlot < m_slotFree.size() && !m_slotFree[m_nextSlot])
+            ++m_nextSlot;
+        return out;
+    }
+    bool IsFull() const {
+        return m_nextSlot >= m_memAllocation.GetNumHandles();
+    }
+    bool IsNull() {
+        return m_memAllocation.IsNull();
+    }
+
+private:
+    std::vector<bool> m_slotFree;
+    uint32_t m_nextSlot;
+    DescriptorAllocation_D12 m_memAllocation;
+};
+
+
 
 #endif

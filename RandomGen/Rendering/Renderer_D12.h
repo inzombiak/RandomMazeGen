@@ -27,6 +27,9 @@ using namespace Microsoft::WRL;
 #include "ShaderReflection.h"
 #include "RootSignatureBuilder.h"
 
+#include "Texture_D12.h"
+#include "../Material.h"
+
 struct PerEntityData
 {
 	unsigned int type;
@@ -58,6 +61,9 @@ class Texture_D12;
 #include "imgui.h"
 #include "imgui_impl_dx12.h"
 #include "imgui_impl_win32.h"
+
+#include "../Material.h"
+
 //@ZGTODO merge this with the decriptor alocator
 class Tile;
 struct ExampleDescriptorHeapAllocator
@@ -134,7 +140,7 @@ class Renderer_D12 {
 
 		void PopulateVertexBuffer(const VertexInput *data, size_t count);
 		void PopulateIndexBuffer(const WORD *data, size_t count);
-		int  BuildPipelineState(const std::wstring& vertexShaderName, const std::wstring& pixelShaderName);
+		Material* CreateMeterial(const std::string name, const std::wstring& vertexShaderName, const std::wstring& pixelShaderName, const std::vector<std::wstring>& textures = {});
 		void CreateSRVForBoxes(const std::vector<std::vector<MazeDefs::TileProperties>>& tiles, int rows, int columns, double t);
 		void LoadTextures();
 		// Resize the depth buffer to match the size of the client area.
@@ -153,10 +159,8 @@ class Renderer_D12 {
 
 	private:
 
-		struct PSOEntry {
-			std::shared_ptr<RootSignature_D12>  rootSignature;
-			ComPtr<ID3D12PipelineState>			pipelineState;
-		};
+		PipelineStateObject* BuildPipelineState(const std::wstring& vertexShaderName, const std::wstring& pixelShaderName);
+		std::shared_ptr<Texture_D12> MakeOrGetTexture(const std::wstring& name, std::map<size_t, std::shared_ptr<Texture_D12>>& resourceMap, std::shared_ptr<CommandList_D12> cmdList, const std::wstring& filepath);
 
 		D3D12_CPU_DESCRIPTOR_HANDLE GetCurrentRenderTargetView() const;
 
@@ -183,6 +187,7 @@ class Renderer_D12 {
 		std::shared_ptr<DescriptorAllocator_D12>	m_shaderResourceAllocator;
 		std::shared_ptr<DescriptorAllocation_D12>	m_shaderResources;
 		std::shared_ptr<DynamicDescriptorHeap_D12>	m_shaderResourceDynHeap;
+		std::vector<TextureAllocationPage>			m_textureAllocPages;
 
 		const UINT						IMGUI_HEAP_SIZE = 64;
 		bool							m_imGUIInitalized = false;
@@ -213,13 +218,14 @@ class Renderer_D12 {
 		ComPtr<ID3D12Resource> m_colorBuffer;
 		D3D12_VERTEX_BUFFER_VIEW m_colorBufferView;
 		// Pipeline state object.
-		
-		std::vector<PSOEntry> m_pipelineStates;
-
-		std::shared_ptr<Texture_D12> m_wallTexture;
-		std::shared_ptr<Texture_D12> m_grassTexture;
-		std::shared_ptr<Texture_D12> m_dirtTexture;
 		std::shared_ptr<Texture_D12> m_shadowTexture;
+
+		std::map<size_t, Material> m_materialMap;
+		std::map<size_t, PipelineStateObject> m_psoMap;
+		std::map<size_t, std::shared_ptr<Texture_D12>> m_textureMap;
+
+		size_t m_basicLitMatId;
+		size_t m_shadowmapMatId;
 
 		D3D12_VIEWPORT m_viewport;
 		D3D12_RECT m_scissorRect;

@@ -87,3 +87,15 @@ std::shared_ptr<DescriptorAllocatorPage_D12> DescriptorAllocation_D12::GetDescri
 {
     return m_page;
 }
+
+TextureAllocationPage::TextureAllocationPage(DescriptorAllocation_D12& descAlloc) noexcept : m_memAllocation {std::move(descAlloc)} {
+    m_slotFree.resize(m_memAllocation.GetNumHandles(), true);
+    m_nextSlot = 0;
+}
+
+
+TextureAllocationPage::TextureAllocationPage(TextureAllocationPage&& otherAlloc) noexcept : 
+    m_memAllocation(std::move(otherAlloc.m_memAllocation)),
+    m_nextSlot(otherAlloc.m_nextSlot),
+    m_slotFree(otherAlloc.m_slotFree)
+{}

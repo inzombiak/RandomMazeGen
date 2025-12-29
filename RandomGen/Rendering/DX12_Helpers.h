@@ -37,6 +37,9 @@
 #include <string>
 #define WIN32_LEAN_AND_MEAN
 #include <Windows.h> // For HRESULT
+// D3D12 extension library.
+#include "d3dx12/d3dx12.h"
+
 
   // From DXSampleHelper.h 
   // Source: https://github.com/Microsoft/DirectX-Graphics-Samples

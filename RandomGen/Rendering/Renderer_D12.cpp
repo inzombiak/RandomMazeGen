@@ -226,7 +226,7 @@ void Renderer_D12::PostInit() {
 	m_dsvAllocator = std::make_shared<DescriptorAllocator_D12>(D3D12_DESCRIPTOR_HEAP_TYPE_DSV, 2);
 	m_dsvs = std::make_shared<DescriptorAllocation_D12>(m_dsvAllocator->Allocate(2));
 	m_shaderResourceAllocator = std::make_shared<DescriptorAllocator_D12>(D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV);
-	m_shaderResources = std::make_shared<DescriptorAllocation_D12>(m_shaderResourceAllocator->Allocate(7));
+	m_shaderResources = std::make_shared<DescriptorAllocation_D12>(m_shaderResourceAllocator->Allocate(3));
 	m_shaderResourceDynHeap = std::make_shared<DynamicDescriptorHeap_D12>(D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV);
 	
 	//ImGUI
@@ -343,10 +343,11 @@ void Renderer_D12::Render() {
 	}
 
 	//@ZGTODO Move to CommandList_D12
-	{
+	{	
+		auto basicMat = m_materialMap[m_basicLitMatId];
 		auto d3dCommList = commandList->GetGraphicsCommandList();
-		d3dCommList->SetPipelineState(m_pipelineStates[0].pipelineState.Get());
-		d3dCommList->SetGraphicsRootSignature(m_pipelineStates[0].rootSignature->GetD3D12RootSignature().Get());
+		d3dCommList->SetPipelineState(basicMat.pso->pipelineState.Get());
+		d3dCommList->SetGraphicsRootSignature(basicMat.pso->rootSignature->GetD3D12RootSignature().Get());
 		d3dCommList->IASetPrimitiveTopology(D3D_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
 		d3dCommList->IASetVertexBuffers(0, 1, &m_vertexBufferView);
 		d3dCommList->IASetIndexBuffer(&m_indexBufferView);
@@ -359,12 +360,18 @@ void Renderer_D12::Render() {
 		// Update the MVP matrixb
 		d3dCommList->SetGraphicsRoot32BitConstants(0, sizeof(LightingData) / 4, &m_lightingData, 0);
 		d3dCommList->SetGraphicsRootConstantBufferView(1, m_vpBufferView.BufferLocation);
-		m_shaderResourceDynHeap->ParseRootSignature(*m_pipelineStates[0].rootSignature.get());
-		m_shaderResourceDynHeap->StageDescriptors(2, 0, 4, m_shaderResources->GetDescriptorHandle(3));
+
+		m_shaderResourceDynHeap->ParseRootSignature(*basicMat.pso->rootSignature.get());
+		static const uint32_t BASE_DESC_IDX = 2;
+		for (int i = 0; i < basicMat.textures.size(); ++i) {
+			m_shaderResourceDynHeap->StageDescriptors(BASE_DESC_IDX, i, 1, basicMat.textures[i]->GetCPUHandle());
+		}
+
+		m_shaderResourceDynHeap->StageDescriptors(BASE_DESC_IDX, (uint32_t) basicMat.textures.size(), 1, m_shadowTexture->GetCPUHandle());
 		m_shaderResourceDynHeap->CommitStagedDescriptorsForDraw(commandList);
 		d3dCommList->SetGraphicsRootShaderResourceView(3, m_modelBufferView.BufferLocation);
 		d3dCommList->SetGraphicsRootShaderResourceView(4, m_entityDataBufferView.BufferLocation);
-		d3dCommList->DrawIndexedInstanced((UINT)m_indexCount, m_numInstances, 0, 0, 0);
+		d3dCommList->DrawIndexedInstanced((UINT)m_indexCount, (UINT)m_numInstances, 0, 0, 0);
 	}
 
 	// Present
@@ -418,8 +425,9 @@ void Renderer_D12::Shadowmap() {
 	{
 
 		auto d3dCommList = commandList->GetGraphicsCommandList();
-		d3dCommList->SetPipelineState(m_pipelineStates[1].pipelineState.Get());
-		d3dCommList->SetGraphicsRootSignature(m_pipelineStates[1].rootSignature->GetD3D12RootSignature().Get());
+		auto shadowMat = m_materialMap[m_shadowmapMatId];
+		d3dCommList->SetPipelineState(shadowMat.pso->pipelineState.Get());
+		d3dCommList->SetGraphicsRootSignature(shadowMat.pso->rootSignature->GetD3D12RootSignature().Get());
 		d3dCommList->IASetPrimitiveTopology(D3D_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
 		d3dCommList->IASetVertexBuffers(0, 1, &m_vertexBufferView);
 		d3dCommList->IASetIndexBuffer(&m_indexBufferView);
@@ -432,7 +440,7 @@ void Renderer_D12::Shadowmap() {
 		// Update the MVP matrix
 		d3dCommList->SetGraphicsRoot32BitConstants(0, sizeof(glm::mat4) / 4, &m_sceneData.sunVP, 0);
 		d3dCommList->SetGraphicsRootShaderResourceView(1, m_modelBufferView.BufferLocation);
-		d3dCommList->DrawIndexedInstanced((UINT)m_indexCount, m_numInstances, 0, 0, 0);
+		d3dCommList->DrawIndexedInstanced((UINT)m_indexCount, (UINT)m_numInstances, 0, 0, 0);
 
 		commandList->TransitionResource(m_shadowTexture->GetResource(),
 			D3D12_RESOURCE_STATE_DEPTH_WRITE, D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE);
@@ -517,17 +525,12 @@ void Renderer_D12::LoadTextures() {
 	CD3DX12_RANGE readRange(0, 0); 
 	ThrowIfFailed(m_vpBuffer->Map(0, &readRange, reinterpret_cast<void**>(&m_sceneDataBegin)));
 	memcpy(m_sceneDataBegin, &m_sceneData, sizeof(m_sceneData));
-	m_wallTexture = std::make_shared<Texture_D12>();
-	m_wallTexture->SetCPUHandle(m_shaderResources->GetDescriptorHandle(3));
-	commandList->LoadTexture(L"Clay.dds", m_wallTexture);
 
-	m_grassTexture = std::make_shared<Texture_D12>();
-	m_grassTexture->SetCPUHandle(m_shaderResources->GetDescriptorHandle(4));
-	commandList->LoadTexture(L"Grass.dds", m_grassTexture);
-
-	m_dirtTexture = std::make_shared<Texture_D12>();
-	m_dirtTexture->SetCPUHandle(m_shaderResources->GetDescriptorHandle(5));
-	commandList->LoadTexture(L"Dirt.dds", m_dirtTexture);
+	std::hash<std::string> hasher;
+	CreateMeterial("BasicLit", L"vertex_basic", L"pixel_basic", { L"Clay.dds", L"Grass.dds", L"Dirt.dds" });
+	m_basicLitMatId = hasher("BasicLit");
+	CreateMeterial("Shadowmap", L"vertex_shadow", L"pixel_shadow");;
+	m_shadowmapMatId = hasher("Shadowmap");
 }
 
 void Renderer_D12::CreateSRVForBoxes(const std::vector<std::vector<MazeDefs::TileProperties>>& tiles, int rows, int columns, double t) {
@@ -607,7 +610,7 @@ void Renderer_D12::CreateSRVForBoxes(const std::vector<std::vector<MazeDefs::Til
 		srvDesc.Format = DXGI_FORMAT_UNKNOWN;
 		srvDesc.Shader4ComponentMapping = D3D12_DEFAULT_SHADER_4_COMPONENT_MAPPING;
 		srvDesc.Buffer.FirstElement = 0;
-		srvDesc.Buffer.NumElements = m_numInstances;
+		srvDesc.Buffer.NumElements = (UINT)m_numInstances;
 		srvDesc.Buffer.StructureByteStride = sizeof(glm::mat4);
 		srvDesc.Buffer.Flags = D3D12_BUFFER_SRV_FLAG_NONE;
 
@@ -636,7 +639,7 @@ void Renderer_D12::CreateSRVForBoxes(const std::vector<std::vector<MazeDefs::Til
 		srvDesc.Format = DXGI_FORMAT_UNKNOWN;
 		srvDesc.Shader4ComponentMapping = D3D12_DEFAULT_SHADER_4_COMPONENT_MAPPING;
 		srvDesc.Buffer.FirstElement = 0;
-		srvDesc.Buffer.NumElements = m_numInstances;
+		srvDesc.Buffer.NumElements = (UINT)m_numInstances;
 		srvDesc.Buffer.StructureByteStride = sizeof(PerEntityData);
 		srvDesc.Buffer.Flags = D3D12_BUFFER_SRV_FLAG_NONE;
 
@@ -647,9 +650,73 @@ void Renderer_D12::CreateSRVForBoxes(const std::vector<std::vector<MazeDefs::Til
 	m_commQueue->WaitForFenceValue(fenceValue);
 }
 
-int Renderer_D12::BuildPipelineState(const std::wstring& vertexShaderName, const std::wstring& pixelShaderName) {
+std::shared_ptr<Texture_D12> Renderer_D12::MakeOrGetTexture(const std::wstring& name, std::map<size_t, std::shared_ptr<Texture_D12>>& resourceMap,
+					std::shared_ptr<CommandList_D12> cmdList = nullptr, const std::wstring& filepath = L"") {
+	std::hash<std::wstring> whasher;
+	size_t id = whasher(name);
+	if (resourceMap.contains(id)) {
+		return resourceMap[id];
+	}
 
-	PSOEntry entry;
+	int pageIdx = -1;
+	for (int j = 0; j < m_textureAllocPages.size(); ++j) {
+		if (!m_textureAllocPages[j].IsFull())
+			pageIdx = j;
+	}
+
+	std::shared_ptr<Texture_D12> tex = std::make_shared<Texture_D12>();
+	if (pageIdx == -1) {
+		TextureAllocationPage tap(std::move(m_shaderResourceAllocator->Allocate(128)));
+		tex->SetCPUAllocation(tap.GetNextHandle());
+		m_textureAllocPages.emplace_back(std::move(tap));
+
+	}
+	else {
+		tex->SetCPUAllocation(m_textureAllocPages[pageIdx].GetNextHandle());
+	}
+
+	if (filepath.size() > 0) {
+		if (cmdList == nullptr)
+			cmdList = m_commQueue->GetCommandList();
+		cmdList->LoadTexture(filepath, tex);
+
+		resourceMap[id] = tex;
+	}
+
+	return tex;
+}
+
+Material* Renderer_D12::CreateMeterial(const std::string name, const std::wstring& vertexShaderName, const std::wstring& pixelShaderName, const std::vector<std::wstring>& textures) {
+	std::hash<std::string> hasher;
+	size_t matId = hasher(name);
+
+	if (m_materialMap.contains(matId))
+		return &m_materialMap[matId];
+
+	Material mat;
+	mat.name = name;
+	mat.vertexShader = vertexShaderName;
+	mat.pixelShader = pixelShaderName;
+
+	mat.pso = BuildPipelineState(vertexShaderName, pixelShaderName);
+	mat.textures.resize(textures.size());
+	auto cmdList = m_commQueue->GetCommandList();
+	for (int i = 0; i < textures.size(); ++i) {
+		mat.textures[i] = MakeOrGetTexture(textures[i], m_textureMap, cmdList, textures[i]);
+	}
+
+	m_materialMap[matId] = mat;
+	return &m_materialMap[matId];
+}
+
+PipelineStateObject* Renderer_D12::BuildPipelineState(const std::wstring& vertexShaderName, const std::wstring& pixelShaderName) {
+
+	std::hash<std::wstring> hasher;
+	size_t psoId = hasher(vertexShaderName + pixelShaderName);
+	if (m_psoMap.contains(psoId))
+		return &m_psoMap[psoId];
+
+	PipelineStateObject entry;
 
 	// Reflect shaders to extract metadata
 	Rendering::ShaderReflector reflector;
@@ -718,8 +785,8 @@ int Renderer_D12::BuildPipelineState(const std::wstring& vertexShaderName, const
 	pipelineStateStream.PS = CD3DX12_SHADER_BYTECODE(pixelMetadata.shaderBlob.Get());
 	pipelineStateStream.DSVFormat = DXGI_FORMAT_D32_FLOAT;
 	D3D12_RT_FORMAT_ARRAY rtvFormats = {};
-	rtvFormats.NumRenderTargets = pixelMetadata.renderDefs.renderTargets.size();
-	for (int i = 0; i < rtvFormats.NumRenderTargets; ++i) {
+	rtvFormats.NumRenderTargets = (UINT)pixelMetadata.renderDefs.renderTargets.size();
+	for (unsigned int i = 0; i < rtvFormats.NumRenderTargets; ++i) {
 		rtvFormats.RTFormats[i] = pixelMetadata.renderDefs.renderTargets[i];
 	}
 	pipelineStateStream.RTVFormats = rtvFormats;
@@ -733,9 +800,9 @@ int Renderer_D12::BuildPipelineState(const std::wstring& vertexShaderName, const
 	};
 	ThrowIfFailed(m_device->CreatePipelineState(&pipelineStateStreamDesc, IID_PPV_ARGS(&entry.pipelineState)));
 
-	m_pipelineStates.push_back(entry);
+	m_psoMap[psoId] = entry;
 
-	return m_pipelineStates.size() - 1;
+	return &m_psoMap[psoId];
 }
 
 // Resize the depth buffer to match the size of the client area.
@@ -786,9 +853,8 @@ void Renderer_D12::ResizeDepthBuffer(int width, int height) {
 	auto descStep = GetDescriptorHandleIncrementSize(D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV);
 	m_device->CreateDepthStencilView(resource.Get(), &dsv,
 		m_dsvs->GetDescriptorHandle(1));
-	m_shadowTexture = std::make_shared<Texture_D12>();
+	m_shadowTexture = MakeOrGetTexture(L"SunShadow", m_textureMap);
 	m_shadowTexture->SetResource(resource);
-	m_shadowTexture->SetCPUHandle(m_shaderResources->GetDescriptorHandle(6));
 	D3D12_SHADER_RESOURCE_VIEW_DESC srvDesc = {};
 	srvDesc.Shader4ComponentMapping = D3D12_DEFAULT_SHADER_4_COMPONENT_MAPPING;
 	srvDesc.Format = DXGI_FORMAT_R32_FLOAT;
