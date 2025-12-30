@@ -8,23 +8,27 @@ struct PixelInput
     uint   instanceid : SV_InstanceID;
 };
 
-cbuffer LightingPos_Const : register(b0)
+struct SceneData
 {
+    matrix camVP;
+    matrix sunVP;
     float4 lightPos;
     float4 viewPos;
     float2 shadowTexelSize;
 };
+ConstantBuffer<SceneData> SceneDataCB : register(b0);
 
 struct PerEntityData
 {
-    uint type;
+    matrix M;
+    uint data;
 };
-StructuredBuffer<PerEntityData> PerEntitySB : register(t1);
+StructuredBuffer<PerEntityData> PerEntitySB : register(t0);
 
-Texture2D wallTexture : register(t2);
-Texture2D grassTexture : register(t3);
-Texture2D dirtTexture : register(t4);
-Texture2D shadowTexture : register(t5);
+Texture2D wallTexture : register(t1);
+Texture2D grassTexture : register(t2);
+Texture2D dirtTexture : register(t3);
+Texture2D shadowTexture : register(t4);
 SamplerState TextureSampler : register(s0);
 /*~
     StaticSampler
@@ -61,7 +65,7 @@ float ShadowCalculation(float3 surfaceNormal, float4 fragPosLightSpace, float3 l
     {
         for (int y = -1; y <= 1; ++y)
         {
-            shadow += shadowTexture.SampleCmpLevelZero(ShadowSampler, float2(projCoords.x, 1 - projCoords.y) + float2(x, y) * shadowTexelSize, z - bias).r;
+            shadow += shadowTexture.SampleCmpLevelZero(ShadowSampler, float2(projCoords.x, 1 - projCoords.y) + float2(x, y) * SceneDataCB.shadowTexelSize, z - bias).r;
         }
     }
     shadow /= 9.0;
@@ -75,7 +79,7 @@ float4 main(PixelInput input) : SV_Target
     float4 color;
     if (input.uv.z > 0.5)
     {
-        if (ped.type != 1)
+        if (ped.data != 1)
         {
             color = grassTexture.Sample(TextureSampler, input.uv.xy) * input.color;
         }
@@ -94,13 +98,13 @@ float4 main(PixelInput input) : SV_Target
     // ambient
     float3 ambient = 0.35 * lightColor;
     // diffuse
-    float3 lightDir = normalize(lightPos.xyz - input.worldPos.xyz);
+    float3 lightDir = normalize(SceneDataCB.lightPos.xyz - input.worldPos.xyz);
     
     float3 normal = input.normal;
     float diff = max(dot(lightDir, normal), 0.0);
     float3 diffuse = diff * lightColor;
     // specular
-    float3 viewDir = normalize(viewPos.xyz - input.worldPos.xyz);
+    float3 viewDir = normalize(SceneDataCB.viewPos.xyz - input.worldPos.xyz);
     float spec = 0.0;
     float3 halfwayDir = normalize(lightDir + viewDir);
     spec = pow(max(dot(normal, halfwayDir), 0.0), 64.0);
@@ -118,7 +122,6 @@ float4 main(PixelInput input) : SV_Target
     float shadow = ShadowCalculation(normal, input.sunPos, lightDir);
     
     float3 lighting = (ambient + (1.0 - shadow) * (diffuse + specular)) * color.xyz;
-    
    //return float4(z, projCoords.x, 1 - projCoords.y, projCoords.z);
     return float4(lighting, 1.0);
 }

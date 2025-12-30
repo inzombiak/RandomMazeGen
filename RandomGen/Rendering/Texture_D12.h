@@ -12,7 +12,7 @@ public:
 	void SetResource(Microsoft::WRL::ComPtr<ID3D12Resource> resource);
 	Microsoft::WRL::ComPtr<ID3D12Resource> GetResource() const;
 
-	void SetCPUAllocation(const TextureAllocation& cpu);
+	void SetCPUAllocation(const SRVAllocation& cpu);
 	D3D12_CPU_DESCRIPTOR_HANDLE GetCPUHandle() const;
 	D3D12_GPU_DESCRIPTOR_HANDLE GetGPUHandle() const;
 
@@ -23,7 +23,7 @@ private:
 	bool m_ready;
 
 	Microsoft::WRL::ComPtr<ID3D12Resource> m_resource;
-	TextureAllocation m_cpuAllocation;
+	SRVAllocation m_cpuAllocation;
 	CD3DX12_GPU_DESCRIPTOR_HANDLE m_gpuHandle;
 };
 

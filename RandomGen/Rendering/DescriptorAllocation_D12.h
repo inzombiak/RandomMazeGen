@@ -55,21 +55,21 @@ private:
     std::shared_ptr<DescriptorAllocatorPage_D12> m_page;
 };
 
-struct TextureAllocation {
+struct SRVAllocation {
     D3D12_CPU_DESCRIPTOR_HANDLE cpuHandle;
     uint32_t allocId = 0;
 };
 
-class TextureAllocationPage {
+class SRVAllocationPage {
 public:  
-    TextureAllocationPage(DescriptorAllocation_D12& descAlloc) noexcept;
-    TextureAllocationPage(TextureAllocationPage&& descAlloc) noexcept;
-    ~TextureAllocationPage() {};
+    SRVAllocationPage(DescriptorAllocation_D12& descAlloc) noexcept;
+    SRVAllocationPage(SRVAllocationPage&& descAlloc) noexcept;
+    ~SRVAllocationPage() {};
 
-    TextureAllocationPage(const TextureAllocationPage&) = delete;
-    TextureAllocationPage& operator=(const TextureAllocationPage&) = delete;
+    SRVAllocationPage(const SRVAllocationPage&) = delete;
+    SRVAllocationPage& operator=(const SRVAllocationPage&) = delete;
 
-    void FreeAllocation(TextureAllocation ta) {
+    void FreeAllocation(SRVAllocation ta) {
         if (ta.allocId >= m_memAllocation.GetNumHandles())
             return;
 
@@ -78,8 +78,8 @@ public:
             m_nextSlot = ta.allocId;
     }
 
-    TextureAllocation GetNextHandle() {
-        TextureAllocation out;
+    SRVAllocation GetNextHandle() {
+        SRVAllocation out;
         if (IsFull())
             return out;
 

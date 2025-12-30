@@ -11,7 +11,7 @@ Microsoft::WRL::ComPtr<ID3D12Resource> Texture_D12::GetResource() const {
 	return m_resource;
 }
 
-void Texture_D12::SetCPUAllocation(const TextureAllocation& alloc) {
+void Texture_D12::SetCPUAllocation(const SRVAllocation& alloc) {
 	m_cpuAllocation = alloc;
 }
 D3D12_CPU_DESCRIPTOR_HANDLE Texture_D12::GetCPUHandle() const {

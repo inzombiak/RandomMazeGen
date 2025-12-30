@@ -32,23 +32,20 @@ using namespace Microsoft::WRL;
 
 struct PerEntityData
 {
-	unsigned int type;
+	glm::mat4 M;
+	unsigned int data;
 };
 
 struct SceneData
 {
 	glm::mat4 camVP;
 	glm::mat4 sunVP;
-
-	glm::mat4 PAD[2];
-};
-
-struct LightingData {
 	glm::vec4 sunPos;
 	glm::vec4 camPos;
 	glm::vec2 invShadowTexSize;
+	glm::vec2 _pad0;           
+	glm::vec4 _pad1[5];       
 };
-
 
 class Tile;
 class UploadBuffer_D12;
@@ -63,6 +60,13 @@ class Texture_D12;
 #include "imgui_impl_win32.h"
 
 #include "../Material.h"
+
+struct Buffer {
+	ComPtr<ID3D12Resource> m_resource;
+	D3D12_VERTEX_BUFFER_VIEW m_bufferView;
+	SRVAllocation m_srvAlloc;
+	CD3DX12_GPU_DESCRIPTOR_HANDLE m_GPUHandle;
+};
 
 //@ZGTODO merge this with the decriptor alocator
 class Tile;
@@ -140,7 +144,7 @@ class Renderer_D12 {
 
 		void PopulateVertexBuffer(const VertexInput *data, size_t count);
 		void PopulateIndexBuffer(const WORD *data, size_t count);
-		Material* CreateMeterial(const std::string name, const std::wstring& vertexShaderName, const std::wstring& pixelShaderName, const std::vector<std::wstring>& textures = {});
+		Material* CreateMaterial(const std::string name, const std::wstring& vertexShaderName, const std::wstring& pixelShaderName, const std::vector<std::wstring>& textures = {});
 		void CreateSRVForBoxes(const std::vector<std::vector<MazeDefs::TileProperties>>& tiles, int rows, int columns, double t);
 		void LoadTextures();
 		// Resize the depth buffer to match the size of the client area.
@@ -161,6 +165,10 @@ class Renderer_D12 {
 
 		PipelineStateObject* BuildPipelineState(const std::wstring& vertexShaderName, const std::wstring& pixelShaderName);
 		std::shared_ptr<Texture_D12> MakeOrGetTexture(const std::wstring& name, std::map<size_t, std::shared_ptr<Texture_D12>>& resourceMap, std::shared_ptr<CommandList_D12> cmdList, const std::wstring& filepath);
+		std::shared_ptr<Buffer> CreateSRVBuffer(const std::string& name, size_t size, size_t count, void* data, std::shared_ptr<CommandList_D12> cmdList);
+		std::shared_ptr<Buffer> CreateCBVBuffer(const std::string& name, size_t size, void* data, std::shared_ptr<CommandList_D12> cmdList);
+
+		SRVAllocation GetNextSRVAlloc();
 
 		D3D12_CPU_DESCRIPTOR_HANDLE GetCurrentRenderTargetView() const;
 
@@ -185,38 +193,24 @@ class Renderer_D12 {
 		std::shared_ptr<DescriptorAllocation_D12> m_dsvs;
 
 		std::shared_ptr<DescriptorAllocator_D12>	m_shaderResourceAllocator;
-		std::shared_ptr<DescriptorAllocation_D12>	m_shaderResources;
 		std::shared_ptr<DynamicDescriptorHeap_D12>	m_shaderResourceDynHeap;
-		std::vector<TextureAllocationPage>			m_textureAllocPages;
+		std::vector<SRVAllocationPage>				m_srvAllocPages;
 
 		const UINT						IMGUI_HEAP_SIZE = 64;
 		bool							m_imGUIInitalized = false;
 		ComPtr<ID3D12DescriptorHeap>	m_imGUISRVHeap;
 
+
+		uint64_t m_numInstances = 0;
+
 		ComPtr<ID3D12Resource> m_vertexBuffer;
 		D3D12_VERTEX_BUFFER_VIEW m_vertexBufferView;
-		// Index buffer for the cube.
 		ComPtr<ID3D12Resource> m_indexBuffer;
 		D3D12_INDEX_BUFFER_VIEW m_indexBufferView;
 
-		uint64_t m_numInstances = 0;
-		ComPtr<ID3D12Resource> m_modelBuffer;
-		D3D12_VERTEX_BUFFER_VIEW m_modelBufferView;
-		CD3DX12_CPU_DESCRIPTOR_HANDLE m_modelCPUHandle;
-		CD3DX12_GPU_DESCRIPTOR_HANDLE m_modelGPUHandle;
+		std::shared_ptr<Buffer> m_perEntityDataBuffer;
+		std::shared_ptr<Buffer> m_sceneDataBuffer;
 
-		ComPtr<ID3D12Resource> m_entityDataBuffer;
-		D3D12_VERTEX_BUFFER_VIEW m_entityDataBufferView;
-		CD3DX12_CPU_DESCRIPTOR_HANDLE m_entityDataCPUHandle;
-		CD3DX12_GPU_DESCRIPTOR_HANDLE m_entityDataGPUHandle;
-
-		ComPtr<ID3D12Resource> m_vpBuffer;
-		D3D12_VERTEX_BUFFER_VIEW m_vpBufferView;
-		CD3DX12_CPU_DESCRIPTOR_HANDLE m_vpCPUHandle;
-		CD3DX12_GPU_DESCRIPTOR_HANDLE m_vpGPUHandle;
-
-		ComPtr<ID3D12Resource> m_colorBuffer;
-		D3D12_VERTEX_BUFFER_VIEW m_colorBufferView;
 		// Pipeline state object.
 		std::shared_ptr<Texture_D12> m_shadowTexture;
 
@@ -234,7 +228,7 @@ class Renderer_D12 {
 		int m_worldWidth;
 		UINT8* m_sceneDataBegin;
 		SceneData m_sceneData;
-		LightingData m_lightingData;
+
 		//Fencing
 		uint64_t			m_fenceValue = 0;
 		uint64_t			m_shadowMapFenceVal = 0;

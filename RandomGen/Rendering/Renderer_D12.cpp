@@ -226,7 +226,6 @@ void Renderer_D12::PostInit() {
 	m_dsvAllocator = std::make_shared<DescriptorAllocator_D12>(D3D12_DESCRIPTOR_HEAP_TYPE_DSV, 2);
 	m_dsvs = std::make_shared<DescriptorAllocation_D12>(m_dsvAllocator->Allocate(2));
 	m_shaderResourceAllocator = std::make_shared<DescriptorAllocator_D12>(D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV);
-	m_shaderResources = std::make_shared<DescriptorAllocation_D12>(m_shaderResourceAllocator->Allocate(3));
 	m_shaderResourceDynHeap = std::make_shared<DynamicDescriptorHeap_D12>(D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV);
 	
 	//ImGUI
@@ -358,19 +357,17 @@ void Renderer_D12::Render() {
 		d3dCommList->OMSetRenderTargets(1, &rtv, FALSE, &dsv);
 
 		// Update the MVP matrixb
-		d3dCommList->SetGraphicsRoot32BitConstants(0, sizeof(LightingData) / 4, &m_lightingData, 0);
-		d3dCommList->SetGraphicsRootConstantBufferView(1, m_vpBufferView.BufferLocation);
+		d3dCommList->SetGraphicsRootConstantBufferView(0, m_sceneDataBuffer->m_bufferView.BufferLocation);
 
 		m_shaderResourceDynHeap->ParseRootSignature(*basicMat.pso->rootSignature.get());
-		static const uint32_t BASE_DESC_IDX = 2;
+		static const uint32_t BASE_DESC_IDX = 1;
 		for (int i = 0; i < basicMat.textures.size(); ++i) {
 			m_shaderResourceDynHeap->StageDescriptors(BASE_DESC_IDX, i, 1, basicMat.textures[i]->GetCPUHandle());
 		}
 
 		m_shaderResourceDynHeap->StageDescriptors(BASE_DESC_IDX, (uint32_t) basicMat.textures.size(), 1, m_shadowTexture->GetCPUHandle());
 		m_shaderResourceDynHeap->CommitStagedDescriptorsForDraw(commandList);
-		d3dCommList->SetGraphicsRootShaderResourceView(3, m_modelBufferView.BufferLocation);
-		d3dCommList->SetGraphicsRootShaderResourceView(4, m_entityDataBufferView.BufferLocation);
+		d3dCommList->SetGraphicsRootShaderResourceView(2, m_perEntityDataBuffer->m_bufferView.BufferLocation);
 		d3dCommList->DrawIndexedInstanced((UINT)m_indexCount, (UINT)m_numInstances, 0, 0, 0);
 	}
 
@@ -438,8 +435,8 @@ void Renderer_D12::Shadowmap() {
 		d3dCommList->OMSetRenderTargets(0, NULL, FALSE, &dsv);
 
 		// Update the MVP matrix
-		d3dCommList->SetGraphicsRoot32BitConstants(0, sizeof(glm::mat4) / 4, &m_sceneData.sunVP, 0);
-		d3dCommList->SetGraphicsRootShaderResourceView(1, m_modelBufferView.BufferLocation);
+		d3dCommList->SetGraphicsRootConstantBufferView(0, m_sceneDataBuffer->m_bufferView.BufferLocation);
+		d3dCommList->SetGraphicsRootShaderResourceView(1, m_perEntityDataBuffer->m_bufferView.BufferLocation);
 		d3dCommList->DrawIndexedInstanced((UINT)m_indexCount, (UINT)m_numInstances, 0, 0, 0);
 
 		commandList->TransitionResource(m_shadowTexture->GetResource(),
@@ -469,6 +466,70 @@ bool Renderer_D12::IsInitialized() const {
 	return m_initalized;
 }
 
+std::shared_ptr<Buffer> Renderer_D12::CreateSRVBuffer(const std::string& name, size_t size, size_t count, void* data, std::shared_ptr<CommandList_D12> cmdList = nullptr) {
+	if (cmdList == nullptr)
+		cmdList = m_commQueue->GetCommandList();
+
+	auto out = std::make_shared<Buffer>();
+
+	ComPtr<ID3D12Resource> intermediateBuffer;
+	cmdList->UpdateBufferResource(m_device,
+		&out->m_resource, &intermediateBuffer,
+		count, size, data);
+	std::wstring stemp = std::wstring(name.begin(), name.end());
+	out->m_resource->SetName(stemp.c_str());
+	out->m_bufferView.BufferLocation = out->m_resource->GetGPUVirtualAddress();
+	out->m_bufferView.SizeInBytes = (UINT)(size * count);
+	out->m_bufferView.StrideInBytes = size;
+	cmdList->TrackResource(intermediateBuffer);
+
+	D3D12_SHADER_RESOURCE_VIEW_DESC srvDesc = {};
+	srvDesc.ViewDimension = D3D12_SRV_DIMENSION_BUFFER;
+	srvDesc.Format = DXGI_FORMAT_UNKNOWN;
+	srvDesc.Shader4ComponentMapping = D3D12_DEFAULT_SHADER_4_COMPONENT_MAPPING;
+	srvDesc.Buffer.FirstElement = 0;
+	srvDesc.Buffer.NumElements = count;
+	srvDesc.Buffer.StructureByteStride = size;
+	srvDesc.Buffer.Flags = D3D12_BUFFER_SRV_FLAG_NONE;
+	out->m_srvAlloc = GetNextSRVAlloc();
+	m_device->CreateShaderResourceView(out->m_resource.Get(), &srvDesc, out->m_srvAlloc.cpuHandle);
+
+	return out;
+}
+
+std::shared_ptr<Buffer> Renderer_D12::CreateCBVBuffer(const std::string& name, size_t size, void* data, std::shared_ptr<CommandList_D12> cmdList = nullptr) {
+	if (cmdList == nullptr)
+		cmdList = m_commQueue->GetCommandList();
+
+	auto out = std::make_shared<Buffer>();
+
+	ThrowIfFailed(m_device->CreateCommittedResource(
+		&CD3DX12_HEAP_PROPERTIES(D3D12_HEAP_TYPE_UPLOAD),
+		D3D12_HEAP_FLAG_NONE,
+		&CD3DX12_RESOURCE_DESC::Buffer(sizeof(SceneData)),
+		D3D12_RESOURCE_STATE_GENERIC_READ,
+		nullptr,
+		IID_PPV_ARGS(&out->m_resource)));
+	std::wstring stemp = std::wstring(name.begin(), name.end());
+	out->m_resource->SetName(stemp.c_str());
+
+	// Describe and create a constant buffer view.
+	D3D12_CONSTANT_BUFFER_VIEW_DESC cbvDesc = {};
+	cbvDesc.BufferLocation = out->m_resource->GetGPUVirtualAddress();
+	cbvDesc.SizeInBytes = size;
+	out->m_srvAlloc = GetNextSRVAlloc();
+	m_device->CreateConstantBufferView(&cbvDesc, out->m_srvAlloc.cpuHandle);
+
+	out->m_bufferView.BufferLocation = out->m_resource->GetGPUVirtualAddress();
+	out->m_bufferView.SizeInBytes = (UINT)(sizeof(glm::mat4) * m_numInstances);
+	out->m_bufferView.StrideInBytes = sizeof(glm::mat4);
+
+	CD3DX12_RANGE readRange(0, 0);
+	ThrowIfFailed(out->m_resource->Map(0, &readRange, reinterpret_cast<void**>(&m_sceneDataBegin)));
+	memcpy(m_sceneDataBegin, data, size);
+
+	return out;
+}
 void Renderer_D12::PopulateVertexBuffer(const VertexInput* data, size_t count) {
 	auto commandList = m_commQueue->GetCommandList();
 	// Upload vertex buffer data.
@@ -481,6 +542,7 @@ void Renderer_D12::PopulateVertexBuffer(const VertexInput* data, size_t count) {
 	m_vertexBufferView.SizeInBytes = (UINT)(sizeof(VertexInput) * count);
 	m_vertexBufferView.StrideInBytes = sizeof(VertexInput);
 	commandList->TrackResource(intermediateVertexBuffer);
+
 }
 
 void Renderer_D12::PopulateIndexBuffer(const WORD *data, size_t count) {
@@ -500,43 +562,18 @@ void Renderer_D12::PopulateIndexBuffer(const WORD *data, size_t count) {
 }
 
 void Renderer_D12::LoadTextures() {
-
-	auto commandList = m_commQueue->GetCommandList();
-	
-	ThrowIfFailed(m_device->CreateCommittedResource(
-		&CD3DX12_HEAP_PROPERTIES(D3D12_HEAP_TYPE_UPLOAD),
-		D3D12_HEAP_FLAG_NONE,
-		&CD3DX12_RESOURCE_DESC::Buffer(sizeof(m_sceneData)),
-		D3D12_RESOURCE_STATE_GENERIC_READ,
-		nullptr,
-		IID_PPV_ARGS(&m_vpBuffer)));
-
-	// Describe and create a constant buffer view.
-	D3D12_CONSTANT_BUFFER_VIEW_DESC cbvDesc = {};
-	cbvDesc.BufferLocation = m_vpBuffer->GetGPUVirtualAddress();
-	cbvDesc.SizeInBytes = sizeof(m_sceneData);
-	m_vpCPUHandle = m_shaderResources->GetDescriptorHandle(1);
-	m_device->CreateConstantBufferView(&cbvDesc, m_vpCPUHandle);
-
-	m_vpBufferView.BufferLocation = m_vpBuffer->GetGPUVirtualAddress();
-	m_vpBufferView.SizeInBytes = (UINT)(sizeof(glm::mat4) * m_numInstances);
-	m_vpBufferView.StrideInBytes = sizeof(glm::mat4);
-
-	CD3DX12_RANGE readRange(0, 0); 
-	ThrowIfFailed(m_vpBuffer->Map(0, &readRange, reinterpret_cast<void**>(&m_sceneDataBegin)));
-	memcpy(m_sceneDataBegin, &m_sceneData, sizeof(m_sceneData));
+	m_sceneDataBuffer = CreateCBVBuffer("SceneData", sizeof(SceneData), &m_sceneData);
 
 	std::hash<std::string> hasher;
-	CreateMeterial("BasicLit", L"vertex_basic", L"pixel_basic", { L"Clay.dds", L"Grass.dds", L"Dirt.dds" });
+	CreateMaterial("BasicLit", L"vertex_basic", L"pixel_basic", { L"Clay.dds", L"Grass.dds", L"Dirt.dds" });
 	m_basicLitMatId = hasher("BasicLit");
-	CreateMeterial("Shadowmap", L"vertex_shadow", L"pixel_shadow");;
+	CreateMaterial("Shadowmap", L"vertex_shadow", L"pixel_shadow");;
 	m_shadowmapMatId = hasher("Shadowmap");
 }
 
 void Renderer_D12::CreateSRVForBoxes(const std::vector<std::vector<MazeDefs::TileProperties>>& tiles, int rows, int columns, double t) {
 
 	m_numInstances = 0;
-	std::vector<glm::mat4>		mvpMatrices;
 	std::vector<PerEntityData>  peds;
 
 	int x = 0;
@@ -555,8 +592,8 @@ void Renderer_D12::CreateSRVForBoxes(const std::vector<std::vector<MazeDefs::Til
 
 			for (int h = 0; h < height; ++h) {
 				glm::mat4 modelMat = glm::translate(glm::mat4(1.0f), glm::vec3((float)x, (float)y, (float)z));
-				mvpMatrices.push_back(modelMat);
-				peds.push_back({ 0 });
+				
+				peds.push_back({ modelMat, 0 });
 				y += 2;
 			}
 			for (int p = 0; p < 4; ++p) {
@@ -575,8 +612,7 @@ void Renderer_D12::CreateSRVForBoxes(const std::vector<std::vector<MazeDefs::Til
 
 					glm::mat4 modelMat = glm::translate(glm::mat4(1.0f), glm::vec3(wallX, (float)y, wallZ));
 					modelMat = modelMat * glm::scale(glm::mat4(1.0f), glm::vec3(scaleX, 1, scaleZ));
-					mvpMatrices.push_back(modelMat);
-					peds.push_back({ 1 });
+					peds.push_back({ modelMat, 1 });
 				}
 			}
 
@@ -587,65 +623,11 @@ void Renderer_D12::CreateSRVForBoxes(const std::vector<std::vector<MazeDefs::Til
 	m_worldWidth = z;
 	auto descStep = GetDescriptorHandleIncrementSize(D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV);
 	auto commandList = m_commQueue->GetCommandList();
-	m_numInstances = mvpMatrices.size();
+	m_numInstances = peds.size();
 	// Create a buffer and upload the MVP matrices to the GPU
-	{
-		D3D12_SUBRESOURCE_DATA mvpData = {};
-		mvpData.pData = mvpMatrices.data();
-		mvpData.RowPitch = sizeof(glm::mat4) * m_numInstances;
-		mvpData.SlicePitch = mvpData.RowPitch;
+	m_perEntityDataBuffer = CreateSRVBuffer("PerEntityBuffer", sizeof(PerEntityData), m_numInstances, peds.data());
+	
 
-		ComPtr<ID3D12Resource> intermediateBuffer;
-		commandList->UpdateBufferResource(m_device,
-			&m_modelBuffer, &intermediateBuffer,
-			m_numInstances, sizeof(glm::mat4), mvpMatrices.data());
-
-		m_modelBufferView.BufferLocation = m_modelBuffer->GetGPUVirtualAddress();
-		m_modelBufferView.SizeInBytes = (UINT)(sizeof(glm::mat4) * m_numInstances);
-		m_modelBufferView.StrideInBytes = sizeof(glm::mat4);
-		commandList->TrackResource(intermediateBuffer);
-
-		D3D12_SHADER_RESOURCE_VIEW_DESC srvDesc = {};
-		srvDesc.ViewDimension = D3D12_SRV_DIMENSION_BUFFER;
-		srvDesc.Format = DXGI_FORMAT_UNKNOWN;
-		srvDesc.Shader4ComponentMapping = D3D12_DEFAULT_SHADER_4_COMPONENT_MAPPING;
-		srvDesc.Buffer.FirstElement = 0;
-		srvDesc.Buffer.NumElements = (UINT)m_numInstances;
-		srvDesc.Buffer.StructureByteStride = sizeof(glm::mat4);
-		srvDesc.Buffer.Flags = D3D12_BUFFER_SRV_FLAG_NONE;
-
-		m_modelCPUHandle = m_shaderResources->GetDescriptorHandle(0);
-		m_device->CreateShaderResourceView(m_modelBuffer.Get(), &srvDesc, m_modelCPUHandle);
-	}
-
-	{
-		D3D12_SUBRESOURCE_DATA pedData = {};
-		pedData.pData = peds.data();
-		pedData.RowPitch = sizeof(PerEntityData) * m_numInstances;
-		pedData.SlicePitch = pedData.RowPitch;
-
-		ComPtr<ID3D12Resource> intermediateBuffer;
-		commandList->UpdateBufferResource(m_device,
-			&m_entityDataBuffer, &intermediateBuffer,
-			m_numInstances, sizeof(PerEntityData), peds.data());
-
-		m_entityDataBufferView.BufferLocation = m_entityDataBuffer->GetGPUVirtualAddress();
-		m_entityDataBufferView.SizeInBytes = (UINT)(sizeof(PerEntityData) * m_numInstances);
-		m_entityDataBufferView.StrideInBytes = sizeof(PerEntityData);
-		commandList->TrackResource(intermediateBuffer);
-
-		D3D12_SHADER_RESOURCE_VIEW_DESC srvDesc = {};
-		srvDesc.ViewDimension = D3D12_SRV_DIMENSION_BUFFER;
-		srvDesc.Format = DXGI_FORMAT_UNKNOWN;
-		srvDesc.Shader4ComponentMapping = D3D12_DEFAULT_SHADER_4_COMPONENT_MAPPING;
-		srvDesc.Buffer.FirstElement = 0;
-		srvDesc.Buffer.NumElements = (UINT)m_numInstances;
-		srvDesc.Buffer.StructureByteStride = sizeof(PerEntityData);
-		srvDesc.Buffer.Flags = D3D12_BUFFER_SRV_FLAG_NONE;
-
-		m_entityDataCPUHandle = m_shaderResources->GetDescriptorHandle(2);
-		m_device->CreateShaderResourceView(m_entityDataBuffer.Get(), &srvDesc, m_entityDataCPUHandle);
-	}
 	auto fenceValue = m_commQueue->ExecuteActiveCommandList();
 	m_commQueue->WaitForFenceValue(fenceValue);
 }
@@ -658,22 +640,8 @@ std::shared_ptr<Texture_D12> Renderer_D12::MakeOrGetTexture(const std::wstring& 
 		return resourceMap[id];
 	}
 
-	int pageIdx = -1;
-	for (int j = 0; j < m_textureAllocPages.size(); ++j) {
-		if (!m_textureAllocPages[j].IsFull())
-			pageIdx = j;
-	}
-
 	std::shared_ptr<Texture_D12> tex = std::make_shared<Texture_D12>();
-	if (pageIdx == -1) {
-		TextureAllocationPage tap(std::move(m_shaderResourceAllocator->Allocate(128)));
-		tex->SetCPUAllocation(tap.GetNextHandle());
-		m_textureAllocPages.emplace_back(std::move(tap));
-
-	}
-	else {
-		tex->SetCPUAllocation(m_textureAllocPages[pageIdx].GetNextHandle());
-	}
+	tex->SetCPUAllocation(GetNextSRVAlloc());
 
 	if (filepath.size() > 0) {
 		if (cmdList == nullptr)
@@ -686,7 +654,27 @@ std::shared_ptr<Texture_D12> Renderer_D12::MakeOrGetTexture(const std::wstring& 
 	return tex;
 }
 
-Material* Renderer_D12::CreateMeterial(const std::string name, const std::wstring& vertexShaderName, const std::wstring& pixelShaderName, const std::vector<std::wstring>& textures) {
+SRVAllocation Renderer_D12::GetNextSRVAlloc() {
+	SRVAllocation out;
+	int pageIdx = -1;
+	for (int j = 0; j < m_srvAllocPages.size(); ++j) {
+		if (!m_srvAllocPages[j].IsFull())
+			pageIdx = j;
+	}
+	if (pageIdx == -1) {
+		SRVAllocationPage srvAP(std::move(m_shaderResourceAllocator->Allocate(128)));
+		out = srvAP.GetNextHandle();
+		m_srvAllocPages.emplace_back(std::move(srvAP));
+
+	}
+	else {
+		out = m_srvAllocPages[pageIdx].GetNextHandle();
+	}
+
+	return out;
+}
+
+Material* Renderer_D12::CreateMaterial(const std::string name, const std::wstring& vertexShaderName, const std::wstring& pixelShaderName, const std::vector<std::wstring>& textures) {
 	std::hash<std::string> hasher;
 	size_t matId = hasher(name);
 
@@ -695,6 +683,7 @@ Material* Renderer_D12::CreateMeterial(const std::string name, const std::wstrin
 
 	Material mat;
 	mat.name = name;
+
 	mat.vertexShader = vertexShaderName;
 	mat.pixelShader = pixelShaderName;
 
@@ -863,12 +852,12 @@ void Renderer_D12::ResizeDepthBuffer(int width, int height) {
 	m_device->CreateShaderResourceView(m_shadowTexture->GetResource().Get(), &srvDesc,
 		m_shadowTexture->GetCPUHandle());
 
-	m_lightingData.invShadowTexSize = glm::vec2(1.f / width, 1.f / height);
+	m_sceneData.invShadowTexSize = glm::vec2(1.f / width, 1.f / height);
 }
 
 void Renderer_D12::UpdateMVP(float fov, glm::vec3 camPos, glm::vec3 camFwd, glm::vec3 camRight, glm::vec3 camUp, glm::vec4 sunPos) {
 	// Update the view matrix.
-	m_lightingData.camPos = glm::vec4(camPos, 1.0f);
+	m_sceneData.camPos = glm::vec4(camPos, 1.0f);
 	glm::vec3 upDirection = glm::cross(camFwd, camRight);
 	auto view = glm::lookAtLH(camPos, camPos + camFwd, upDirection);
 
@@ -888,8 +877,8 @@ void Renderer_D12::UpdateMVP(float fov, glm::vec3 camPos, glm::vec3 camFwd, glm:
 	proj = glm::orthoLH(-m_worldWidth * 0.75f, m_worldWidth * 0.75f, -m_worldWidth * 0.75f, m_worldWidth * 0.75f, 0.1f, 100.0f);
 	m_sceneData.sunVP = proj * view;
 
-	m_lightingData.sunPos = sunPos;
-	memcpy(m_sceneDataBegin, &m_sceneData, sizeof(m_sceneData));
+	m_sceneData.sunPos = sunPos;
+	memcpy(m_sceneDataBegin, &m_sceneData, sizeof(SceneData));
 }
 
 

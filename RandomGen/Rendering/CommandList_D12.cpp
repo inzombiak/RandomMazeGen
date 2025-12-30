@@ -131,6 +131,8 @@ void CommandList_D12::LoadTexture(std::wstring filename, shared_ptr<Texture_D12>
         nullptr,
         IID_PPV_ARGS(&texResource)));
 
+    texResource->SetName(filename.c_str());
+
     std::vector<D3D12_SUBRESOURCE_DATA> subresources(scratchImage.GetImageCount());
     const Image* pImages = scratchImage.GetImages();
     for (int i = 0; i < scratchImage.GetImageCount(); ++i)

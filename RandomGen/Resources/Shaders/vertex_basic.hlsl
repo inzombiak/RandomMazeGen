@@ -7,24 +7,22 @@ struct VertexInput
     uint instanceid : SV_InstanceID;
 };
 
-struct Model
-{
-    matrix M;
-};
-StructuredBuffer<Model> ModelSB : register(t0);
-
 struct PerEntityData
 {
-    uint type;
+    matrix M;
+    uint data;
 };
-StructuredBuffer<PerEntityData> PerEntitySB : register(t1);
+StructuredBuffer<PerEntityData> PerEntitySB : register(t0);
 
 struct SceneData
 {
     matrix camVP;
     matrix sunVP; 
+    float4 lightPos;
+    float4 viewPos;
+    float2 shadowTexelSize;
 };
-ConstantBuffer<SceneData> SceneDataCB : register(b1);
+ConstantBuffer<SceneData> SceneDataCB : register(b0);
 
 struct VertexOutput
 {   
@@ -40,7 +38,7 @@ struct VertexOutput
 VertexOutput main(VertexInput input)
 {
     VertexOutput output;
-    output.worldPos     = mul(ModelSB[input.instanceid].M, float4(input.position, 1.0f)).xyz;
+    output.worldPos     = mul(PerEntitySB[input.instanceid].M, float4(input.position, 1.0f)).xyz;
     output.sunPos       = mul(SceneDataCB.sunVP, float4(output.worldPos, 1.f));
     output.hpos         = mul(SceneDataCB.camVP, float4(output.worldPos, 1.f));
     output.color        = float4(input.color, 1.0f);
