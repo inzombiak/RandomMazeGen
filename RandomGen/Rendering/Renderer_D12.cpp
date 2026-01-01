@@ -357,17 +357,21 @@ void Renderer_D12::Render() {
 		d3dCommList->OMSetRenderTargets(1, &rtv, FALSE, &dsv);
 
 		// Update the MVP matrixb
-		d3dCommList->SetGraphicsRootConstantBufferView(0, m_sceneDataBuffer->m_bufferView.BufferLocation);
+		BindingInfo bi;
+		bool hasBinding = GetMaterialBindingInfoForResource(basicMat, SCENE_DATA_BUFFER_NAME, bi);
+		d3dCommList->SetGraphicsRootConstantBufferView(bi.rootIndex, m_sceneDataBuffer->m_bufferView.BufferLocation);
 
 		m_shaderResourceDynHeap->ParseRootSignature(*basicMat.pso->rootSignature.get());
 		static const uint32_t BASE_DESC_IDX = 1;
-		for (int i = 0; i < basicMat.textures.size(); ++i) {
-			m_shaderResourceDynHeap->StageDescriptors(BASE_DESC_IDX, i, 1, basicMat.textures[i]->GetCPUHandle());
+		for (int i = 0; i < basicMat.textureAttachments.size(); ++i) {
+			GetMaterialBindingInfoForResource(basicMat, basicMat.textureAttachments[i].shaderName, bi);
+			m_shaderResourceDynHeap->StageDescriptors(bi.rootIndex, bi.offset, 1, basicMat.textureAttachments[i].texture->GetCPUHandle());
 		}
-
-		m_shaderResourceDynHeap->StageDescriptors(BASE_DESC_IDX, (uint32_t) basicMat.textures.size(), 1, m_shadowTexture->GetCPUHandle());
+		GetMaterialBindingInfoForResource(basicMat, SHADOW_TEX_NAME, bi);
+		m_shaderResourceDynHeap->StageDescriptors(bi.rootIndex, bi.offset, 1, m_shadowTexture->GetCPUHandle());
 		m_shaderResourceDynHeap->CommitStagedDescriptorsForDraw(commandList);
-		d3dCommList->SetGraphicsRootShaderResourceView(2, m_perEntityDataBuffer->m_bufferView.BufferLocation);
+		GetMaterialBindingInfoForResource(basicMat, PER_ENTITY_DATA_BUFFER_NAME, bi);
+		d3dCommList->SetGraphicsRootShaderResourceView(bi.rootIndex, m_perEntityDataBuffer->m_bufferView.BufferLocation);
 		d3dCommList->DrawIndexedInstanced((UINT)m_indexCount, (UINT)m_numInstances, 0, 0, 0);
 	}
 
@@ -435,8 +439,11 @@ void Renderer_D12::Shadowmap() {
 		d3dCommList->OMSetRenderTargets(0, NULL, FALSE, &dsv);
 
 		// Update the MVP matrix
-		d3dCommList->SetGraphicsRootConstantBufferView(0, m_sceneDataBuffer->m_bufferView.BufferLocation);
-		d3dCommList->SetGraphicsRootShaderResourceView(1, m_perEntityDataBuffer->m_bufferView.BufferLocation);
+		BindingInfo bi;
+		bool hasBinding = GetMaterialBindingInfoForResource(shadowMat, SCENE_DATA_BUFFER_NAME, bi);
+		d3dCommList->SetGraphicsRootConstantBufferView(bi.rootIndex, m_sceneDataBuffer->m_bufferView.BufferLocation);
+		GetMaterialBindingInfoForResource(shadowMat, PER_ENTITY_DATA_BUFFER_NAME, bi);
+		d3dCommList->SetGraphicsRootShaderResourceView(bi.rootIndex, m_perEntityDataBuffer->m_bufferView.BufferLocation);
 		d3dCommList->DrawIndexedInstanced((UINT)m_indexCount, (UINT)m_numInstances, 0, 0, 0);
 
 		commandList->TransitionResource(m_shadowTexture->GetResource(),
@@ -480,7 +487,7 @@ std::shared_ptr<Buffer> Renderer_D12::CreateSRVBuffer(const std::string& name, s
 	out->m_resource->SetName(stemp.c_str());
 	out->m_bufferView.BufferLocation = out->m_resource->GetGPUVirtualAddress();
 	out->m_bufferView.SizeInBytes = (UINT)(size * count);
-	out->m_bufferView.StrideInBytes = size;
+	out->m_bufferView.StrideInBytes = (UINT)size;
 	cmdList->TrackResource(intermediateBuffer);
 
 	D3D12_SHADER_RESOURCE_VIEW_DESC srvDesc = {};
@@ -488,8 +495,8 @@ std::shared_ptr<Buffer> Renderer_D12::CreateSRVBuffer(const std::string& name, s
 	srvDesc.Format = DXGI_FORMAT_UNKNOWN;
 	srvDesc.Shader4ComponentMapping = D3D12_DEFAULT_SHADER_4_COMPONENT_MAPPING;
 	srvDesc.Buffer.FirstElement = 0;
-	srvDesc.Buffer.NumElements = count;
-	srvDesc.Buffer.StructureByteStride = size;
+	srvDesc.Buffer.NumElements = (UINT)count;
+	srvDesc.Buffer.StructureByteStride = (UINT)size;
 	srvDesc.Buffer.Flags = D3D12_BUFFER_SRV_FLAG_NONE;
 	out->m_srvAlloc = GetNextSRVAlloc();
 	m_device->CreateShaderResourceView(out->m_resource.Get(), &srvDesc, out->m_srvAlloc.cpuHandle);
@@ -516,7 +523,7 @@ std::shared_ptr<Buffer> Renderer_D12::CreateCBVBuffer(const std::string& name, s
 	// Describe and create a constant buffer view.
 	D3D12_CONSTANT_BUFFER_VIEW_DESC cbvDesc = {};
 	cbvDesc.BufferLocation = out->m_resource->GetGPUVirtualAddress();
-	cbvDesc.SizeInBytes = size;
+	cbvDesc.SizeInBytes = (UINT)size;
 	out->m_srvAlloc = GetNextSRVAlloc();
 	m_device->CreateConstantBufferView(&cbvDesc, out->m_srvAlloc.cpuHandle);
 
@@ -542,7 +549,6 @@ void Renderer_D12::PopulateVertexBuffer(const VertexInput* data, size_t count) {
 	m_vertexBufferView.SizeInBytes = (UINT)(sizeof(VertexInput) * count);
 	m_vertexBufferView.StrideInBytes = sizeof(VertexInput);
 	commandList->TrackResource(intermediateVertexBuffer);
-
 }
 
 void Renderer_D12::PopulateIndexBuffer(const WORD *data, size_t count) {
@@ -565,7 +571,31 @@ void Renderer_D12::LoadTextures() {
 	m_sceneDataBuffer = CreateCBVBuffer("SceneData", sizeof(SceneData), &m_sceneData);
 
 	std::hash<std::string> hasher;
-	CreateMaterial("BasicLit", L"vertex_basic", L"pixel_basic", { L"Clay.dds", L"Grass.dds", L"Dirt.dds" });
+	auto mat = CreateMaterial("BasicLit", L"vertex_basic", L"pixel_basic", { L"Clay.dds", L"Grass.dds", L"Dirt.dds" });
+
+	int idx = 0;
+	//Manual set until i have a UI
+	for (const auto& pair : mat->pso->resourceToBindingInfo) {
+		if (pair.second.type != D3D_SIT_TEXTURE)
+			continue;
+
+		TextureAttachmentInfo tai;
+		tai.shaderName = pair.first;
+
+		if (pair.first.compare("wallTexture") == 0)
+			tai.texture = MakeOrGetTexture(L"WallTex", L"Clay.dds", m_textureMap);
+		else if (pair.first.compare("grassTexture") == 0)
+			tai.texture = MakeOrGetTexture(L"GrassTex", L"Grass.dds", m_textureMap);
+		else if (pair.first.compare("dirtTexture") == 0)
+			tai.texture = MakeOrGetTexture(L"DirtTex", L"Dirt.dds", m_textureMap);
+		else
+			continue;
+		mat->textureAttachments[idx] = tai;
+		++idx;
+	}
+	
+
+
 	m_basicLitMatId = hasher("BasicLit");
 	CreateMaterial("Shadowmap", L"vertex_shadow", L"pixel_shadow");;
 	m_shadowmapMatId = hasher("Shadowmap");
@@ -632,8 +662,8 @@ void Renderer_D12::CreateSRVForBoxes(const std::vector<std::vector<MazeDefs::Til
 	m_commQueue->WaitForFenceValue(fenceValue);
 }
 
-std::shared_ptr<Texture_D12> Renderer_D12::MakeOrGetTexture(const std::wstring& name, std::map<size_t, std::shared_ptr<Texture_D12>>& resourceMap,
-					std::shared_ptr<CommandList_D12> cmdList = nullptr, const std::wstring& filepath = L"") {
+std::shared_ptr<Texture_D12> Renderer_D12::MakeOrGetTexture(const std::wstring& name, const std::wstring& filepath, 
+	std::map<size_t, std::shared_ptr<Texture_D12>>& resourceMap, std::shared_ptr<CommandList_D12> cmdList) {
 	std::hash<std::wstring> whasher;
 	size_t id = whasher(name);
 	if (resourceMap.contains(id)) {
@@ -642,11 +672,10 @@ std::shared_ptr<Texture_D12> Renderer_D12::MakeOrGetTexture(const std::wstring& 
 
 	std::shared_ptr<Texture_D12> tex = std::make_shared<Texture_D12>();
 	tex->SetCPUAllocation(GetNextSRVAlloc());
-
 	if (filepath.size() > 0) {
 		if (cmdList == nullptr)
 			cmdList = m_commQueue->GetCommandList();
-		cmdList->LoadTexture(filepath, tex);
+		cmdList->LoadTexture(name, filepath, tex);
 
 		resourceMap[id] = tex;
 	}
@@ -688,12 +717,9 @@ Material* Renderer_D12::CreateMaterial(const std::string name, const std::wstrin
 	mat.pixelShader = pixelShaderName;
 
 	mat.pso = BuildPipelineState(vertexShaderName, pixelShaderName);
-	mat.textures.resize(textures.size());
-	auto cmdList = m_commQueue->GetCommandList();
-	for (int i = 0; i < textures.size(); ++i) {
-		mat.textures[i] = MakeOrGetTexture(textures[i], m_textureMap, cmdList, textures[i]);
-	}
+	mat.textureAttachments.resize(textures.size());
 
+	auto cmdList = m_commQueue->GetCommandList();
 	m_materialMap[matId] = mat;
 	return &m_materialMap[matId];
 }
@@ -744,6 +770,21 @@ PipelineStateObject* Renderer_D12::BuildPipelineState(const std::wstring& vertex
 	D3D12_ROOT_SIGNATURE_DESC1 rootSigDesc = {};
 	if (!rootSigBuilder.Build(rootSigDesc)) {
 		throw std::runtime_error("Failed to build shadow root signature from shader metadata");
+	}
+
+	auto mappings = rootSigBuilder.GetResourceMappings();
+	uint32_t offset = 0;
+	uint32_t lastRootIdx = 0;
+	for (int i = 0; i < mappings.size(); ++i) {
+		uint32_t rootIdx = mappings[i].rootParameterIndex;
+		if (rootIdx == lastRootIdx) {
+			++offset;
+		}
+		else {
+			offset = 0;
+		}
+		entry.resourceToBindingInfo[mappings[i].resourceName] = { rootIdx, offset, mappings[i].type};
+		lastRootIdx = rootIdx;
 	}
 
 	// Print the generated layout for debugging
@@ -842,7 +883,7 @@ void Renderer_D12::ResizeDepthBuffer(int width, int height) {
 	auto descStep = GetDescriptorHandleIncrementSize(D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV);
 	m_device->CreateDepthStencilView(resource.Get(), &dsv,
 		m_dsvs->GetDescriptorHandle(1));
-	m_shadowTexture = MakeOrGetTexture(L"SunShadow", m_textureMap);
+	m_shadowTexture = MakeOrGetTexture(L"SunShadow", L"", m_textureMap);
 	m_shadowTexture->SetResource(resource);
 	D3D12_SHADER_RESOURCE_VIEW_DESC srvDesc = {};
 	srvDesc.Shader4ComponentMapping = D3D12_DEFAULT_SHADER_4_COMPONENT_MAPPING;

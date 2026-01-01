@@ -28,4 +28,7 @@ struct VertexInput
 static const char* SHADER_PATH = "Resources\\Shaders\\";
 static const wchar_t* L_SHADER_PATH = L"Resources\\Shaders\\";
 
+static const char* SCENE_DATA_BUFFER_NAME			= "SceneDataCB";
+static const char* PER_ENTITY_DATA_BUFFER_NAME		= "PerEntitySB";
+static const char* SHADOW_TEX_NAME					= "shadowTexture";
 #endif

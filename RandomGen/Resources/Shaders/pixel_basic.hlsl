@@ -1,3 +1,5 @@
+#include "default_render_defs.hlsli"
+
 struct PixelInput
 {
     float3 normal : NORMAL0;
@@ -7,23 +9,6 @@ struct PixelInput
     float3 worldPos : TEXCOORD2;
     uint   instanceid : SV_InstanceID;
 };
-
-struct SceneData
-{
-    matrix camVP;
-    matrix sunVP;
-    float4 lightPos;
-    float4 viewPos;
-    float2 shadowTexelSize;
-};
-ConstantBuffer<SceneData> SceneDataCB : register(b0);
-
-struct PerEntityData
-{
-    matrix M;
-    uint data;
-};
-StructuredBuffer<PerEntityData> PerEntitySB : register(t0);
 
 Texture2D wallTexture : register(t1);
 Texture2D grassTexture : register(t2);

@@ -24,7 +24,7 @@ public:
 	void UpdateBufferResource(ComPtr<ID3D12Device> device, ID3D12Resource** pDestinationResource, ID3D12Resource** pIntermediateResource,
 		size_t numElements, size_t elementSize, const void* bufferData,
 		D3D12_RESOURCE_FLAGS flags = D3D12_RESOURCE_FLAG_NONE);
-	void LoadTexture(std::wstring fileName, std::shared_ptr<Texture_D12> tex);
+	void LoadTexture(const std::wstring& name, const std::wstring& filename, std::shared_ptr<Texture_D12> tex);
 
 	void SetDescriptorHeap(D3D12_DESCRIPTOR_HEAP_TYPE type, ID3D12DescriptorHeap* heap);
 	void Reset();

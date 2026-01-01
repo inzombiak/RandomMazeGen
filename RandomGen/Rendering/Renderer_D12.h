@@ -164,7 +164,7 @@ class Renderer_D12 {
 	private:
 
 		PipelineStateObject* BuildPipelineState(const std::wstring& vertexShaderName, const std::wstring& pixelShaderName);
-		std::shared_ptr<Texture_D12> MakeOrGetTexture(const std::wstring& name, std::map<size_t, std::shared_ptr<Texture_D12>>& resourceMap, std::shared_ptr<CommandList_D12> cmdList, const std::wstring& filepath);
+		std::shared_ptr<Texture_D12> MakeOrGetTexture(const std::wstring& name, const std::wstring& filepath, std::map<size_t, std::shared_ptr<Texture_D12>>& resourceMap, std::shared_ptr<CommandList_D12> cmdList = nullptr);
 		std::shared_ptr<Buffer> CreateSRVBuffer(const std::string& name, size_t size, size_t count, void* data, std::shared_ptr<CommandList_D12> cmdList);
 		std::shared_ptr<Buffer> CreateCBVBuffer(const std::string& name, size_t size, void* data, std::shared_ptr<CommandList_D12> cmdList);
 
@@ -185,7 +185,7 @@ class Renderer_D12 {
 		ComPtr<ID3D12Resource>				m_backbuffers[NUM_BACKBUFFER_FRAMES];
 		ComPtr<ID3D12Resource>				m_depthBuffer;
 
-		D3D_ROOT_SIGNATURE_VERSION m_highestRootSignatureVersion;
+		D3D_ROOT_SIGNATURE_VERSION			m_highestRootSignatureVersion;
 
 		std::shared_ptr<DescriptorAllocator_D12>  m_rtvAllocator;
 		std::shared_ptr<DescriptorAllocation_D12> m_rtvs;

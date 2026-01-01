@@ -327,6 +327,7 @@
   <ItemGroup>
     <None Include="Extern\DirectXTex\DirectXTex.inl" />
     <None Include="Extern\imgui\misc\debuggers\imgui.natstepfilter" />
+    <None Include="Resources\Shaders\default_render_defs.hlsli" />
   </ItemGroup>
   <ItemGroup>
     <Natvis Include="Extern\imgui\misc\debuggers\imgui.natvis" />

@@ -76,7 +76,7 @@ void CommandList_D12::UpdateBufferResource(ComPtr<ID3D12Device> device, ID3D12Re
 #include <filesystem>
 using namespace std;
 using namespace DirectX;
-void CommandList_D12::LoadTexture(std::wstring filename, shared_ptr<Texture_D12> tex) {
+void CommandList_D12::LoadTexture(const std::wstring& name, const std::wstring& filename, shared_ptr<Texture_D12> tex) {
 
     std::filesystem::path filePath(filename);
     if (!std::filesystem::exists(filePath))
@@ -131,7 +131,7 @@ void CommandList_D12::LoadTexture(std::wstring filename, shared_ptr<Texture_D12>
         nullptr,
         IID_PPV_ARGS(&texResource)));
 
-    texResource->SetName(filename.c_str());
+    texResource->SetName(name.c_str());
 
     std::vector<D3D12_SUBRESOURCE_DATA> subresources(scratchImage.GetImageCount());
     const Image* pImages = scratchImage.GetImages();

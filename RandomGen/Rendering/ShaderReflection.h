@@ -50,8 +50,8 @@ class ShaderMetadata {
 public:
     ShaderMetadata() : shaderType(D3D12_SHVER_PIXEL_SHADER) {}
 
-    std::vector<ShaderResourceBinding> resources;
     std::vector<ShaderInputElement> inputElements;
+    std::vector<ShaderResourceBinding> resources;
     std::vector<ShaderConstantBuffer> constantBuffers;
 
     std::vector<D3D12_STATIC_SAMPLER_DESC> staticSamplers;

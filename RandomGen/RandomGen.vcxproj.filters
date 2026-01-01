@@ -408,6 +408,9 @@
     <None Include="Extern\imgui\misc\debuggers\imgui.natstepfilter">
       <Filter>Header Files\Extern\imgui</Filter>
     </None>
+    <None Include="Resources\Shaders\default_render_defs.hlsli">
+      <Filter>Resource Files\Shaders</Filter>
+    </None>
   </ItemGroup>
   <ItemGroup>
     <Natvis Include="Extern\imgui\misc\debuggers\imgui.natvis">

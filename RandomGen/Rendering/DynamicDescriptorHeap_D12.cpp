@@ -64,7 +64,6 @@ void DynamicDescriptorHeap_D12::ParseRootSignature(const RootSignature_D12& root
 
 void DynamicDescriptorHeap_D12::StageDescriptors(uint32_t rootParameterIndex, uint32_t offset, uint32_t numDescriptors, const D3D12_CPU_DESCRIPTOR_HANDLE srcDescriptor)
 {
-    // Cannot stage more than the maximum number of descriptors per heap.
     // Cannot stage more than MAX_DESCRIPTOR_TABLES root parameters.
         if (numDescriptors > m_numDescriptorsPerHeap || rootParameterIndex >= MAX_DESCRIPTOR_TABLES)
     {

@@ -1,3 +1,5 @@
+#include "default_render_defs.hlsli"
+
 struct VertexInput
 {
     float3 position : POSITION;
@@ -6,23 +8,6 @@ struct VertexInput
     float3 uv : TEXCOORD0;
     uint   instanceid : SV_InstanceID;
 };
-
-struct PerEntityData
-{
-    matrix M;
-    uint data;
-};
-StructuredBuffer<PerEntityData> PerEntitySB : register(t0);
-
-struct SceneData
-{
-    matrix camVP;
-    matrix sunVP;
-    float4 lightPos;
-    float4 viewPos;
-    float2 shadowTexelSize;
-};
-ConstantBuffer<SceneData> SceneDataCB : register(b0);
 
 struct VertexOutput
 {
