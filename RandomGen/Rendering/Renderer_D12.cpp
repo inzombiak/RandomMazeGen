@@ -362,7 +362,6 @@ void Renderer_D12::Render() {
 		d3dCommList->SetGraphicsRootConstantBufferView(bi.rootIndex, m_sceneDataBuffer->m_bufferView.BufferLocation);
 
 		m_shaderResourceDynHeap->ParseRootSignature(*basicMat.pso->rootSignature.get());
-		static const uint32_t BASE_DESC_IDX = 1;
 		for (int i = 0; i < basicMat.textureAttachments.size(); ++i) {
 			GetMaterialBindingInfoForResource(basicMat, basicMat.textureAttachments[i].shaderName, bi);
 			m_shaderResourceDynHeap->StageDescriptors(bi.rootIndex, bi.offset, 1, basicMat.textureAttachments[i].texture->GetCPUHandle());
