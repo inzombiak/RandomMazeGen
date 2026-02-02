@@ -13,6 +13,7 @@
 
 #include <iostream>
 #include <chrono>     
+#include <print>
 
 using namespace MazeDefs;
 
@@ -93,7 +94,8 @@ MazeDefs::TileProperties GridManager::GetTileProperties(int row, int col) {
 
 	if (row >= m_rowCount || row < 0 ||
 		col >= m_columnCount || col < 0) {
-		std::cout << "Invalid indices, row: " << row << " , col: " << col << std::endl;
+
+		std::println("Invalid indices, row {}, col: {}" , row, col);
 		return props;
 	}
 
@@ -103,10 +105,10 @@ MazeDefs::TileProperties GridManager::GetTileProperties(int row, int col) {
 	return props;
 }
 
-void GridManager::GetAllTileProperties(MazeDefs::TileProperties* buffer, unsigned int bufferSize) {
+void GridManager::GetAllTileProperties(std::vector<MazeDefs::TileProperties>& buffer) {
 	unsigned int expectedSize = m_rowCount * m_columnCount;
-	if (buffer == nullptr || bufferSize < expectedSize) {
-		std::cout << "Invalid buffer or size. Expected: " << expectedSize << ", Got: " << bufferSize << std::endl;
+	if (buffer.empty() || buffer.size() < expectedSize) {
+		std::println("Invalid buffer or size. Expected: {}, Got: {}", expectedSize, buffer.size());
 		return;
 	}
 
@@ -161,7 +163,7 @@ void GridManager::RandomizeMap()
 	m_rooms = GenerateRooms();
 	auto finish = std::chrono::high_resolution_clock::now();
 	std::chrono::duration<double> elapsed = finish - start;
-	std::cout << "Room generation elapsed time: " << elapsed.count() << std::endl;
+	std::println("Room generation elapsed time: {}", elapsed.count());
 	
 	m_simPhase = GeneratingMaze;
 	GenerateMaze();
@@ -217,7 +219,7 @@ void GridManager::GenerateMazeWorker()
 
 	auto finish = std::chrono::high_resolution_clock::now();
 	std::chrono::duration<double> elapsed = finish - start;
-	std::cout << "Maze generation elapsed time: " << elapsed.count() << std::endl;
+	std::println("Maze generation elapsed time: {}", elapsed.count());
 
 	// Mark maze as dirty after generation
 	m_isDirty = true;
@@ -267,7 +269,7 @@ void GridManager::ConnectMap()
 		ConnectMapWorker(m_rooms);
 		auto finish = std::chrono::high_resolution_clock::now();
 		std::chrono::duration<double> elapsed = finish - start;
-		std::cout << "Maze connection elapsed time: " << elapsed.count() << std::endl;
+		std::println("Maze connection elapsed time: {}", elapsed.count());
 	}
 
 }
@@ -304,7 +306,7 @@ void GridManager::ConnectMapWorkerByStep(std::vector<MazeDefs::IntRect> rooms)
 	MazeConnectorSingleton::Instance().ConnectMaze(rooms, m_tiles, m_mazeGenerateType, m_seed, m_threadSleepTime);
 	auto finish = std::chrono::high_resolution_clock::now();
 	std::chrono::duration<double> elapsed = finish - start;
-	std::cout << "Maze connection elapsed time: " << elapsed.count() << std::endl;
+	std::println("Maze connection elapsed time: {}", elapsed.count());
 	m_isDirty = true;  // Mark dirty after connecting
 	if (m_terminated)
 		return;
@@ -329,7 +331,7 @@ void GridManager::RemoveDeadEnds()
 		RemoveDeadEndsWorker();
 		auto finish = std::chrono::high_resolution_clock::now();
 		std::chrono::duration<double> elapsed = finish - start;
-		std::cout << "Dead end removal elapsed time: " << elapsed.count() << std::endl;
+		std::println("Dead end removal elapsed time: {}", elapsed.count());
 	}
 }
 
@@ -366,7 +368,7 @@ void GridManager::RemoveDeadEndsWorkerByStep()
 	DeadEndRemoverSingleton::Instance().RemoveDeadEnds(m_tiles, m_mazeGenerateType, m_removeDeadEndsPercentage, m_seed, m_threadSleepTime);
 	auto finish = std::chrono::high_resolution_clock::now();
 	std::chrono::duration<double> elapsed = finish - start;
-	std::cout << "Dead end removal elapsed time: " << elapsed.count() << std::endl;
+	std::println("Dead end removal elapsed time: {}", elapsed.count());
 	m_isDirty = true;  // Mark dirty after removing dead ends
 	m_simPhase = Done;
 }

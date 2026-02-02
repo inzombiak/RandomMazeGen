@@ -19,16 +19,15 @@ private:
 
 	const TileHolder* m_tiles;
 
-	int m_rowCount;
-	int m_columnCount;
-	int m_seed;
-	int m_sleepDuration;
-	int m_removalPercentage;
+	int m_rowCount = 0;
+	int m_columnCount = 0;
+	int m_seed = 0;
+	int m_sleepDuration = 0;
+	int m_removalPercentage = 0;
 
-	MazeDefs::GenerateType m_generateType;
+	MazeDefs::GenerateType m_generateType = MazeDefs::GenerateType::Full;
 	std::default_random_engine m_randomNumGen;
 	std::uniform_int_distribution<int> m_distribution;
-
 };
 
 #endif

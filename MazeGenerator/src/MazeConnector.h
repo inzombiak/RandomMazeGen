@@ -23,12 +23,12 @@ private:
 	void FloodSetByStep(const std::pair<int, int>& indices, int id);
 
 	std::vector<MazeDefs::IntRect> m_rooms;
-	const TileHolder* m_tiles;
+	const TileHolder* m_tiles = nullptr;
 
-	int m_rowCount;
-	int m_columnCount;
-	int m_seed;
-	int m_sleepDuration;
+	int m_rowCount = 0;
+	int m_columnCount = 0;
+	int m_seed = 0;
+	int m_sleepDuration = 0;
 	//For step generation
 
 	MazeDefs::GenerateType m_generateType;

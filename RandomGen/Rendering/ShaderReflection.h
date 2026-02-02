@@ -14,7 +14,7 @@ namespace Rendering {
 
 // Describes a single resource binding in a shader
 struct ShaderResourceBinding {
-    std::string name;                    // Resource name (e.g., "ModelSB")
+    std::string name = "";                    // Resource name (e.g., "ModelSB")
     D3D_SHADER_INPUT_TYPE type;          // CBV, SRV, UAV, Sampler
     UINT bindPoint;                      // Register slot (e.g., t0, b0, s0)
     UINT bindCount;                      // Array size (1 for non-arrays)

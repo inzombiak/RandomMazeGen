@@ -1,6 +1,7 @@
 #include "RootSignatureBuilder.h"
 #include <algorithm>
 #include <iostream>
+#include <print>
 #include <sstream>
 
 namespace Rendering {
@@ -327,7 +328,7 @@ void RootSignatureBuilder::PrintLayout() const {
     ss << "=============================\n";
 
     OutputDebugStringA(ss.str().c_str());
-    std::cout << ss.str();
+    std::cout << ss.str() << std::endl;
 }
 
 D3D12_SHADER_VISIBILITY RootSignatureBuilder::CombineVisibility(D3D12_SHADER_VISIBILITY a, D3D12_SHADER_VISIBILITY b) {

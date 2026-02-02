@@ -30,13 +30,13 @@ private:
 	//TODO: May need to lock all reads for these if I add GUI
 	MazeDefs::Vector2i m_verticalBounds;
 	MazeDefs::Vector2i m_horizontalBounds;
-	int m_attemptCount;
+	int m_attemptCount = 0;
 
 	std::vector<MazeDefs::IntRect> m_rooms;
-	const TileHolder* m_tiles;
-	int m_rowCount;
-	int m_columnCount;
-	int m_seed;
+	const TileHolder* m_tiles = nullptr;
+	int m_rowCount = 0;
+	int m_columnCount = 0;
+	int m_seed = 0;
 	//For step generation
 	//TODO: STATIC MAY CAUSE ISSUES
 	static std::atomic_flag m_generate;
@@ -47,9 +47,9 @@ private:
 	std::mutex m_attemptMutex;
 
 	static std::atomic<bool> m_done;
-	int m_sleepDuration;
+	int m_sleepDuration = 0;
 
-	MazeDefs::GenerateType m_generateType;
+	MazeDefs::GenerateType m_generateType = MazeDefs::GenerateType::Full;
 	std::default_random_engine m_randomNumGen;
 
 };

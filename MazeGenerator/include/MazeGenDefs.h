@@ -5,6 +5,7 @@
 #include <random> 
 #include <array>
 #include <map>
+#include <span>
 
 #ifdef MAZEGENERATOR_EXPORTS
 #define MAZEGENLIB_API __declspec(dllexport)
@@ -73,9 +74,9 @@ namespace MazeDefs
 		PassageDirection directions = PassageDirection::None;
 	};
 
-	static std::array<PassageDirection, 4>			DIRECTIONS = { MazeDefs::East, MazeDefs::West, MazeDefs::North, MazeDefs::South };
-	static std::array<PassageDirection, 4>			OPPOSITE_DIRECTIONS = { MazeDefs::West, MazeDefs::East, MazeDefs::South, MazeDefs::North };;
-	static std::array<std::pair<int, int>, 4>		DIRECTION_CHANGES = { std::make_pair(0, 1), std::make_pair(0, -1), std::make_pair(-1, 0), std::make_pair(1, 0) };
+	inline constexpr std::array<PassageDirection, 4>	DIRECTIONS = { MazeDefs::East, MazeDefs::West, MazeDefs::North, MazeDefs::South };
+	inline constexpr std::array<PassageDirection, 4>	OPPOSITE_DIRECTIONS = { MazeDefs::West, MazeDefs::East, MazeDefs::South, MazeDefs::North };;
+	inline constexpr std::array<std::pair<int, int>, 4> DIRECTION_CHANGES = { std::make_pair(0, 1), std::make_pair(0, -1), std::make_pair(-1, 0), std::make_pair(1, 0) };
 }
 
 extern "C" {
@@ -89,7 +90,7 @@ extern "C" {
 	MAZEGENLIB_API void ClearMazeDirtyFlag();
 
 	// Batch API: Get all tiles at once (more efficient than individual calls)
-	MAZEGENLIB_API void GetAllTileProperties(MazeDefs::TileProperties* buffer, unsigned int bufferSize);
+	MAZEGENLIB_API void GetAllTileProperties(std::vector<MazeDefs::TileProperties>& buffer);
 }
 
 

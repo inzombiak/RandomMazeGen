@@ -41,7 +41,7 @@ public:
 	bool IsDirty() const { return m_isDirty; }
 	void ClearDirtyFlag() { m_isDirty = false; }
 	void SetDirtyFlag() { m_isDirty = true; }
-	void GetAllTileProperties(MazeDefs::TileProperties* buffer, unsigned int bufferSize);
+	void GetAllTileProperties(std::vector<MazeDefs::TileProperties>& buffer);
 
 private:
 	void Terminate();
@@ -61,15 +61,15 @@ private:
 	void RemoveDeadEndsWorker();
 	void RemoveDeadEndsWorkerByStep();
 
-	int m_windowHeight;
-	int m_windowWidth;
-	int m_rowCount;
-	int m_columnCount;
-	float m_tileWidth;
-	float m_tileHeight;
+	int m_windowHeight = 0;
+	int m_windowWidth = 0;
+	int m_rowCount = 0;
+	int m_columnCount = 0;
+	float m_tileWidth = 0;
+	float m_tileHeight = 0;
 	const int BORDER_WIDTH = 2;
 	int m_threadSleepTime = 5;
-	int m_seed;
+	int m_seed = 0;
 	int m_removeDeadEndsPercentage = 75;
 
 	volatile std::atomic<bool> m_terminated;

@@ -56,8 +56,10 @@ void DeadEndRemover::RemoveDeadEnd(int i, int j)
 
 	(*m_tiles)(i, j).SetType(TileType::Empty);
 
-	nextI = i + DIRECTION_CHANGES[tilePassageIndices[0]].first;
-	nextJ = j + DIRECTION_CHANGES[tilePassageIndices[0]].second;
+	auto [deltaI, deltaJ] = DIRECTION_CHANGES[tilePassageIndices[0]];
+
+	nextI = i + deltaI;
+	nextJ = j + deltaJ;
 
 	if (nextI < 0 || nextI >= m_rowCount ||
 		nextJ < 0 || nextJ >= m_columnCount)
@@ -129,8 +131,10 @@ void DeadEndRemover::RemoveDeadEndByStep(int i, int j)
 
 	(*m_tiles)(i, j).SetType(TileType::Empty);
 
-	nextI = i + DIRECTION_CHANGES[tilePassageIndices[0]].first;
-	nextJ = j + DIRECTION_CHANGES[tilePassageIndices[0]].second;
+	auto [deltaI, deltaJ] = DIRECTION_CHANGES[tilePassageIndices[0]];
+
+	nextI = i + deltaI;
+	nextJ = j + deltaJ;
 
 	if (nextI < 0 || nextI >= m_rowCount ||
 		nextJ < 0 || nextJ >= m_columnCount)

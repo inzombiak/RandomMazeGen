@@ -16,13 +16,13 @@ protected:
 	virtual void GenerateFull() = 0;
 	virtual void GenerateByStep() = 0;
 
-	int m_rowCount;
-	int m_columnCount;
-	const TileHolder* m_tiles;
-	int m_seed;
-	int m_sleepDuration;
+	int m_rowCount = 0;
+	int m_columnCount = 0;
+	const TileHolder* m_tiles = nullptr;
+	int m_seed = 0;
+	int m_sleepDuration = 0;
 
-	MazeDefs::GenerateType m_generateType;
+	MazeDefs::GenerateType m_generateType = MazeDefs::GenerateType::Full;
 	std::default_random_engine m_randomNumGen;
 };
 

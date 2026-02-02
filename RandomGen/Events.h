@@ -59,8 +59,8 @@ public:
 
     int X;              // The X-position of the cursor relative to the upper-left corner of the client area.
     int Y;              // The Y-position of the cursor relative to the upper-left corner of the client area.
-    int RelX;           // How far the mouse moved since the last event.
-    int RelY;           // How far the mouse moved since the last event.
+    int RelX = 0;           // How far the mouse moved since the last event.
+    int RelY = 0;           // How far the mouse moved since the last event.
 
 };
 

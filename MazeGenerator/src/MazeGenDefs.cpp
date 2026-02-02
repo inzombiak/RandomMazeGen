@@ -28,6 +28,6 @@ extern "C" MAZEGENLIB_API void ClearMazeDirtyFlag() {
 	GridManagerSingleton::Instance().ClearDirtyFlag();
 }
 
-extern "C" MAZEGENLIB_API void GetAllTileProperties(MazeDefs::TileProperties* buffer, unsigned int bufferSize) {
-	GridManagerSingleton::Instance().GetAllTileProperties(buffer, bufferSize);
+extern "C" MAZEGENLIB_API void GetAllTileProperties(std::vector<MazeDefs::TileProperties>& buffer) {
+	GridManagerSingleton::Instance().GetAllTileProperties(buffer);
 }

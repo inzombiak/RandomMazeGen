@@ -55,16 +55,17 @@ void MARecursiveBacktracker::CarvePassageFull(int startI, int startJ)
 {
 
 	std::array<int, 4> directionIndices = { 0, 1, 2, 3 };
-	shuffle(directionIndices.begin(), directionIndices.end(), m_randomNumGen);
+	std::ranges::shuffle(directionIndices, m_randomNumGen);
 	int nextI, nextJ, index, id;
 
 	for (int i = 0; i < 4; ++i)
 	{
 
 		index = directionIndices[i];
+		auto [deltaI, deltaJ] = DIRECTION_CHANGES[index];
 
-		nextI = startI + DIRECTION_CHANGES[index].first;
-		nextJ = startJ + DIRECTION_CHANGES[index].second;
+		nextI = startI + deltaI;
+		nextJ = startJ + deltaJ;
 
 		if (nextI >= 0 && nextI < m_rowCount &&
 			nextJ >= 0 && nextJ < m_columnCount &&
@@ -124,7 +125,7 @@ void MARecursiveBacktracker::GenerateByStep()
 void MARecursiveBacktracker::CarvePassageByStep(int startI, int startJ)
 {
 	std::array<int, 4> directionIndices = { 0, 1, 2, 3 };
-	shuffle(directionIndices.begin(), directionIndices.end(), m_randomNumGen);
+	std::ranges::shuffle(directionIndices, m_randomNumGen);
 	int nextI, nextJ, index, id;
 
 	for (int i = 0; i < 4; ++i)
@@ -137,9 +138,10 @@ void MARecursiveBacktracker::CarvePassageByStep(int startI, int startJ)
 
 		std::this_thread::sleep_for(std::chrono::milliseconds(m_sleepDuration));
 		index = directionIndices[i];
+		auto [deltaI, deltaJ] = DIRECTION_CHANGES[index];
 
-		nextI = startI + MazeDefs::DIRECTION_CHANGES[index].first;
-		nextJ = startJ + MazeDefs::DIRECTION_CHANGES[index].second;
+		nextI = startI + deltaI;
+		nextJ = startJ + deltaJ;
 
 		if (nextI >= 0 && nextI < m_rowCount &&
 			nextJ >= 0 && nextJ < m_columnCount &&

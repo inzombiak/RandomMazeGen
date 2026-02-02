@@ -68,7 +68,7 @@ ComPtr<IDXGISwapChain4> CreateSwapChain(HWND hWnd,
 
 	ThrowIfFailed(CreateDXGIFactory2(createFactoryFlags, IID_PPV_ARGS(&dxgiFactory4)));
 
-	DXGI_SWAP_CHAIN_DESC1 swapChainDesc = {};
+	DXGI_SWAP_CHAIN_DESC1 swapChainDesc;
 	swapChainDesc.Width = width;
 	swapChainDesc.Height = height;
 	swapChainDesc.Format = DXGI_FORMAT_R8G8B8A8_UNORM;
@@ -79,9 +79,8 @@ ComPtr<IDXGISwapChain4> CreateSwapChain(HWND hWnd,
 	swapChainDesc.Scaling = DXGI_SCALING_STRETCH;
 	swapChainDesc.SwapEffect = DXGI_SWAP_EFFECT_FLIP_DISCARD;
 	swapChainDesc.AlphaMode = DXGI_ALPHA_MODE_UNSPECIFIED;
-	// It is recommended to always allow tearing if tearing support is available.
 	swapChainDesc.Flags = CheckTearingSupport() ? DXGI_SWAP_CHAIN_FLAG_ALLOW_TEARING : 0;
-
+	
 	ComPtr<IDXGISwapChain1> swapChain1;
 	ThrowIfFailed(dxgiFactory4->CreateSwapChainForHwnd(
 		commandQueue.Get(),

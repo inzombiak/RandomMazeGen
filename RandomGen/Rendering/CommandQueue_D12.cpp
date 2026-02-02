@@ -5,7 +5,7 @@
 CommandQueue_D12::CommandQueue_D12(ComPtr<ID3D12Device2> device, D3D12_COMMAND_LIST_TYPE type, DWORD fenceTimeout) : m_d3d12Device(device), m_commandListType(type), 
 			m_fenceValue(0), m_fenceTimeout(fenceTimeout) {
 
-	D3D12_COMMAND_QUEUE_DESC desc = {};
+	D3D12_COMMAND_QUEUE_DESC desc;
 	desc.Type = type;
 	desc.Priority = D3D12_COMMAND_QUEUE_PRIORITY_NORMAL;
 	desc.Flags = D3D12_COMMAND_QUEUE_FLAG_NONE;

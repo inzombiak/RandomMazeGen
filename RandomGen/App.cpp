@@ -212,7 +212,7 @@ void App::OnUpdate(UpdateEventArgs& e)
         // Use batch API for efficiency (single DLL call instead of rows*columns calls)
         // Note: m_tileProperties is a 2D vector, so we need a temporary contiguous buffer
         std::vector<MazeDefs::TileProperties> tempBuffer(m_rows * m_columns);
-        GetAllTileProperties(tempBuffer.data(), m_rows * m_columns);
+        GetAllTileProperties(tempBuffer);
 
         // Copy from temp buffer to 2D structure
         for (int i = 0; i < m_rows; ++i) {

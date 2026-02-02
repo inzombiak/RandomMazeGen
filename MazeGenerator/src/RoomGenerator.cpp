@@ -144,4 +144,4 @@ MazeDefs::Vector2i RoomGenerator::GetRoomVerticalBounds()
 std::atomic<bool> RoomGenerator::m_done;
 std::condition_variable RoomGenerator::m_doneCV;
 std::mutex RoomGenerator::m_doneCVMutex;
-std::atomic_flag RoomGenerator::m_generate{ 0 };
+std::atomic_flag RoomGenerator::m_generate{};
