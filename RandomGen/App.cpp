@@ -10,61 +10,65 @@
 #endif
 
 
-static VertexInput BOX_VERTICES[24] = {
-    //Size Za
-    { glm::vec3(-1.0f, -1.0f, -1.0f), glm::vec3(0.0f, 0.0f, 0.0f), glm::vec3(0.0f, 0.0f, -1.0f), glm::vec3(0.0f, 0.0f, 0.0f) },
-    { glm::vec3(-1.0f,  1.0f, -1.0f), glm::vec3(0.0f, 1.0f, 0.0f), glm::vec3(0.0f, 0.0f, -1.0f), glm::vec3(0.0f, 1.0f, 0.0f) },
-    { glm::vec3(1.0f,  1.0f, -1.0f),  glm::vec3(1.0f, 1.0f, 0.0f), glm::vec3(0.0f, 0.0f, -1.0f), glm::vec3(1.0f, 1.0f, 0.0f) },
-    { glm::vec3(1.0f, -1.0f, -1.0f),  glm::vec3(1.0f, 0.0f, 0.0f), glm::vec3(0.0f, 0.0f, -1.0f), glm::vec3(1.0f, 0.0f, 0.0f) },
+static Mesh CreateBoxMesh() {
+    Mesh mesh;
+    mesh.m_name = "Box";
 
-    //Size Zb
-    { glm::vec3(-1.0f, -1.0f,  1.0f), glm::vec3(0.0f, 0.0f, 1.0f), glm::vec3(0.0f, 0.0f, 1.0f), glm::vec3(1.0f, 0.0f, 0.0f) },
-    { glm::vec3(-1.0f,  1.0f,  1.0f), glm::vec3(0.0f, 1.0f, 1.0f), glm::vec3(0.0f, 0.0f, 1.0f), glm::vec3(1.0f, 1.0f, 0.0f) },
-    { glm::vec3(1.0f,  1.0f,  1.0f),  glm::vec3(1.0f, 1.0f, 1.0f), glm::vec3(0.0f, 0.0f, 1.0f), glm::vec3(0.0f, 1.0f, 0.0f) },
-    { glm::vec3(1.0f, -1.0f,  1.0f),  glm::vec3(1.0f, 0.0f, 1.0f), glm::vec3(0.0f, 0.0f, 1.0f), glm::vec3(0.0f, 0.0f, 0.0f) },
+    mesh.m_vertices = {
+        //Size Za
+        { glm::vec3(-1.0f, -1.0f, -1.0f), glm::vec3(0.0f, 0.0f, 0.0f), glm::vec3(0.0f, 0.0f, -1.0f), glm::vec3(0.0f, 0.0f, 0.0f) },
+        { glm::vec3(-1.0f,  1.0f, -1.0f), glm::vec3(0.0f, 1.0f, 0.0f), glm::vec3(0.0f, 0.0f, -1.0f), glm::vec3(0.0f, 1.0f, 0.0f) },
+        { glm::vec3(1.0f,  1.0f, -1.0f),  glm::vec3(1.0f, 1.0f, 0.0f), glm::vec3(0.0f, 0.0f, -1.0f), glm::vec3(1.0f, 1.0f, 0.0f) },
+        { glm::vec3(1.0f, -1.0f, -1.0f),  glm::vec3(1.0f, 0.0f, 0.0f), glm::vec3(0.0f, 0.0f, -1.0f), glm::vec3(1.0f, 0.0f, 0.0f) },
 
-    //Side Xa
-    { glm::vec3(-1.0f, -1.0f, -1.0f), glm::vec3(0.0f, 0.0f, 0.0f), glm::vec3(-1.0f, 0.0f, 0.0f), glm::vec3(0.0f, 0.0f, 0.0f) },
-    { glm::vec3(-1.0f,  1.0f, -1.0f), glm::vec3(0.0f, 1.0f, 0.0f), glm::vec3(-1.0f, 0.0f, 0.0f), glm::vec3(0.0f, 1.0f, 0.0f) },
-    { glm::vec3(-1.0f,  1.0f, 1.0f),  glm::vec3(1.0f, 1.0f, 0.0f), glm::vec3(-1.0f, 0.0f, 0.0f), glm::vec3(1.0f, 1.0f, 0.0f) },
-    { glm::vec3(-1.0f, -1.0f, 1.0f),  glm::vec3(1.0f, 0.0f, 0.0f), glm::vec3(-1.0f, 0.0f, 0.0f), glm::vec3(1.0f, 0.0f, 0.0f) },
+        //Size Zb
+        { glm::vec3(-1.0f, -1.0f,  1.0f), glm::vec3(0.0f, 0.0f, 1.0f), glm::vec3(0.0f, 0.0f, 1.0f), glm::vec3(1.0f, 0.0f, 0.0f) },
+        { glm::vec3(-1.0f,  1.0f,  1.0f), glm::vec3(0.0f, 1.0f, 1.0f), glm::vec3(0.0f, 0.0f, 1.0f), glm::vec3(1.0f, 1.0f, 0.0f) },
+        { glm::vec3(1.0f,  1.0f,  1.0f),  glm::vec3(1.0f, 1.0f, 1.0f), glm::vec3(0.0f, 0.0f, 1.0f), glm::vec3(0.0f, 1.0f, 0.0f) },
+        { glm::vec3(1.0f, -1.0f,  1.0f),  glm::vec3(1.0f, 0.0f, 1.0f), glm::vec3(0.0f, 0.0f, 1.0f), glm::vec3(0.0f, 0.0f, 0.0f) },
 
-    //Side Xb
-    { glm::vec3(1.0f, -1.0f, -1.0f), glm::vec3(0.0f, 0.0f, 0.0f), glm::vec3(1.0f, 0.0f, 0.0f), glm::vec3(0.0f, 0.0f, 0.0f) },
-    { glm::vec3(1.0f,  1.0f, -1.0f), glm::vec3(0.0f, 1.0f, 0.0f), glm::vec3(1.0f, 0.0f, 0.0f), glm::vec3(0.0f, 1.0f, 0.0f) },
-    { glm::vec3(1.0f,  1.0f, 1.0f),  glm::vec3(1.0f, 1.0f, 0.0f), glm::vec3(1.0f, 0.0f, 0.0f), glm::vec3(1.0f, 1.0f, 0.0f) },
-    { glm::vec3(1.0f, -1.0f, 1.0f),  glm::vec3(1.0f, 0.0f, 0.0f), glm::vec3(1.0f, 0.0f, 0.0f), glm::vec3(1.0f, 0.0f, 0.0f) },
+        //Side Xa
+        { glm::vec3(-1.0f, -1.0f, -1.0f), glm::vec3(0.0f, 0.0f, 0.0f), glm::vec3(-1.0f, 0.0f, 0.0f), glm::vec3(0.0f, 0.0f, 0.0f) },
+        { glm::vec3(-1.0f,  1.0f, -1.0f), glm::vec3(0.0f, 1.0f, 0.0f), glm::vec3(-1.0f, 0.0f, 0.0f), glm::vec3(0.0f, 1.0f, 0.0f) },
+        { glm::vec3(-1.0f,  1.0f, 1.0f),  glm::vec3(1.0f, 1.0f, 0.0f), glm::vec3(-1.0f, 0.0f, 0.0f), glm::vec3(1.0f, 1.0f, 0.0f) },
+        { glm::vec3(-1.0f, -1.0f, 1.0f),  glm::vec3(1.0f, 0.0f, 0.0f), glm::vec3(-1.0f, 0.0f, 0.0f), glm::vec3(1.0f, 0.0f, 0.0f) },
 
-    //Top
-    { glm::vec3(-1.0f,  1.0f, -1.0f), glm::vec3(0.6f, 1.0f, 0.0f), glm::vec3(0.0f, 1.0f, 0.0f), glm::vec3(0.0f, 0.0f, 1.0f) },
-    { glm::vec3(1.0f,  1.0f, -1.0f),  glm::vec3(0.6f, 1.0f, 0.0f), glm::vec3(0.0f, 1.0f, 0.0f), glm::vec3(1.0f, 0.0f, 1.0f) },
-    { glm::vec3(-1.0f,  1.0f,  1.0f), glm::vec3(0.6f, 1.0f, 0.0f), glm::vec3(0.0f, 1.0f, 0.0f), glm::vec3(0.0f, 1.0f, 1.0f) },
-    { glm::vec3(1.0f,  1.0f,  1.0f),  glm::vec3(0.6f, 1.0f, 0.0f), glm::vec3(0.0f, 1.0f, 0.0f), glm::vec3(1.0f, 1.0f, 1.0f) },
+        //Side Xb
+        { glm::vec3(1.0f, -1.0f, -1.0f), glm::vec3(0.0f, 0.0f, 0.0f), glm::vec3(1.0f, 0.0f, 0.0f), glm::vec3(0.0f, 0.0f, 0.0f) },
+        { glm::vec3(1.0f,  1.0f, -1.0f), glm::vec3(0.0f, 1.0f, 0.0f), glm::vec3(1.0f, 0.0f, 0.0f), glm::vec3(0.0f, 1.0f, 0.0f) },
+        { glm::vec3(1.0f,  1.0f, 1.0f),  glm::vec3(1.0f, 1.0f, 0.0f), glm::vec3(1.0f, 0.0f, 0.0f), glm::vec3(1.0f, 1.0f, 0.0f) },
+        { glm::vec3(1.0f, -1.0f, 1.0f),  glm::vec3(1.0f, 0.0f, 0.0f), glm::vec3(1.0f, 0.0f, 0.0f), glm::vec3(1.0f, 0.0f, 0.0f) },
 
-    //Bot
-    { glm::vec3(-1.0f, -1.0f, -1.0f), glm::vec3(0.6f, 1.0f, 0.0f), glm::vec3(0.0f, -1.0f, 0.0f), glm::vec3(0.0f, 0.0f, 1.0f) },
-    { glm::vec3(1.0f,  -1.0f, -1.0f), glm::vec3(0.6f, 1.0f, 0.0f), glm::vec3(0.0f, -1.0f, 0.0f), glm::vec3(1.0f, 0.0f, 1.0f) },
-    { glm::vec3(-1.0f, -1.0f,  1.0f), glm::vec3(0.6f, 1.0f, 0.0f), glm::vec3(0.0f, -1.0f, 0.0f), glm::vec3(0.0f, 1.0f, 1.0f) },
-    { glm::vec3(1.0f,  -1.0f,  1.0f), glm::vec3(0.6f, 1.0f, 0.0f), glm::vec3(0.0f, -1.0f, 0.0f), glm::vec3(1.0f, 1.0f, 1.0f) },
-};
+        //Top
+        { glm::vec3(-1.0f,  1.0f, -1.0f), glm::vec3(0.6f, 1.0f, 0.0f), glm::vec3(0.0f, 1.0f, 0.0f), glm::vec3(0.0f, 0.0f, 1.0f) },
+        { glm::vec3(1.0f,  1.0f, -1.0f),  glm::vec3(0.6f, 1.0f, 0.0f), glm::vec3(0.0f, 1.0f, 0.0f), glm::vec3(1.0f, 0.0f, 1.0f) },
+        { glm::vec3(-1.0f,  1.0f,  1.0f), glm::vec3(0.6f, 1.0f, 0.0f), glm::vec3(0.0f, 1.0f, 0.0f), glm::vec3(0.0f, 1.0f, 1.0f) },
+        { glm::vec3(1.0f,  1.0f,  1.0f),  glm::vec3(0.6f, 1.0f, 0.0f), glm::vec3(0.0f, 1.0f, 0.0f), glm::vec3(1.0f, 1.0f, 1.0f) },
 
-static WORD BOX_INDICES[36] =
-{   
-    //Za
-    0, 1, 2, 0, 2, 3,
-    //Zb
-    4, 6, 5, 4, 7, 6,
+        //Bot
+        { glm::vec3(-1.0f, -1.0f, -1.0f), glm::vec3(0.6f, 1.0f, 0.0f), glm::vec3(0.0f, -1.0f, 0.0f), glm::vec3(0.0f, 0.0f, 1.0f) },
+        { glm::vec3(1.0f,  -1.0f, -1.0f), glm::vec3(0.6f, 1.0f, 0.0f), glm::vec3(0.0f, -1.0f, 0.0f), glm::vec3(1.0f, 0.0f, 1.0f) },
+        { glm::vec3(-1.0f, -1.0f,  1.0f), glm::vec3(0.6f, 1.0f, 0.0f), glm::vec3(0.0f, -1.0f, 0.0f), glm::vec3(0.0f, 1.0f, 1.0f) },
+        { glm::vec3(1.0f,  -1.0f,  1.0f), glm::vec3(0.6f, 1.0f, 0.0f), glm::vec3(0.0f, -1.0f, 0.0f), glm::vec3(1.0f, 1.0f, 1.0f) },
+    };
 
-    //Xa
-    8, 10, 9, 8, 11, 10,
-    //Xb
-    12, 13, 14, 12, 14, 15,
-    
-    //Top
-    16, 18, 19, 16, 19, 17,
-    //Bot
-    20, 23, 22, 20, 21, 22
-};
+    mesh.m_indices = {
+        //Za
+        0, 1, 2, 0, 2, 3,
+        //Zb
+        4, 6, 5, 4, 7, 6,
+        //Xa
+        8, 10, 9, 8, 11, 10,
+        //Xb
+        12, 13, 14, 12, 14, 15,
+        //Top
+        16, 18, 19, 16, 19, 17,
+        //Bot
+        20, 23, 22, 20, 21, 22
+    };
+
+    return mesh;
+}
 
 
 App::App(const std::wstring& name, int width, int height, bool vSync, HINSTANCE hInstance)
@@ -119,10 +123,12 @@ bool App::LoadContent() {
     if (!RENDERER || !RENDERER->IsInitialized())
         return false;
 
-    RENDERER->PopulateVertexBuffer(BOX_VERTICES, _countof(BOX_VERTICES));
-    RENDERER->PopulateIndexBuffer(BOX_INDICES, _countof(BOX_INDICES));
+    m_boxMesh = CreateBoxMesh();
+    RENDERER->PopulateVertexBuffer(m_boxMesh.m_vertices.data(), m_boxMesh.m_vertices.size());
+    RENDERER->PopulateIndexBuffer(m_boxMesh.m_indices.data(), m_boxMesh.m_indices.size());
     GenerateMap(m_width, m_height, m_rows, m_columns);
     RENDERER->LoadTextures();
+    m_boxMesh.m_material = RENDERER->GetMaterial("BasicLit");
     RENDERER->ResizeDepthBuffer(m_width, m_height);
 
     m_contentLoaded = true;

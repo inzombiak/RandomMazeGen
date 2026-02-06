@@ -143,8 +143,9 @@ class Renderer_D12 {
 		bool IsInitialized() const;
 
 		void PopulateVertexBuffer(const VertexInput *data, size_t count);
-		void PopulateIndexBuffer(const WORD *data, size_t count);
-		Material* CreateMaterial(const std::string name, const std::wstring& vertexShaderName, const std::wstring& pixelShaderName, const std::vector<std::wstring>& textures = {});
+		void PopulateIndexBuffer(const unsigned int *data, size_t count);
+		std::shared_ptr<Material> CreateMaterial(const std::string name, const std::wstring& vertexShaderName, const std::wstring& pixelShaderName, const std::vector<std::wstring>& textures = {});
+		std::shared_ptr<Material> GetMaterial(const std::string& name) const;
 		void CreateSRVForBoxes(const std::vector<std::vector<MazeDefs::TileProperties>>& tiles, int rows, int columns, double t);
 		void LoadTextures();
 		// Resize the depth buffer to match the size of the client area.
@@ -214,7 +215,7 @@ class Renderer_D12 {
 		// Pipeline state object.
 		std::shared_ptr<Texture_D12> m_shadowTexture;
 
-		std::map<size_t, Material> m_materialMap;
+		std::map<size_t, std::shared_ptr<Material>> m_materialMap;
 		std::map<size_t, PipelineStateObject> m_psoMap;
 		std::map<size_t, std::shared_ptr<Texture_D12>> m_textureMap;
 

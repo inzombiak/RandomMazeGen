@@ -2,7 +2,7 @@
 #define MESH_H
 
 #include "Rendering/RenderDefs.h"
-#include "Rendering/Texture_D12.h"
+#include "Material.h"
 
 #include "glm/glm.hpp"
 #include "glm/gtc/quaternion.hpp"
@@ -10,19 +10,6 @@
 #include <string>
 #include <memory>
 #include <vector>
-
-struct Material
-{
-	std::string m_name;
-	std::string m_filePath;
-
-	std::string m_vertexShaderPath;
-	std::string m_fragmentShaderPath;
-
-	bool m_isDirty = false;
-
-	std::shared_ptr<Texture_D12> m_textures;
-};
 
 struct Mesh
 {

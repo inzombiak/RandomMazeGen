@@ -342,33 +342,33 @@ void Renderer_D12::Render() {
 
 	//@ZGTODO Move to CommandList_D12
 	{	
-		auto basicMat = m_materialMap[m_basicLitMatId];
+		auto& basicMat = m_materialMap[m_basicLitMatId];
 		auto d3dCommList = commandList->GetGraphicsCommandList();
-		d3dCommList->SetPipelineState(basicMat.pso->pipelineState.Get());
-		d3dCommList->SetGraphicsRootSignature(basicMat.pso->rootSignature->GetD3D12RootSignature().Get());
+		d3dCommList->SetPipelineState(basicMat->pso->pipelineState.Get());
+		d3dCommList->SetGraphicsRootSignature(basicMat->pso->rootSignature->GetD3D12RootSignature().Get());
 		d3dCommList->IASetPrimitiveTopology(D3D_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
 		d3dCommList->IASetVertexBuffers(0, 1, &m_vertexBufferView);
 		d3dCommList->IASetIndexBuffer(&m_indexBufferView);
 
 		d3dCommList->RSSetViewports(1, &m_viewport);
 		d3dCommList->RSSetScissorRects(1, &m_scissorRect);
-		
+
 		d3dCommList->OMSetRenderTargets(1, &rtv, FALSE, &dsv);
 
 		// Update the MVP matrixb
 		BindingInfo bi;
-		bool hasBinding = GetMaterialBindingInfoForResource(basicMat, SCENE_DATA_BUFFER_NAME, bi);
+		bool hasBinding = GetMaterialBindingInfoForResource(*basicMat, SCENE_DATA_BUFFER_NAME, bi);
 		d3dCommList->SetGraphicsRootConstantBufferView(bi.rootIndex, m_sceneDataBuffer->m_bufferView.BufferLocation);
 
-		m_shaderResourceDynHeap->ParseRootSignature(*basicMat.pso->rootSignature.get());
-		for (int i = 0; i < basicMat.textureAttachments.size(); ++i) {
-			GetMaterialBindingInfoForResource(basicMat, basicMat.textureAttachments[i].shaderName, bi);
-			m_shaderResourceDynHeap->StageDescriptors(bi.rootIndex, bi.offset, 1, basicMat.textureAttachments[i].texture->GetCPUHandle());
+		m_shaderResourceDynHeap->ParseRootSignature(*basicMat->pso->rootSignature.get());
+		for (int i = 0; i < basicMat->textureAttachments.size(); ++i) {
+			GetMaterialBindingInfoForResource(*basicMat, basicMat->textureAttachments[i].shaderName, bi);
+			m_shaderResourceDynHeap->StageDescriptors(bi.rootIndex, bi.offset, 1, basicMat->textureAttachments[i].texture->GetCPUHandle());
 		}
-		GetMaterialBindingInfoForResource(basicMat, SHADOW_TEX_NAME, bi);
+		GetMaterialBindingInfoForResource(*basicMat, SHADOW_TEX_NAME, bi);
 		m_shaderResourceDynHeap->StageDescriptors(bi.rootIndex, bi.offset, 1, m_shadowTexture->GetCPUHandle());
 		m_shaderResourceDynHeap->CommitStagedDescriptorsForDraw(commandList);
-		GetMaterialBindingInfoForResource(basicMat, PER_ENTITY_DATA_BUFFER_NAME, bi);
+		GetMaterialBindingInfoForResource(*basicMat, PER_ENTITY_DATA_BUFFER_NAME, bi);
 		d3dCommList->SetGraphicsRootShaderResourceView(bi.rootIndex, m_perEntityDataBuffer->m_bufferView.BufferLocation);
 		d3dCommList->DrawIndexedInstanced((UINT)m_indexCount, (UINT)m_numInstances, 0, 0, 0);
 	}
@@ -424,9 +424,9 @@ void Renderer_D12::Shadowmap() {
 	{
 
 		auto d3dCommList = commandList->GetGraphicsCommandList();
-		auto shadowMat = m_materialMap[m_shadowmapMatId];
-		d3dCommList->SetPipelineState(shadowMat.pso->pipelineState.Get());
-		d3dCommList->SetGraphicsRootSignature(shadowMat.pso->rootSignature->GetD3D12RootSignature().Get());
+		auto& shadowMat = m_materialMap[m_shadowmapMatId];
+		d3dCommList->SetPipelineState(shadowMat->pso->pipelineState.Get());
+		d3dCommList->SetGraphicsRootSignature(shadowMat->pso->rootSignature->GetD3D12RootSignature().Get());
 		d3dCommList->IASetPrimitiveTopology(D3D_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
 		d3dCommList->IASetVertexBuffers(0, 1, &m_vertexBufferView);
 		d3dCommList->IASetIndexBuffer(&m_indexBufferView);
@@ -438,9 +438,9 @@ void Renderer_D12::Shadowmap() {
 
 		// Update the MVP matrix
 		BindingInfo bi;
-		bool hasBinding = GetMaterialBindingInfoForResource(shadowMat, SCENE_DATA_BUFFER_NAME, bi);
+		bool hasBinding = GetMaterialBindingInfoForResource(*shadowMat, SCENE_DATA_BUFFER_NAME, bi);
 		d3dCommList->SetGraphicsRootConstantBufferView(bi.rootIndex, m_sceneDataBuffer->m_bufferView.BufferLocation);
-		GetMaterialBindingInfoForResource(shadowMat, PER_ENTITY_DATA_BUFFER_NAME, bi);
+		GetMaterialBindingInfoForResource(*shadowMat, PER_ENTITY_DATA_BUFFER_NAME, bi);
 		d3dCommList->SetGraphicsRootShaderResourceView(bi.rootIndex, m_perEntityDataBuffer->m_bufferView.BufferLocation);
 		d3dCommList->DrawIndexedInstanced((UINT)m_indexCount, (UINT)m_numInstances, 0, 0, 0);
 
@@ -549,17 +549,17 @@ void Renderer_D12::PopulateVertexBuffer(const VertexInput* data, size_t count) {
 	commandList->TrackResource(intermediateVertexBuffer);
 }
 
-void Renderer_D12::PopulateIndexBuffer(const WORD *data, size_t count) {
+void Renderer_D12::PopulateIndexBuffer(const unsigned int *data, size_t count) {
 	auto commandList = m_commQueue->GetCommandList();
 	// Upload index buffer data.
 	ComPtr<ID3D12Resource> intermediateIndexBuffer;
 	commandList->UpdateBufferResource(m_device, &m_indexBuffer, &intermediateIndexBuffer,
-		count, sizeof(WORD), data);
+		count, sizeof(unsigned int), data);
 
 	// Create index buffer view.
 	m_indexBufferView.BufferLocation = m_indexBuffer->GetGPUVirtualAddress();
-	m_indexBufferView.Format = DXGI_FORMAT_R16_UINT;
-	m_indexBufferView.SizeInBytes = (UINT)(sizeof(WORD) * count);
+	m_indexBufferView.Format = DXGI_FORMAT_R32_UINT;
+	m_indexBufferView.SizeInBytes = (UINT)(sizeof(unsigned int) * count);
 
 	m_indexCount = count;
 	commandList->TrackResource(intermediateIndexBuffer);
@@ -701,25 +701,34 @@ SRVAllocation Renderer_D12::GetNextSRVAlloc() {
 	return out;
 }
 
-Material* Renderer_D12::CreateMaterial(const std::string name, const std::wstring& vertexShaderName, const std::wstring& pixelShaderName, const std::vector<std::wstring>& textures) {
+std::shared_ptr<Material> Renderer_D12::CreateMaterial(const std::string name, const std::wstring& vertexShaderName, const std::wstring& pixelShaderName, const std::vector<std::wstring>& textures) {
 	std::hash<std::string> hasher;
 	size_t matId = hasher(name);
 
 	if (m_materialMap.contains(matId))
-		return &m_materialMap[matId];
+		return m_materialMap[matId];
 
-	Material mat;
-	mat.name = name;
+	auto mat = std::make_shared<Material>();
+	mat->name = name;
 
-	mat.vertexShader = vertexShaderName;
-	mat.pixelShader = pixelShaderName;
+	mat->vertexShader = vertexShaderName;
+	mat->pixelShader = pixelShaderName;
 
-	mat.pso = BuildPipelineState(vertexShaderName, pixelShaderName);
-	mat.textureAttachments.resize(textures.size());
+	mat->pso = BuildPipelineState(vertexShaderName, pixelShaderName);
+	mat->textureAttachments.resize(textures.size());
 
 	auto cmdList = m_commQueue->GetCommandList();
 	m_materialMap[matId] = mat;
-	return &m_materialMap[matId];
+	return mat;
+}
+
+std::shared_ptr<Material> Renderer_D12::GetMaterial(const std::string& name) const {
+	std::hash<std::string> hasher;
+	size_t matId = hasher(name);
+	auto it = m_materialMap.find(matId);
+	if (it != m_materialMap.end())
+		return it->second;
+	return nullptr;
 }
 
 PipelineStateObject* Renderer_D12::BuildPipelineState(const std::wstring& vertexShaderName, const std::wstring& pixelShaderName) {

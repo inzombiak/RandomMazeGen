@@ -12,6 +12,8 @@
 #include <glm/gtc/quaternion.hpp>
 #include <glm/gtc/type_ptr.hpp>
 
+#include "Renderable.h"
+
 #include <memory>
 #include <string>
 #include <vector>
@@ -134,6 +136,8 @@ private:
     int m_height;
     bool m_vSync;
     bool m_contentLoaded;
+
+    Mesh m_boxMesh;
 
     std::vector<std::vector<MazeDefs::TileProperties>> m_tileProperties;
 };
