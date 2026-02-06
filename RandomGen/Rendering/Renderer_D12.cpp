@@ -599,62 +599,25 @@ void Renderer_D12::LoadTextures() {
 	m_shadowmapMatId = hasher("Shadowmap");
 }
 
-void Renderer_D12::CreateSRVForBoxes(const std::vector<std::vector<MazeDefs::TileProperties>>& tiles, int rows, int columns, double t) {
+void Renderer_D12::UpdateInstanceData(const std::vector<Renderable>& renderables) {
 
-	m_numInstances = 0;
-	std::vector<PerEntityData>  peds;
+	std::vector<PerEntityData> peds;
+	peds.reserve(renderables.size());
 
-	int x = 0;
-	int y = 0;
-	int z = 0;
-	for (int i = 0; i < rows; ++i) {
-		x = 0;
-		for (int j = 0; j < columns; ++j) {
-			y = 0;
-			int height = 1;
+	float maxZ = 0.0f;
+	for (const auto& r : renderables) {
+		glm::mat4 M = glm::translate(glm::mat4(1.0f), r.m_position)
+			* glm::mat4_cast(r.m_orientation)
+			* glm::scale(glm::mat4(1.0f), r.m_scale);
+		peds.push_back({ M, r.m_entityData });
 
-			if (tiles [i][j].type == MazeDefs::TileType::Empty) {
-				x += 2;
-				continue;
-			}
-
-			for (int h = 0; h < height; ++h) {
-				glm::mat4 modelMat = glm::translate(glm::mat4(1.0f), glm::vec3((float)x, (float)y, (float)z));
-				
-				peds.push_back({ modelMat, 0 });
-				y += 2;
-			}
-			for (int p = 0; p < 4; ++p) {
-				if ((tiles[i][j].directions & MazeDefs::DIRECTIONS[p]) != MazeDefs::DIRECTIONS[p]) {
-					float wallX = (float)x;
-					float wallZ = (float)z;
-					float scaleX = 1;
-					float scaleZ = 1;
-
-					auto delta = MazeDefs::DIRECTION_CHANGES[p];
-					wallX += delta.second;
-					wallZ += delta.first;
-
-					scaleX -= abs(delta.second) * 0.9f;
-					scaleZ -= abs(delta.first) * 0.9f;
-
-					glm::mat4 modelMat = glm::translate(glm::mat4(1.0f), glm::vec3(wallX, (float)y, wallZ));
-					modelMat = modelMat * glm::scale(glm::mat4(1.0f), glm::vec3(scaleX, 1, scaleZ));
-					peds.push_back({ modelMat, 1 });
-				}
-			}
-
-			x += 2;
-		}
-		z += 2;
+		if (r.m_position.z > maxZ)
+			maxZ = r.m_position.z;
 	}
-	m_worldWidth = z;
-	auto descStep = GetDescriptorHandleIncrementSize(D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV);
-	auto commandList = m_commQueue->GetCommandList();
+	m_worldWidth = (int)(maxZ + 2);
+
 	m_numInstances = peds.size();
-	// Create a buffer and upload the MVP matrices to the GPU
 	m_perEntityDataBuffer = CreateSRVBuffer("PerEntityBuffer", sizeof(PerEntityData), m_numInstances, peds.data());
-	
 
 	auto fenceValue = m_commQueue->ExecuteActiveCommandList();
 	m_commQueue->WaitForFenceValue(fenceValue);

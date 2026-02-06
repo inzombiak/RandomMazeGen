@@ -123,12 +123,12 @@ bool App::LoadContent() {
     if (!RENDERER || !RENDERER->IsInitialized())
         return false;
 
-    m_boxMesh = CreateBoxMesh();
-    RENDERER->PopulateVertexBuffer(m_boxMesh.m_vertices.data(), m_boxMesh.m_vertices.size());
-    RENDERER->PopulateIndexBuffer(m_boxMesh.m_indices.data(), m_boxMesh.m_indices.size());
+    m_boxMesh = std::make_shared<Mesh>(CreateBoxMesh());
+    RENDERER->PopulateVertexBuffer(m_boxMesh->m_vertices.data(), m_boxMesh->m_vertices.size());
+    RENDERER->PopulateIndexBuffer(m_boxMesh->m_indices.data(), m_boxMesh->m_indices.size());
     GenerateMap(m_width, m_height, m_rows, m_columns);
     RENDERER->LoadTextures();
-    m_boxMesh.m_material = RENDERER->GetMaterial("BasicLit");
+    m_boxMesh->m_material = RENDERER->GetMaterial("BasicLit");
     RENDERER->ResizeDepthBuffer(m_width, m_height);
 
     m_contentLoaded = true;
@@ -159,6 +159,54 @@ glm::vec4 GetPositionFromAngle(float angle, float radius = 1.0f) {
 
     // Return the new position as a vec4 (x = 0, y, z, w = 1)
     return glm::vec4(0.0f, y, z, 1.0f);
+}
+
+void App::BuildRenderablesFromTiles() {
+    m_renderables.clear();
+
+    int x = 0;
+    int z = 0;
+    for (int i = 0; i < m_rows; ++i) {
+        x = 0;
+        for (int j = 0; j < m_columns; ++j) {
+            if (m_tileProperties[i][j].type == MazeDefs::TileType::Empty) {
+                x += 2;
+                continue;
+            }
+
+            // Floor
+            Renderable floor;
+            floor.m_meshs = m_boxMesh;
+            floor.m_position = glm::vec3((float)x, 0.0f, (float)z);
+            floor.m_orientation = glm::quat(1.0f, 0.0f, 0.0f, 0.0f);
+            floor.m_scale = glm::vec3(1.0f, 1.0f, 1.0f);
+            floor.m_entityData = 0;
+            m_renderables.push_back(std::move(floor));
+
+            int y = 2;
+            // Walls for blocked directions
+            for (int p = 0; p < 4; ++p) {
+                if ((m_tileProperties[i][j].directions & MazeDefs::DIRECTIONS[p]) != MazeDefs::DIRECTIONS[p]) {
+                    auto delta = MazeDefs::DIRECTION_CHANGES[p];
+                    float wallX = (float)x + delta.second;
+                    float wallZ = (float)z + delta.first;
+                    float scaleX = 1.0f - abs(delta.second) * 0.9f;
+                    float scaleZ = 1.0f - abs(delta.first) * 0.9f;
+
+                    Renderable wall;
+                    wall.m_meshs = m_boxMesh;
+                    wall.m_position = glm::vec3(wallX, (float)y, wallZ);
+                    wall.m_orientation = glm::quat(1.0f, 0.0f, 0.0f, 0.0f);
+                    wall.m_scale = glm::vec3(scaleX, 1.0f, scaleZ);
+                    wall.m_entityData = 1;
+                    m_renderables.push_back(std::move(wall));
+                }
+            }
+
+            x += 2;
+        }
+        z += 2;
+    }
 }
 
 void App::OnUpdate(UpdateEventArgs& e)
@@ -227,8 +275,9 @@ void App::OnUpdate(UpdateEventArgs& e)
             }
         }
 
-        // Upload to GPU
-        RENDERER->CreateSRVForBoxes(m_tileProperties, m_rows, m_columns, 0);
+        // Build renderables from tile data and upload to GPU
+        BuildRenderablesFromTiles();
+        RENDERER->UpdateInstanceData(m_renderables);
 
         // Clear dirty flag after sync for both modes
         ClearMazeDirtyFlag();

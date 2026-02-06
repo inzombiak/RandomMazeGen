@@ -34,6 +34,8 @@ struct Renderable
 
 	bool m_isDirty = false;
 
+	unsigned int m_entityData = 0;
+
 	glm::vec3 m_position;
 	glm::quat m_orientation;
 	glm::vec3 m_scale;

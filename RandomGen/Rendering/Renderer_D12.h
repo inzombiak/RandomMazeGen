@@ -28,7 +28,7 @@ using namespace Microsoft::WRL;
 #include "RootSignatureBuilder.h"
 
 #include "Texture_D12.h"
-#include "../Material.h"
+#include "../Renderable.h"
 
 struct PerEntityData
 {
@@ -146,7 +146,7 @@ class Renderer_D12 {
 		void PopulateIndexBuffer(const unsigned int *data, size_t count);
 		std::shared_ptr<Material> CreateMaterial(const std::string name, const std::wstring& vertexShaderName, const std::wstring& pixelShaderName, const std::vector<std::wstring>& textures = {});
 		std::shared_ptr<Material> GetMaterial(const std::string& name) const;
-		void CreateSRVForBoxes(const std::vector<std::vector<MazeDefs::TileProperties>>& tiles, int rows, int columns, double t);
+		void UpdateInstanceData(const std::vector<Renderable>& renderables);
 		void LoadTextures();
 		// Resize the depth buffer to match the size of the client area.
 		void ResizeDepthBuffer(int width, int height);

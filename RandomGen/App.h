@@ -137,7 +137,10 @@ private:
     bool m_vSync;
     bool m_contentLoaded;
 
-    Mesh m_boxMesh;
+    std::shared_ptr<Mesh> m_boxMesh;
+    std::vector<Renderable> m_renderables;
+
+    void BuildRenderablesFromTiles();
 
     std::vector<std::vector<MazeDefs::TileProperties>> m_tileProperties;
 };
