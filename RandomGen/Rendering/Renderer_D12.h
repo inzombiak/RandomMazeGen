@@ -68,6 +68,12 @@ struct Buffer {
 	CD3DX12_GPU_DESCRIPTOR_HANDLE m_GPUHandle;
 };
 
+struct MaterialBatch {
+	std::shared_ptr<Material> material;
+	uint32_t startInstanceOffset;
+	uint32_t instanceCount;
+};
+
 //@ZGTODO merge this with the decriptor alocator
 class Tile;
 struct ExampleDescriptorHeapAllocator
@@ -211,6 +217,7 @@ class Renderer_D12 {
 
 		std::shared_ptr<Buffer> m_perEntityDataBuffer;
 		std::shared_ptr<Buffer> m_sceneDataBuffer;
+		std::vector<MaterialBatch> m_materialBatches;
 
 		// Pipeline state object.
 		std::shared_ptr<Texture_D12> m_shadowTexture;

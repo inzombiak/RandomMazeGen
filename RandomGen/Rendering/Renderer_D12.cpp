@@ -334,18 +334,15 @@ void Renderer_D12::Render() {
 		commandList->TransitionResource(backBuffer,
 			D3D12_RESOURCE_STATE_PRESENT, D3D12_RESOURCE_STATE_RENDER_TARGET);
 
-		FLOAT clearColor[] = { 0.4f, 0.6f, 0.9f, 1.0f };
+		FLOAT clearColor[] = { 0.5f, 0.0f, 0.5f, 1.0f };
 
 		commandList->ClearRTV(rtv, clearColor);
 		commandList->ClearDepth(dsv);
 	}
 
 	//@ZGTODO Move to CommandList_D12
-	{	
-		auto& basicMat = m_materialMap[m_basicLitMatId];
+	{
 		auto d3dCommList = commandList->GetGraphicsCommandList();
-		d3dCommList->SetPipelineState(basicMat->pso->pipelineState.Get());
-		d3dCommList->SetGraphicsRootSignature(basicMat->pso->rootSignature->GetD3D12RootSignature().Get());
 		d3dCommList->IASetPrimitiveTopology(D3D_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
 		d3dCommList->IASetVertexBuffers(0, 1, &m_vertexBufferView);
 		d3dCommList->IASetIndexBuffer(&m_indexBufferView);
@@ -355,22 +352,35 @@ void Renderer_D12::Render() {
 
 		d3dCommList->OMSetRenderTargets(1, &rtv, FALSE, &dsv);
 
-		// Update the MVP matrixb
-		BindingInfo bi;
-		bool hasBinding = GetMaterialBindingInfoForResource(*basicMat, SCENE_DATA_BUFFER_NAME, bi);
-		d3dCommList->SetGraphicsRootConstantBufferView(bi.rootIndex, m_sceneDataBuffer->m_bufferView.BufferLocation);
+		for (const auto& batch : m_materialBatches) {
+			if (!batch.material || !batch.material->pso)
+				continue;
 
-		m_shaderResourceDynHeap->ParseRootSignature(*basicMat->pso->rootSignature.get());
-		for (int i = 0; i < basicMat->textureAttachments.size(); ++i) {
-			GetMaterialBindingInfoForResource(*basicMat, basicMat->textureAttachments[i].shaderName, bi);
-			m_shaderResourceDynHeap->StageDescriptors(bi.rootIndex, bi.offset, 1, basicMat->textureAttachments[i].texture->GetCPUHandle());
+			d3dCommList->SetPipelineState(batch.material->pso->pipelineState.Get());
+			d3dCommList->SetGraphicsRootSignature(batch.material->pso->rootSignature->GetD3D12RootSignature().Get());
+
+			// CC RENAME THIS TO BI
+			BindingInfo bi;
+			// Bind global SceneData CBV
+			if (GetMaterialBindingInfoForResource(*batch.material, SCENE_DATA_BUFFER_NAME, bi))
+				d3dCommList->SetGraphicsRootConstantBufferView(bi.rootIndex, m_sceneDataBuffer->m_bufferView.BufferLocation);
+
+			// Bind global PerEntityData SRV
+			if (GetMaterialBindingInfoForResource(*batch.material, PER_ENTITY_DATA_BUFFER_NAME, bi))
+				d3dCommList->SetGraphicsRootShaderResourceView(bi.rootIndex, m_perEntityDataBuffer->m_bufferView.BufferLocation);
+
+			// Bind material-specific textures via dynamic descriptor heap
+			m_shaderResourceDynHeap->ParseRootSignature(*batch.material->pso->rootSignature.get());
+			for (int i = 0; i < batch.material->textureAttachments.size(); ++i) {
+				GetMaterialBindingInfoForResource(*batch.material, batch.material->textureAttachments[i].shaderName, bi);
+				m_shaderResourceDynHeap->StageDescriptors(bi.rootIndex, bi.offset, 1, batch.material->textureAttachments[i].texture->GetCPUHandle());
+			}
+			if (GetMaterialBindingInfoForResource(*batch.material, SHADOW_TEX_NAME, bi))
+				m_shaderResourceDynHeap->StageDescriptors(bi.rootIndex, bi.offset, 1, m_shadowTexture->GetCPUHandle());
+			m_shaderResourceDynHeap->CommitStagedDescriptorsForDraw(commandList);
+
+			d3dCommList->DrawIndexedInstanced((UINT)m_indexCount, batch.instanceCount, 0, 0, batch.startInstanceOffset);
 		}
-		GetMaterialBindingInfoForResource(*basicMat, SHADOW_TEX_NAME, bi);
-		m_shaderResourceDynHeap->StageDescriptors(bi.rootIndex, bi.offset, 1, m_shadowTexture->GetCPUHandle());
-		m_shaderResourceDynHeap->CommitStagedDescriptorsForDraw(commandList);
-		GetMaterialBindingInfoForResource(*basicMat, PER_ENTITY_DATA_BUFFER_NAME, bi);
-		d3dCommList->SetGraphicsRootShaderResourceView(bi.rootIndex, m_perEntityDataBuffer->m_bufferView.BufferLocation);
-		d3dCommList->DrawIndexedInstanced((UINT)m_indexCount, (UINT)m_numInstances, 0, 0, 0);
 	}
 
 	// Present
@@ -601,21 +611,43 @@ void Renderer_D12::LoadTextures() {
 
 void Renderer_D12::UpdateInstanceData(const std::vector<Renderable>& renderables) {
 
+	// Group renderables by material pointer, preserving the shared_ptr from the first renderable in each group
+	std::map<Material*, std::pair<std::shared_ptr<Material>, std::vector<const Renderable*>>> materialGroups;
+	for (const auto& r : renderables) {
+		auto matPtr = r.m_meshs ? r.m_meshs->m_material : nullptr;
+		auto& entry = materialGroups[matPtr.get()];
+		if (!entry.first)
+			entry.first = matPtr;
+		entry.second.push_back(&r);
+	}
+
+	// Flatten grouped renderables into a single PerEntityData buffer and build batch list
 	std::vector<PerEntityData> peds;
 	peds.reserve(renderables.size());
+	m_materialBatches.clear();
 
 	float maxZ = 0.0f;
-	for (const auto& r : renderables) {
-		glm::mat4 M = glm::translate(glm::mat4(1.0f), r.m_position)
-			* glm::mat4_cast(r.m_orientation)
-			* glm::scale(glm::mat4(1.0f), r.m_scale);
-		peds.push_back({ M, r.m_entityData });
+	for (auto& [rawPtr, entry] : materialGroups) {
+		auto& [matShared, group] = entry;
+		uint32_t startOffset = (uint32_t)peds.size();
+		for (const auto* r : group) {
+			glm::mat4 M = glm::translate(glm::mat4(1.0f), r->m_position)
+				* glm::mat4_cast(r->m_orientation)
+				* glm::scale(glm::mat4(1.0f), r->m_scale);
+			peds.push_back({ M, r->m_entityData });
 
-		if (r.m_position.z > maxZ)
-			maxZ = r.m_position.z;
+			if (r->m_position.z > maxZ)
+				maxZ = r->m_position.z;
+		}
+
+		MaterialBatch batch;
+		batch.material = matShared;
+		batch.startInstanceOffset = startOffset;
+		batch.instanceCount = (uint32_t)group.size();
+		m_materialBatches.push_back(batch);
 	}
-	m_worldWidth = (int)(maxZ + 2);
 
+	m_worldWidth = (int)(maxZ + 2);
 	m_numInstances = peds.size();
 	m_perEntityDataBuffer = CreateSRVBuffer("PerEntityBuffer", sizeof(PerEntityData), m_numInstances, peds.data());
 
