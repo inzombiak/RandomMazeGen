@@ -15,11 +15,11 @@
 
 // D3D12 extension library.
 #include "d3dx12/d3dx12.h"
-
-
 // Windows Runtime Library. Needed for Microsoft::WRL::ComPtr<> template class.
 #include <wrl.h>
 using namespace Microsoft::WRL;
+
+#include <variant>
 
 #include "CommandQueue_D12.h"
 #include "MazeGenDefs.h"
@@ -61,20 +61,18 @@ class Texture_D12;
 
 #include "../Material.h"
 
-struct Buffer {
-	ComPtr<ID3D12Resource> m_resource;
-	D3D12_VERTEX_BUFFER_VIEW m_bufferView;
-	SRVAllocation m_srvAlloc;
-	CD3DX12_GPU_DESCRIPTOR_HANDLE m_GPUHandle;
-};
-
-struct MaterialBatch {
-	std::shared_ptr<Material> material;
+struct MeshBatch {
+	std::shared_ptr<Mesh> mesh;
 	uint32_t startInstanceOffset;
 	uint32_t instanceCount;
 };
 
-//@ZGTODO merge this with the decriptor alocator
+struct MaterialBatch {
+	std::shared_ptr<Material> material;
+	std::vector<MeshBatch> meshes;
+};
+
+//@ZGTODO merge this with the descriptor allocator
 class Tile;
 struct ExampleDescriptorHeapAllocator
 {
@@ -148,8 +146,11 @@ class Renderer_D12 {
 		void Shutdown();
 		bool IsInitialized() const;
 
-		void PopulateVertexBuffer(const VertexInput *data, size_t count);
-		void PopulateIndexBuffer(const unsigned int *data, size_t count);
+		//ZGTODO - Temp until i have file loading
+		std::shared_ptr<Mesh> BuildMesh(std::string name, std::vector<VertexInput> vertices, std::vector<unsigned int> indices, std::string material);
+
+		void CreateAndPopulateVertexBuffer(Buffer& buffer, const VertexInput *data, size_t count);
+		void CreateAndPopulateIndexBuffer(Buffer& buffer, const unsigned int *data, size_t count);
 		std::shared_ptr<Material> CreateMaterial(const std::string name, const std::wstring& vertexShaderName, const std::wstring& pixelShaderName, const std::vector<std::wstring>& textures = {});
 		std::shared_ptr<Material> GetMaterial(const std::string& name) const;
 		void UpdateInstanceData(const std::vector<Renderable>& renderables);
@@ -173,7 +174,7 @@ class Renderer_D12 {
 		PipelineStateObject* BuildPipelineState(const std::wstring& vertexShaderName, const std::wstring& pixelShaderName);
 		std::shared_ptr<Texture_D12> MakeOrGetTexture(const std::wstring& name, const std::wstring& filepath, std::map<size_t, std::shared_ptr<Texture_D12>>& resourceMap, std::shared_ptr<CommandList_D12> cmdList = nullptr);
 		std::shared_ptr<Buffer> CreateSRVBuffer(const std::string& name, size_t size, size_t count, void* data, std::shared_ptr<CommandList_D12> cmdList);
-		std::shared_ptr<Buffer> CreateCBVBuffer(const std::string& name, size_t size, void* data, std::shared_ptr<CommandList_D12> cmdList);
+		std::shared_ptr<Buffer> CreateCBVBuffer(const std::string& name, size_t size, void* data, void** dataCPUHandle, std::shared_ptr<CommandList_D12> cmdList);
 
 		SRVAllocation GetNextSRVAlloc();
 
@@ -208,12 +209,11 @@ class Renderer_D12 {
 		ComPtr<ID3D12DescriptorHeap>	m_imGUISRVHeap;
 
 
-		uint64_t m_numInstances = 0;
-
-		ComPtr<ID3D12Resource> m_vertexBuffer;
+		/*ComPtr<ID3D12Resource> m_vertexBuffer;
 		D3D12_VERTEX_BUFFER_VIEW m_vertexBufferView;
 		ComPtr<ID3D12Resource> m_indexBuffer;
 		D3D12_INDEX_BUFFER_VIEW m_indexBufferView;
+		*/
 
 		std::shared_ptr<Buffer> m_perEntityDataBuffer;
 		std::shared_ptr<Buffer> m_sceneDataBuffer;
@@ -232,10 +232,9 @@ class Renderer_D12 {
 		D3D12_VIEWPORT m_viewport;
 		D3D12_RECT m_scissorRect;
 
-		size_t m_indexCount;
 		int m_worldWidth;
-		UINT8* m_sceneDataBegin;
 		SceneData m_sceneData;
+		UINT8* m_sceneDataPtr;
 
 		//Fencing
 		uint64_t			m_fenceValue = 0;

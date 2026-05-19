@@ -344,9 +344,6 @@ void Renderer_D12::Render() {
 	{
 		auto d3dCommList = commandList->GetGraphicsCommandList();
 		d3dCommList->IASetPrimitiveTopology(D3D_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
-		d3dCommList->IASetVertexBuffers(0, 1, &m_vertexBufferView);
-		d3dCommList->IASetIndexBuffer(&m_indexBufferView);
-
 		d3dCommList->RSSetViewports(1, &m_viewport);
 		d3dCommList->RSSetScissorRects(1, &m_scissorRect);
 
@@ -358,16 +355,16 @@ void Renderer_D12::Render() {
 
 			d3dCommList->SetPipelineState(batch.material->pso->pipelineState.Get());
 			d3dCommList->SetGraphicsRootSignature(batch.material->pso->rootSignature->GetD3D12RootSignature().Get());
-
-			// CC RENAME THIS TO BI
+			
+			
 			BindingInfo bi;
 			// Bind global SceneData CBV
 			if (GetMaterialBindingInfoForResource(*batch.material, SCENE_DATA_BUFFER_NAME, bi))
-				d3dCommList->SetGraphicsRootConstantBufferView(bi.rootIndex, m_sceneDataBuffer->m_bufferView.BufferLocation);
+				d3dCommList->SetGraphicsRootConstantBufferView(bi.rootIndex, m_sceneDataBuffer->m_resource->GetGPUVirtualAddress());
 
 			// Bind global PerEntityData SRV
 			if (GetMaterialBindingInfoForResource(*batch.material, PER_ENTITY_DATA_BUFFER_NAME, bi))
-				d3dCommList->SetGraphicsRootShaderResourceView(bi.rootIndex, m_perEntityDataBuffer->m_bufferView.BufferLocation);
+				d3dCommList->SetGraphicsRootShaderResourceView(bi.rootIndex, m_perEntityDataBuffer->m_resource->GetGPUVirtualAddress());
 
 			// Bind material-specific textures via dynamic descriptor heap
 			m_shaderResourceDynHeap->ParseRootSignature(*batch.material->pso->rootSignature.get());
@@ -379,7 +376,12 @@ void Renderer_D12::Render() {
 				m_shaderResourceDynHeap->StageDescriptors(bi.rootIndex, bi.offset, 1, m_shadowTexture->GetCPUHandle());
 			m_shaderResourceDynHeap->CommitStagedDescriptorsForDraw(commandList);
 
-			d3dCommList->DrawIndexedInstanced((UINT)m_indexCount, batch.instanceCount, 0, 0, batch.startInstanceOffset);
+			for (const auto& mBatch : batch.meshes) {
+				d3dCommList->IASetVertexBuffers(0, 1, &std::get<D3D12_VERTEX_BUFFER_VIEW>(mBatch.mesh->m_vertexBuffer.m_bufferView));
+				d3dCommList->IASetIndexBuffer(&std::get<D3D12_INDEX_BUFFER_VIEW>(mBatch.mesh->m_indexBuffer.m_bufferView));
+
+				d3dCommList->DrawIndexedInstanced((UINT)mBatch.mesh->m_indices.size(), mBatch.instanceCount, 0, 0, mBatch.startInstanceOffset);
+			}
 		}
 	}
 
@@ -438,21 +440,31 @@ void Renderer_D12::Shadowmap() {
 		d3dCommList->SetPipelineState(shadowMat->pso->pipelineState.Get());
 		d3dCommList->SetGraphicsRootSignature(shadowMat->pso->rootSignature->GetD3D12RootSignature().Get());
 		d3dCommList->IASetPrimitiveTopology(D3D_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
-		d3dCommList->IASetVertexBuffers(0, 1, &m_vertexBufferView);
-		d3dCommList->IASetIndexBuffer(&m_indexBufferView);
-
+		//ZGTODO Change this to key based rendering
+		std::string lastMesh = "";
 		d3dCommList->RSSetViewports(1, &m_viewport);
 		d3dCommList->RSSetScissorRects(1, &m_scissorRect);
 
 		d3dCommList->OMSetRenderTargets(0, NULL, FALSE, &dsv);
 
+
 		// Update the MVP matrix
 		BindingInfo bi;
 		bool hasBinding = GetMaterialBindingInfoForResource(*shadowMat, SCENE_DATA_BUFFER_NAME, bi);
-		d3dCommList->SetGraphicsRootConstantBufferView(bi.rootIndex, m_sceneDataBuffer->m_bufferView.BufferLocation);
+		d3dCommList->SetGraphicsRootConstantBufferView(bi.rootIndex, m_sceneDataBuffer->m_resource->GetGPUVirtualAddress());
 		GetMaterialBindingInfoForResource(*shadowMat, PER_ENTITY_DATA_BUFFER_NAME, bi);
-		d3dCommList->SetGraphicsRootShaderResourceView(bi.rootIndex, m_perEntityDataBuffer->m_bufferView.BufferLocation);
-		d3dCommList->DrawIndexedInstanced((UINT)m_indexCount, (UINT)m_numInstances, 0, 0, 0);
+		d3dCommList->SetGraphicsRootShaderResourceView(bi.rootIndex, m_perEntityDataBuffer->m_resource->GetGPUVirtualAddress());
+
+		for (const auto& batch : m_materialBatches) {
+			if (!batch.material || !batch.material->pso)
+				continue;
+			for (const auto& mBatch : batch.meshes) {
+				d3dCommList->IASetVertexBuffers(0, 1, &std::get<D3D12_VERTEX_BUFFER_VIEW>(mBatch.mesh->m_vertexBuffer.m_bufferView));
+				d3dCommList->IASetIndexBuffer(&std::get<D3D12_INDEX_BUFFER_VIEW>(mBatch.mesh->m_indexBuffer.m_bufferView));
+
+				d3dCommList->DrawIndexedInstanced((UINT)mBatch.mesh->m_indices.size(), mBatch.instanceCount, 0, 0, mBatch.startInstanceOffset);
+			}
+		}
 
 		commandList->TransitionResource(m_shadowTexture->GetResource(),
 			D3D12_RESOURCE_STATE_DEPTH_WRITE, D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE);
@@ -493,9 +505,11 @@ std::shared_ptr<Buffer> Renderer_D12::CreateSRVBuffer(const std::string& name, s
 		count, size, data);
 	std::wstring stemp = std::wstring(name.begin(), name.end());
 	out->m_resource->SetName(stemp.c_str());
-	out->m_bufferView.BufferLocation = out->m_resource->GetGPUVirtualAddress();
-	out->m_bufferView.SizeInBytes = (UINT)(size * count);
-	out->m_bufferView.StrideInBytes = (UINT)size;
+	out->m_bufferView = D3D12_VERTEX_BUFFER_VIEW(
+		out->m_resource->GetGPUVirtualAddress(),
+		(UINT)(size * count),
+		(UINT)size
+	);
 	cmdList->TrackResource(intermediateBuffer);
 
 	D3D12_SHADER_RESOURCE_VIEW_DESC srvDesc = {};
@@ -512,7 +526,8 @@ std::shared_ptr<Buffer> Renderer_D12::CreateSRVBuffer(const std::string& name, s
 	return out;
 }
 
-std::shared_ptr<Buffer> Renderer_D12::CreateCBVBuffer(const std::string& name, size_t size, void* data, std::shared_ptr<CommandList_D12> cmdList = nullptr) {
+std::shared_ptr<Buffer> Renderer_D12::CreateCBVBuffer(const std::string& name, size_t size, void* data,
+	void** dataCPUHandle = nullptr, std::shared_ptr<CommandList_D12> cmdList = nullptr) {
 	if (cmdList == nullptr)
 		cmdList = m_commQueue->GetCommandList();
 
@@ -521,7 +536,7 @@ std::shared_ptr<Buffer> Renderer_D12::CreateCBVBuffer(const std::string& name, s
 	ThrowIfFailed(m_device->CreateCommittedResource(
 		&CD3DX12_HEAP_PROPERTIES(D3D12_HEAP_TYPE_UPLOAD),
 		D3D12_HEAP_FLAG_NONE,
-		&CD3DX12_RESOURCE_DESC::Buffer(sizeof(SceneData)),
+		&CD3DX12_RESOURCE_DESC::Buffer(size),
 		D3D12_RESOURCE_STATE_GENERIC_READ,
 		nullptr,
 		IID_PPV_ARGS(&out->m_resource)));
@@ -534,49 +549,50 @@ std::shared_ptr<Buffer> Renderer_D12::CreateCBVBuffer(const std::string& name, s
 	cbvDesc.SizeInBytes = (UINT)size;
 	out->m_srvAlloc = GetNextSRVAlloc();
 	m_device->CreateConstantBufferView(&cbvDesc, out->m_srvAlloc.cpuHandle);
-
-	out->m_bufferView.BufferLocation = out->m_resource->GetGPUVirtualAddress();
-	out->m_bufferView.SizeInBytes = (UINT)(sizeof(glm::mat4) * m_numInstances);
-	out->m_bufferView.StrideInBytes = sizeof(glm::mat4);
+	out->m_bufferView = D3D12_CONSTANT_BUFFER_VIEW_DESC(
+		out->m_resource->GetGPUVirtualAddress(),
+		((UINT)(size + 255) & ~255)
+		);
 
 	CD3DX12_RANGE readRange(0, 0);
-	ThrowIfFailed(out->m_resource->Map(0, &readRange, reinterpret_cast<void**>(&m_sceneDataBegin)));
-	memcpy(m_sceneDataBegin, data, size);
+	ThrowIfFailed(out->m_resource->Map(0, &readRange, dataCPUHandle));
+	memcpy(*dataCPUHandle, data, size);
 
 	return out;
 }
-void Renderer_D12::PopulateVertexBuffer(const VertexInput* data, size_t count) {
+void Renderer_D12::CreateAndPopulateVertexBuffer(Buffer& buffer, const VertexInput* data, size_t count) {
 	auto commandList = m_commQueue->GetCommandList();
 	// Upload vertex buffer data.
 	ComPtr<ID3D12Resource> intermediateVertexBuffer;
 	commandList->UpdateBufferResource(m_device,
-		&m_vertexBuffer, &intermediateVertexBuffer,
+		&buffer.m_resource, &intermediateVertexBuffer,
 		count, sizeof(VertexInput), data);
 	// Create the vertex buffer view.
-	m_vertexBufferView.BufferLocation = m_vertexBuffer->GetGPUVirtualAddress();
-	m_vertexBufferView.SizeInBytes = (UINT)(sizeof(VertexInput) * count);
-	m_vertexBufferView.StrideInBytes = sizeof(VertexInput);
+	buffer.m_bufferView = D3D12_VERTEX_BUFFER_VIEW(
+		buffer.m_resource->GetGPUVirtualAddress(),
+		(UINT)(sizeof(VertexInput) * count),
+		sizeof(VertexInput));
 	commandList->TrackResource(intermediateVertexBuffer);
 }
 
-void Renderer_D12::PopulateIndexBuffer(const unsigned int *data, size_t count) {
+void Renderer_D12::CreateAndPopulateIndexBuffer(Buffer& buffer, const unsigned int *data, size_t count) {
 	auto commandList = m_commQueue->GetCommandList();
 	// Upload index buffer data.
 	ComPtr<ID3D12Resource> intermediateIndexBuffer;
-	commandList->UpdateBufferResource(m_device, &m_indexBuffer, &intermediateIndexBuffer,
+	commandList->UpdateBufferResource(m_device, &buffer.m_resource, &intermediateIndexBuffer,
 		count, sizeof(unsigned int), data);
 
 	// Create index buffer view.
-	m_indexBufferView.BufferLocation = m_indexBuffer->GetGPUVirtualAddress();
-	m_indexBufferView.Format = DXGI_FORMAT_R32_UINT;
-	m_indexBufferView.SizeInBytes = (UINT)(sizeof(unsigned int) * count);
+	buffer.m_bufferView = D3D12_INDEX_BUFFER_VIEW(
+		buffer.m_resource->GetGPUVirtualAddress(),
+		(UINT)(sizeof(unsigned int) * count),
+		DXGI_FORMAT_R32_UINT);
 
-	m_indexCount = count;
 	commandList->TrackResource(intermediateIndexBuffer);
 }
 
 void Renderer_D12::LoadTextures() {
-	m_sceneDataBuffer = CreateCBVBuffer("SceneData", sizeof(SceneData), &m_sceneData);
+	m_sceneDataBuffer = CreateCBVBuffer("SceneData", sizeof(SceneData), &m_sceneData, reinterpret_cast<void**>(&m_sceneDataPtr));
 
 	std::hash<std::string> hasher;
 	auto mat = CreateMaterial("BasicLit", L"vertex_basic", L"pixel_basic", { L"Clay.dds", L"Grass.dds", L"Dirt.dds" });
@@ -601,8 +617,6 @@ void Renderer_D12::LoadTextures() {
 		mat->textureAttachments[idx] = tai;
 		++idx;
 	}
-	
-
 
 	m_basicLitMatId = hasher("BasicLit");
 	CreateMaterial("Shadowmap", L"vertex_shadow", L"pixel_shadow");;
@@ -614,11 +628,16 @@ void Renderer_D12::UpdateInstanceData(const std::vector<Renderable>& renderables
 	// Group renderables by material pointer, preserving the shared_ptr from the first renderable in each group
 	std::map<Material*, std::pair<std::shared_ptr<Material>, std::vector<const Renderable*>>> materialGroups;
 	for (const auto& r : renderables) {
-		auto matPtr = r.m_meshs ? r.m_meshs->m_material : nullptr;
+		auto matPtr = r.m_mesh ? r.m_mesh->m_material : nullptr;
 		auto& entry = materialGroups[matPtr.get()];
 		if (!entry.first)
 			entry.first = matPtr;
 		entry.second.push_back(&r);
+	}
+
+	for (auto& [rawPtr, entry] : materialGroups) {
+		auto& [matShared, group] = entry;
+		std::sort(group.begin(), group.end(), [](const Renderable* a, const Renderable* b) { return a->m_mesh->m_name < b->m_mesh->m_name; });
 	}
 
 	// Flatten grouped renderables into a single PerEntityData buffer and build batch list
@@ -629,8 +648,26 @@ void Renderer_D12::UpdateInstanceData(const std::vector<Renderable>& renderables
 	float maxZ = 0.0f;
 	for (auto& [rawPtr, entry] : materialGroups) {
 		auto& [matShared, group] = entry;
-		uint32_t startOffset = (uint32_t)peds.size();
-		for (const auto* r : group) {
+		if (!matShared || group.empty())
+			continue;
+
+		MaterialBatch batch;
+		batch.material = matShared;
+
+		MeshBatch mBatch{};
+		mBatch.mesh = group.front()->m_mesh;
+		mBatch.startInstanceOffset = peds.size();
+		mBatch.instanceCount = 0;
+
+		for (const Renderable* r : group) {
+			if (r->m_mesh != mBatch.mesh) {
+				batch.meshes.push_back(mBatch);     // flush previous mesh
+				mBatch = {};
+				mBatch.mesh = r->m_mesh;
+				mBatch.startInstanceOffset = peds.size();
+				mBatch.instanceCount = 0;
+			}
+
 			glm::mat4 M = glm::translate(glm::mat4(1.0f), r->m_position)
 				* glm::mat4_cast(r->m_orientation)
 				* glm::scale(glm::mat4(1.0f), r->m_scale);
@@ -638,18 +675,16 @@ void Renderer_D12::UpdateInstanceData(const std::vector<Renderable>& renderables
 
 			if (r->m_position.z > maxZ)
 				maxZ = r->m_position.z;
+
+			++mBatch.instanceCount;
 		}
 
-		MaterialBatch batch;
-		batch.material = matShared;
-		batch.startInstanceOffset = startOffset;
-		batch.instanceCount = (uint32_t)group.size();
-		m_materialBatches.push_back(batch);
+		batch.meshes.push_back(mBatch);             // flush final mesh
+		m_materialBatches.push_back(std::move(batch));
 	}
 
 	m_worldWidth = (int)(maxZ + 2);
-	m_numInstances = peds.size();
-	m_perEntityDataBuffer = CreateSRVBuffer("PerEntityBuffer", sizeof(PerEntityData), m_numInstances, peds.data());
+	m_perEntityDataBuffer = CreateSRVBuffer("PerEntityBuffer", sizeof(PerEntityData), peds.size(), peds.data());
 
 	auto fenceValue = m_commQueue->ExecuteActiveCommandList();
 	m_commQueue->WaitForFenceValue(fenceValue);
@@ -693,6 +728,22 @@ SRVAllocation Renderer_D12::GetNextSRVAlloc() {
 		out = m_srvAllocPages[pageIdx].GetNextHandle();
 	}
 
+	return out;
+}
+
+
+std::shared_ptr<Mesh> Renderer_D12::BuildMesh(std::string name, std::vector<VertexInput> vertices, std::vector<unsigned int> indices, std::string material) {
+	if (vertices.empty() || indices.empty())
+		return nullptr;
+
+	std::shared_ptr<Mesh> out = std::make_shared<Mesh>();
+	out->m_vertices = vertices;
+	out->m_indices = indices;
+
+	CreateAndPopulateVertexBuffer(out->m_vertexBuffer, vertices.data(), vertices.size());
+	CreateAndPopulateIndexBuffer(out->m_indexBuffer, indices.data(), indices.size());
+
+	out->m_material = GetMaterial(material);
 	return out;
 }
 
@@ -921,7 +972,7 @@ void Renderer_D12::UpdateMVP(float fov, glm::vec3 camPos, glm::vec3 camFwd, glm:
 	m_sceneData.sunVP = proj * view;
 
 	m_sceneData.sunPos = sunPos;
-	memcpy(m_sceneDataBegin, &m_sceneData, sizeof(SceneData));
+	memcpy(m_sceneDataPtr, &m_sceneData, sizeof(SceneData));
 }
 
 

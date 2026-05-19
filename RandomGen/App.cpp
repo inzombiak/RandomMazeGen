@@ -10,11 +10,9 @@
 #endif
 
 
-static Mesh CreateBoxMesh() {
-    Mesh mesh;
-    mesh.m_name = "Box";
+struct MeshData {
 
-    mesh.m_vertices = {
+    std::vector<VertexInput> vertices = {
         //Size Za
         { glm::vec3(-1.0f, -1.0f, -1.0f), glm::vec3(0.0f, 0.0f, 0.0f), glm::vec3(0.0f, 0.0f, -1.0f), glm::vec3(0.0f, 0.0f, 0.0f) },
         { glm::vec3(-1.0f,  1.0f, -1.0f), glm::vec3(0.0f, 1.0f, 0.0f), glm::vec3(0.0f, 0.0f, -1.0f), glm::vec3(0.0f, 1.0f, 0.0f) },
@@ -52,7 +50,7 @@ static Mesh CreateBoxMesh() {
         { glm::vec3(1.0f,  -1.0f,  1.0f), glm::vec3(0.6f, 1.0f, 0.0f), glm::vec3(0.0f, -1.0f, 0.0f), glm::vec3(1.0f, 1.0f, 1.0f) },
     };
 
-    mesh.m_indices = {
+    std::vector<unsigned int> indices = {
         //Za
         0, 1, 2, 0, 2, 3,
         //Zb
@@ -66,10 +64,9 @@ static Mesh CreateBoxMesh() {
         //Bot
         20, 23, 22, 20, 21, 22
     };
+};
 
-    return mesh;
-}
-
+MeshData md;
 
 App::App(const std::wstring& name, int width, int height, bool vSync, HINSTANCE hInstance)
     : m_name(name)
@@ -121,14 +118,11 @@ bool App::Initialize()
 bool App::LoadContent() {
 
     if (!RENDERER || !RENDERER->IsInitialized())
-        return false;
+		return false;
+	RENDERER->LoadTextures();
 
-    m_boxMesh = std::make_shared<Mesh>(CreateBoxMesh());
-    RENDERER->PopulateVertexBuffer(m_boxMesh->m_vertices.data(), m_boxMesh->m_vertices.size());
-    RENDERER->PopulateIndexBuffer(m_boxMesh->m_indices.data(), m_boxMesh->m_indices.size());
+    m_boxMesh = RENDERER->BuildMesh("Box", md.vertices, md.indices, "BasicLit");
     GenerateMap(m_width, m_height, m_rows, m_columns);
-    RENDERER->LoadTextures();
-    m_boxMesh->m_material = RENDERER->GetMaterial("BasicLit");
     RENDERER->ResizeDepthBuffer(m_width, m_height);
 
     m_contentLoaded = true;
@@ -176,7 +170,7 @@ void App::BuildRenderablesFromTiles() {
 
             // Floor
             Renderable floor;
-            floor.m_meshs = m_boxMesh;
+            floor.m_mesh = m_boxMesh;
             floor.m_position = glm::vec3((float)x, 0.0f, (float)z);
             floor.m_orientation = glm::quat(1.0f, 0.0f, 0.0f, 0.0f);
             floor.m_scale = glm::vec3(1.0f, 1.0f, 1.0f);
@@ -194,7 +188,7 @@ void App::BuildRenderablesFromTiles() {
                     float scaleZ = 1.0f - abs(delta.first) * 0.9f;
 
                     Renderable wall;
-                    wall.m_meshs = m_boxMesh;
+                    wall.m_mesh = m_boxMesh;
                     wall.m_position = glm::vec3(wallX, (float)y, wallZ);
                     wall.m_orientation = glm::quat(1.0f, 0.0f, 0.0f, 0.0f);
                     wall.m_scale = glm::vec3(scaleX, 1.0f, scaleZ);
