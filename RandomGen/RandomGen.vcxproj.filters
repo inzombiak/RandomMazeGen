@@ -189,6 +189,9 @@
     <ClCompile Include="Material.cpp">
       <Filter>Source Files\Rendering\D12</Filter>
     </ClCompile>
+    <ClCompile Include="AssetManager.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Rendering\d3dx12\d3d12.h">
@@ -385,6 +388,9 @@
     </ClInclude>
     <ClInclude Include="Material.h">
       <Filter>Header Files\Rendering\D12</Filter>
+    </ClInclude>
+    <ClInclude Include="AssetManager.h">
+      <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>

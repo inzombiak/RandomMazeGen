@@ -19,6 +19,7 @@ Mesh* AssetManager::LoadMesh(std::string filePath) {
 	
 
 
+
 	// We're done. Release all resources associated with this import
 	aiReleaseImport(scene);
 	return out;

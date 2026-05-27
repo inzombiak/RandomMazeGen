@@ -106,7 +106,7 @@
       <WarningLevel>Level3</WarningLevel>
       <Optimization>Disabled</Optimization>
       <PreprocessorDefinitions>WIN32;_DEBUG;_CONSOLE;_LIB;%(PreprocessorDefinitions)</PreprocessorDefinitions>
-      <AdditionalIncludeDirectories>Extern\imgui\backends;Extern\imgui;$(SolutionDir)\include;$(SolutionDir)MazeGenerator\include;$(SolutionDir)include\glm$(SolutionDir)include\glm$(SolutionDir)MazeGenerator\include</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>Extern\assimp\include;Extern\imgui\backends;Extern\imgui;$(SolutionDir)\include;$(SolutionDir)MazeGenerator\include;$(SolutionDir)include\glm$(SolutionDir)include\glm$(SolutionDir)MazeGenerator\include</AdditionalIncludeDirectories>
       <RuntimeLibrary>MultiThreadedDebugDLL</RuntimeLibrary>
       <LanguageStandard>stdcpp20</LanguageStandard>
       <ConformanceMode>false</ConformanceMode>
@@ -150,7 +150,7 @@
       <FunctionLevelLinking>true</FunctionLevelLinking>
       <IntrinsicFunctions>true</IntrinsicFunctions>
       <PreprocessorDefinitions>SFML_STATIC;WIN32;NDEBUG;_CONSOLE;_LIB;%(PreprocessorDefinitions)</PreprocessorDefinitions>
-      <AdditionalIncludeDirectories>Extern\imgui\backends;Extern\imgui;$(SolutionDir)\include;$(SolutionDir)MazeGenerator\include;$(SolutionDir)include\glm$(SolutionDir)include\glm%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>Extern\assimp\include;Extern\imgui\backends;Extern\imgui;$(SolutionDir)\include;$(SolutionDir)MazeGenerator\include;$(SolutionDir)include\glm$(SolutionDir)include\glm%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <RuntimeLibrary>MultiThreaded</RuntimeLibrary>
       <LanguageStandard>stdcpp20</LanguageStandard>
       <ConformanceMode>false</ConformanceMode>
@@ -171,6 +171,7 @@
   </ItemDefinitionGroup>
   <ItemGroup>
     <ClCompile Include="App.cpp" />
+    <ClCompile Include="AssetManager.cpp" />
     <ClCompile Include="Extern\DDSTextureLoader\DDSTextureLoader11.cpp" />
     <ClCompile Include="Extern\DDSTextureLoader\DDSTextureLoader12.cpp" />
     <ClCompile Include="Extern\DDSTextureLoader\DDSTextureLoader9.cpp" />
@@ -221,6 +222,7 @@
   <ItemGroup>
     <ClInclude Include="App.h" />
     <ClInclude Include="AppDefs.h" />
+    <ClInclude Include="AssetManager.h" />
     <ClInclude Include="Events.h" />
     <ClInclude Include="Extern\DDSTextureLoader\DDSTextureLoader11.h" />
     <ClInclude Include="Extern\DDSTextureLoader\DDSTextureLoader12.h" />
