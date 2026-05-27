@@ -1,7 +1,11 @@
 {
   "permissions": {
     "allow": [
-      "Bash(grep:*)"
+      "Bash(grep:*)",
+      "Bash(ls \"C:/Projects/assimp/build\" 2>&1 | head -20)",
+      "Read(//c/Projects/assimp/build/**)",
+      "Bash(ls \"C:/Projects/assimp/UILD_SHARED_LIBS=OFF\" 2>&1)",
+      "Read(//c/Projects/assimp/UILD_SHARED_LIBS=OFF/**)"
     ]
   }
 }
