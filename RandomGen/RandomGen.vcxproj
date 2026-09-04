@@ -106,7 +106,7 @@
       <WarningLevel>Level3</WarningLevel>
       <Optimization>Disabled</Optimization>
       <PreprocessorDefinitions>GLM_FORCE_LEFT_HANDED;GLM_FORCE_DEPTH_ZERO_TO_ONE;NOMINMAX;WIN32_LEAN_AND_MEAN;WIN32;_DEBUG;_CONSOLE;_LIB;%(PreprocessorDefinitions)</PreprocessorDefinitions>
-      <AdditionalIncludeDirectories>Extern\assimp\include;Extern\imgui\backends;Extern\imgui;$(SolutionDir)\include;$(SolutionDir)MazeGenerator\include;$(SolutionDir)include\glm;$(SolutionDir)MazeGenerator\include</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>Extern\assimp\include;Extern\imgui\backends;Extern\imgui;$(SolutionDir)\include;$(SolutionDir)MazeGenerator\include;$(SolutionDir)include\glm;$(SolutionDir)Physics;$(SolutionDir)MazeGenerator\include</AdditionalIncludeDirectories>
       <RuntimeLibrary>MultiThreadedDebugDLL</RuntimeLibrary>
       <LanguageStandard>stdcpp20</LanguageStandard>
       <ConformanceMode>false</ConformanceMode>
@@ -114,8 +114,8 @@
     <Link>
       <SubSystem>Windows</SubSystem>
       <GenerateDebugInformation>true</GenerateDebugInformation>
-      <AdditionalDependencies>MazeGenerator.lib;winmm.lib;gdi32.lib;kernel32.lib;user32.lib;winspool.lib;comdlg32.lib;advapi32.lib;shell32.lib;ole32.lib;oleaut32.lib;uuid.lib;odbc32.lib;odbccp32.lib;%(AdditionalDependencies);DXGI.lib;d3d12.lib;d3dcompiler.lib;dxguid.lib</AdditionalDependencies>
-      <AdditionalLibraryDirectories>$(SolutionDir)MazeGenerator\lib\$(Platform)\$(Configuration);%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
+      <AdditionalDependencies>MazeGenerator.lib;Physics.lib;winmm.lib;gdi32.lib;kernel32.lib;user32.lib;winspool.lib;comdlg32.lib;advapi32.lib;shell32.lib;ole32.lib;oleaut32.lib;uuid.lib;odbc32.lib;odbccp32.lib;%(AdditionalDependencies);DXGI.lib;d3d12.lib;d3dcompiler.lib;dxguid.lib</AdditionalDependencies>
+      <AdditionalLibraryDirectories>$(SolutionDir)MazeGenerator\lib\$(Platform)\$(Configuration);$(SolutionDir)$(Platform)\$(Configuration);%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
       <EntryPointSymbol>
       </EntryPointSymbol>
     </Link>
@@ -150,7 +150,7 @@
       <FunctionLevelLinking>true</FunctionLevelLinking>
       <IntrinsicFunctions>true</IntrinsicFunctions>
       <PreprocessorDefinitions>GLM_FORCE_LEFT_HANDED;GLM_FORCE_DEPTH_ZERO_TO_ONE;NOMINMAX;WIN32_LEAN_AND_MEAN;WIN32;NDEBUG;_CONSOLE;_LIB;%(PreprocessorDefinitions)</PreprocessorDefinitions>
-      <AdditionalIncludeDirectories>Extern\assimp\include;Extern\imgui\backends;Extern\imgui;$(SolutionDir)\include;$(SolutionDir)MazeGenerator\include;$(SolutionDir)include\glm;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>Extern\assimp\include;Extern\imgui\backends;Extern\imgui;$(SolutionDir)\include;$(SolutionDir)MazeGenerator\include;$(SolutionDir)include\glm;$(SolutionDir)Physics;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <RuntimeLibrary>MultiThreaded</RuntimeLibrary>
       <LanguageStandard>stdcpp20</LanguageStandard>
       <ConformanceMode>false</ConformanceMode>
@@ -160,8 +160,8 @@
       <GenerateDebugInformation>true</GenerateDebugInformation>
       <EnableCOMDATFolding>true</EnableCOMDATFolding>
       <OptimizeReferences>true</OptimizeReferences>
-      <AdditionalLibraryDirectories>$(SolutionDir)MazeGenerator\lib\$(Platform)\$(Configuration);%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
-      <AdditionalDependencies>MazeGenerator.lib;winmm.lib;gdi32.lib;kernel32.lib;user32.lib;winspool.lib;comdlg32.lib;advapi32.lib;shell32.lib;ole32.lib;oleaut32.lib;uuid.lib;odbc32.lib;odbccp32.lib;%(AdditionalDependencies);DXGI.lib;d3d12.lib;d3dcompiler.lib;dxguid.lib</AdditionalDependencies>
+      <AdditionalLibraryDirectories>$(SolutionDir)MazeGenerator\lib\$(Platform)\$(Configuration);$(SolutionDir)$(Platform)\$(Configuration);%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
+      <AdditionalDependencies>MazeGenerator.lib;Physics.lib;winmm.lib;gdi32.lib;kernel32.lib;user32.lib;winspool.lib;comdlg32.lib;advapi32.lib;shell32.lib;ole32.lib;oleaut32.lib;uuid.lib;odbc32.lib;odbccp32.lib;%(AdditionalDependencies);DXGI.lib;d3d12.lib;d3dcompiler.lib;dxguid.lib</AdditionalDependencies>
       <EntryPointSymbol>
       </EntryPointSymbol>
     </Link>
@@ -171,6 +171,7 @@
   </ItemDefinitionGroup>
   <ItemGroup>
     <ClCompile Include="App.cpp" />
+    <ClCompile Include="Scene\PhysicsScene.cpp" />
     <ClCompile Include="AssetManager.cpp">
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">true</ExcludedFromBuild>
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|x64'">true</ExcludedFromBuild>
@@ -224,6 +225,7 @@
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="App.h" />
+    <ClInclude Include="Scene\PhysicsScene.h" />
     <ClInclude Include="AppDefs.h" />
     <ClInclude Include="AssetManager.h" />
     <ClInclude Include="Events.h" />

@@ -72,7 +72,7 @@ private:
 	float m_rollingFriction;
 	float m_restitution;
 
-	glm::vec3 m_totalForce;
+	glm::vec3 m_totalForce = glm::vec3(0.f);
 
 	PhysicsDefs::OBB m_obb;
 	ICollisionShape* m_collisionShape;

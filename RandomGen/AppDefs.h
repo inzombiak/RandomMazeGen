@@ -13,6 +13,8 @@ namespace Globals {
 		int window_height = 800;
 		const wchar_t* window_className = L"DX12WindowClass";
 		bool use_warp = false;
+		bool physics_test = false;
+		bool physics_headless = false;
 	};
 
 	extern bool VSYNC_ENABLED;

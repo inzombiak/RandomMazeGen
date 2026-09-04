@@ -100,7 +100,12 @@ void PhysicsWorld::StepSimulation(float timeStep, int maxSubSteps, float fixedTi
 
 	}
 
-	//TODO: ADD FLAG TO DISABLE DRAWING
+	// Debug drawing is optional. Orbitals always installed a drawer in
+	// PhysicsSystem::Init, so these unguarded calls never fired there; with the
+	// drawer now an injected interface, a null one must simply mean "no debug
+	// output" rather than a crash on the first step.
+	if (m_physDebugDrawer)
+	{
 	PhysicsDefs::AABB aabb;
 	PhysicsDefs::OBB obb;
 	glm::vec3 color(1.f, 0.f, 0.f), colorOBB(0.f, 0.f, 1.f);
@@ -168,6 +173,7 @@ void PhysicsWorld::StepSimulation(float timeStep, int maxSubSteps, float fixedTi
 				m_physDebugDrawer->DrawLine(pos2, pos2 + ci.localPointB, glm::vec3(0.5, 0.f, 0.5));
 			}
 		}
+	}
 	}
 
 	ClearForces();

@@ -6,6 +6,7 @@ MinimumVisualStudioVersion = 10.0.40219.1
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "RandomGen", "RandomGen\RandomGen.vcxproj", "{688DE3AA-034A-4993-A75F-DA84608B5490}"
 	ProjectSection(ProjectDependencies) = postProject
 		{36D706EB-EE95-4E4A-83C4-8B2D3774ECE0} = {36D706EB-EE95-4E4A-83C4-8B2D3774ECE0}
+		{7F3A9C21-4B5E-4D8A-9E11-2C6D8F0A3B57} = {7F3A9C21-4B5E-4D8A-9E11-2C6D8F0A3B57}
 	EndProjectSection
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "MazeGenerator", "MazeGenerator\MazeGenerator.vcxproj", "{36D706EB-EE95-4E4A-83C4-8B2D3774ECE0}"

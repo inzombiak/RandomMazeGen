@@ -8,6 +8,7 @@
 #include <Core/MathConfig.h>
 
 #include "Renderable.h"
+#include "Scene/PhysicsScene.h"
 
 #include <memory>
 #include <string>
@@ -135,6 +136,13 @@ private:
     std::vector<Renderable> m_renderables;
 
     void BuildRenderablesFromTiles();
+    void AppendPhysicsRenderables();
+    void SetPhysicsTestEnabled(bool enabled);
+
+    PhysicsScene m_physics;
+    bool m_physicsTestEnabled = false;
+    size_t m_mazeRenderableCount = 0;
+    std::vector<PhysicsScene::BodyView> m_bodyViews;
 
     std::vector<std::vector<MazeDefs::TileProperties>> m_tileProperties;
 };

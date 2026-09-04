@@ -44,12 +44,14 @@ static LRESULT CALLBACK WndProc(HWND hwnd, UINT message, WPARAM wParam, LPARAM l
     {
     case WM_PAINT:
     {
-        // Delta time will be filled in by the Window.
-        UpdateEventArgs updateEventArgs(0.0f, 0.0f);
-        GAME_WINDOW->OnUpdate(updateEventArgs);
-        RenderEventArgs renderEventArgs(0.0f, 0.0f);
-        // Delta time will be filled in by the Window.
-        GAME_WINDOW->OnRender(renderEventArgs);
+        // The frame is driven by the message loop in Window::Show(), not by
+        // WM_PAINT. Previously update+render ran from here and the handler
+        // never validated the update region, so Windows resent WM_PAINT
+        // forever -- that accidental repeat was the only thing making the
+        // app tick, and it stopped whenever Windows chose not to paint.
+        PAINTSTRUCT ps;
+        ::BeginPaint(hwnd, &ps);
+        ::EndPaint(hwnd, &ps);
     }
     break;
     case WM_SYSKEYDOWN:
@@ -328,11 +330,23 @@ void Window::Show() {
 	MSG msg = {};
 	while (msg.message != WM_QUIT)
 	{
-		if (::PeekMessage(&msg, NULL, 0, 0, PM_REMOVE))
+		// Drain everything pending, then advance one frame. Driving the frame
+		// from here rather than from WM_PAINT means the simulation keeps
+		// running regardless of whether Windows decides to repaint us.
+		while (::PeekMessage(&msg, NULL, 0, 0, PM_REMOVE))
 		{
 			::TranslateMessage(&msg);
 			::DispatchMessage(&msg);
+			if (msg.message == WM_QUIT)
+				break;
 		}
+		if (msg.message == WM_QUIT)
+			break;
+
+		UpdateEventArgs updateEventArgs(0.0f, 0.0f);
+		OnUpdate(updateEventArgs);
+		RenderEventArgs renderEventArgs(0.0f, 0.0f);
+		OnRender(renderEventArgs);
 	}
 
 }

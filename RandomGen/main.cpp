@@ -18,11 +18,20 @@ void ParseCommandLineArguments()
 		}
 		if (::wcscmp(argv[i], L"-h") == 0 || ::wcscmp(argv[i], L"--height") == 0)
 		{
-			Globals::STARTUP_VALS.window_width = ::wcstol(argv[++i], nullptr, 10);
+			Globals::STARTUP_VALS.window_height = ::wcstol(argv[++i], nullptr, 10);
 		}
 		if (::wcscmp(argv[i], L"-warp") == 0 || ::wcscmp(argv[i], L"--warp") == 0)
 		{
-			Globals::STARTUP_VALS.window_width = true;
+			Globals::STARTUP_VALS.use_warp = true;
+		}
+		if (::wcscmp(argv[i], L"-physicstest") == 0 || ::wcscmp(argv[i], L"--physicstest") == 0)
+		{
+			Globals::STARTUP_VALS.physics_test = true;
+		}
+		if (::wcscmp(argv[i], L"-physicsheadless") == 0)
+		{
+			Globals::STARTUP_VALS.physics_test = true;
+			Globals::STARTUP_VALS.physics_headless = true;
 		}
 	}
 
@@ -32,7 +41,7 @@ void ParseCommandLineArguments()
 
 #include "App.h"
 Globals::StartupValues Globals::STARTUP_VALS;
-bool Globals::VSYNC_ENABLED;
+bool Globals::VSYNC_ENABLED = true;
 int CALLBACK wWinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, PWSTR lpCmdLine, int nCmdShow)
 {
 	// Windows 10 Creators update adds Per Monitor V2 DPI awareness context.

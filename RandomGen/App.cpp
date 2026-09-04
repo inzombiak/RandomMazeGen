@@ -125,6 +125,9 @@ bool App::LoadContent() {
     GenerateMap(m_width, m_height, m_rows, m_columns);
     RENDERER->ResizeDepthBuffer(m_width, m_height);
 
+    if (Globals::STARTUP_VALS.physics_test)
+        SetPhysicsTestEnabled(true);
+
     m_contentLoaded = true;
     return true;
 }
@@ -200,6 +203,52 @@ void App::BuildRenderablesFromTiles() {
             x += 2;
         }
         z += 2;
+    }
+
+    m_mazeRenderableCount = m_renderables.size();
+    AppendPhysicsRenderables();
+}
+
+void App::SetPhysicsTestEnabled(bool enabled)
+{
+    if (enabled == m_physicsTestEnabled)
+        return;
+
+    m_physicsTestEnabled = enabled;
+    if (enabled)
+        m_physics.BuildBoxStackTest();
+    else
+        m_physics.Clear();
+
+    // Drop back to just the maze renderables, then re-append if still on.
+    // Skip the GPU upload if content is still loading -- UpdateInstanceData
+    // executes the active command list and blocks on a fence, which is not
+    // safe before the renderer has finished coming up.
+    if (!m_contentLoaded)
+        return;
+
+    m_renderables.resize(m_mazeRenderableCount);
+    AppendPhysicsRenderables();
+    RENDERER->UpdateInstanceData(m_renderables);
+}
+
+void App::AppendPhysicsRenderables()
+{
+    if (!m_physicsTestEnabled || !m_physics.IsBuilt())
+        return;
+
+    m_physics.CollectBodyViews(m_bodyViews);
+    for (const PhysicsScene::BodyView& v : m_bodyViews)
+    {
+        Renderable r;
+        r.m_mesh        = m_boxMesh;
+        r.m_position    = v.position;
+        r.m_orientation = v.orientation;
+        r.m_scale       = v.renderScale;
+        // 0 picks the grass/floor texture, 1 the wall texture; give dynamic
+        // bodies the wall look so they read against the ground slab.
+        r.m_entityData  = v.isStatic ? 0u : 1u;
+        m_renderables.push_back(std::move(r));
     }
 }
 
@@ -277,6 +326,38 @@ void App::OnUpdate(UpdateEventArgs& e)
         ClearMazeDirtyFlag();
     }
 
+    // While the physics test runs the bodies move every frame, so the
+    // instance buffer must be rebuilt every frame. UpdateInstanceData is still
+    // the slow path -- it recreates the SRV and stalls on a fence -- so this is
+    // gated behind the toggle until that is addressed.
+    if (m_physicsTestEnabled && m_physics.IsBuilt())
+    {
+        m_physics.Step((float)dt);
+        if (Globals::STARTUP_VALS.physics_test)
+        {
+            static double traceTime = 0.0;
+            static double nextTrace = 0.0;
+            traceTime += dt;
+            if (traceTime >= nextTrace)
+            {
+                nextTrace += 0.5;
+                m_physics.CollectBodyViews(m_bodyViews);
+                std::cout << "[phys t=" << traceTime << "]";
+                for (size_t i = 0; i < m_bodyViews.size(); ++i)
+                    std::cout << " b" << i << "(y=" << m_bodyViews[i].position.y
+                              << ",qx=" << m_bodyViews[i].orientation.x << ")";
+                std::cout << std::endl;
+            }
+        }
+
+        if (!Globals::STARTUP_VALS.physics_headless)
+        {
+            m_renderables.resize(m_mazeRenderableCount);
+            AppendPhysicsRenderables();
+            RENDERER->UpdateInstanceData(m_renderables);
+        }
+    }
+
     if (RENDERER && RENDERER->GUIInitialized()) {
         ImGui_ImplDX12_NewFrame();
         ImGui_ImplWin32_NewFrame();
@@ -304,6 +385,19 @@ void App::OnUpdate(UpdateEventArgs& e)
                     m_tileProperties[i].resize(m_columns);
                 }
                 GenerateMap(m_width, m_height, m_rows, m_columns);
+            }
+        }
+
+        if (ImGui::CollapsingHeader("Physics"))
+        {
+            bool enabled = m_physicsTestEnabled;
+            if (ImGui::Checkbox("Box stack test scene", &enabled))
+                SetPhysicsTestEnabled(enabled);
+            if (m_physicsTestEnabled)
+            {
+                ImGui::Text("Bodies: %d", (int)m_physics.BodyCount());
+                if (ImGui::Button("Reset Physics Scene"))
+                    m_physics.BuildBoxStackTest();
             }
         }
 
