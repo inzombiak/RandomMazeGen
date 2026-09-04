@@ -247,7 +247,7 @@ void ConstraintSolverSeqImpulse::SolveContact(IRigidBody* body1, IRigidBody* bod
 	glm::vec3 torque1, torque2;
 
 	invM1 = body1->GetInverseMass();
-	invM2 = body1->GetInverseMass();
+	invM2 = body2->GetInverseMass();
 	//localANorm = glm::cross(contact.localPointA, normal);
 	//localBNorm = glm::cross(contact.localPointB, normal);
 
