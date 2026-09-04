@@ -1,6 +1,7 @@
 #include "MAEllers.h"
 #include "MazeGenPriv.h"
 
+#include <cassert>
 #include <algorithm>
 #include <random>       
 #include <chrono> 

@@ -45,9 +45,6 @@
     <ClInclude Include="src\GridManager.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="src\Singleton.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
     <ClInclude Include="src\Tile.h">
       <Filter>Header Files</Filter>
     </ClInclude>

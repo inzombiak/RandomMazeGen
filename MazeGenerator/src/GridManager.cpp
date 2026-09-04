@@ -17,11 +17,11 @@
 
 using namespace MazeDefs;
 
-typedef SingletonHolder<MAEllers, CreationPolicies::CreateWithNew, LifetimePolicies::DefaultLifetime> MAEllersSingleton;
-typedef SingletonHolder<MARecursiveBacktracker, CreationPolicies::CreateWithNew, LifetimePolicies::DefaultLifetime> MARecursiveBacktrackerSingleton;
-typedef SingletonHolder<RoomGenerator, CreationPolicies::CreateWithNew, LifetimePolicies::DefaultLifetime> RoomGeneratorSingleton;
-typedef SingletonHolder<MazeConnector, CreationPolicies::CreateWithNew, LifetimePolicies::DefaultLifetime> MazeConnectorSingleton;
-typedef SingletonHolder<DeadEndRemover, CreationPolicies::CreateWithNew, LifetimePolicies::DefaultLifetime> DeadEndRemoverSingleton;
+typedef Core::Singleton<MAEllers> MAEllersSingleton;
+typedef Core::Singleton<MARecursiveBacktracker> MARecursiveBacktrackerSingleton;
+typedef Core::Singleton<RoomGenerator> RoomGeneratorSingleton;
+typedef Core::Singleton<MazeConnector> MazeConnectorSingleton;
+typedef Core::Singleton<DeadEndRemover> DeadEndRemoverSingleton;
 
 void GridManager::GenerateMap(int windowWidth, int windowHeight, unsigned int rows, unsigned int columns)
 {

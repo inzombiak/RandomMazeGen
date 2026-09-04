@@ -1,6 +1,6 @@
 #pragma once
 
-#include "Singleton.h"
+#include <Core/Singleton.h>
 
 namespace MazeDefs {
 	struct Vector2f {
@@ -103,4 +103,4 @@ namespace Private
 	};
 }
 
-typedef SingletonHolder<Private::SetIDManager, CreationPolicies::CreateWithNew, LifetimePolicies::DefaultLifetime> SetIDManagerSingleton;
+typedef Core::Singleton<Private::SetIDManager> SetIDManagerSingleton;

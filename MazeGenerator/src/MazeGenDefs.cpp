@@ -1,9 +1,9 @@
 #include "MazeGenDefs.h"
 #include "GridManager.h"
-#include "Singleton.h"
+#include <Core/Singleton.h>
 #include "Tile.h"
 
-typedef SingletonHolder<GridManager, CreationPolicies::CreateWithNew, LifetimePolicies::DefaultLifetime> GridManagerSingleton;
+typedef Core::Singleton<GridManager> GridManagerSingleton;
 
 extern "C" MAZEGENLIB_API void GenerateMap(unsigned int width, unsigned int height, unsigned int rows, unsigned int columns)
 {
