@@ -6,6 +6,8 @@
 #include "ConstraintSolverSeqImpulse.h"
 #include "BoxShape.h"
 #include "IRigidBody.h"
+#include "PhysicsComponent.h"
+#include "RenderComponent.h"
 
 const float PhysicsScene::FIXED_TIMESTEP    = 1.0f / 60.0f;
 const int   PhysicsScene::MAX_SUBSTEPS      = 8;
@@ -30,6 +32,7 @@ void PhysicsScene::Clear()
 		delete s;
 	m_shapes.clear();
 
+	m_entities.clear();
 	m_renderScales.clear();
 	m_isStatic.clear();
 
@@ -63,6 +66,27 @@ orb::IRigidBody* PhysicsScene::AddBox(const glm::vec3& extents, const glm::vec3&
 	m_isStatic.push_back(mass == 0.0f);
 
 	m_world->AddRigidBody(body);
+
+	// Give the body an entity with a physics + render component. The physics
+	// component is what pulls the transform across each frame.
+	{
+		auto entity = std::make_shared<Entity>("Body" + std::to_string(m_entities.size()),
+		                                       (unsigned int)m_entities.size());
+		entity->SetPosition(position);
+		entity->SetScale(extents * 0.5f);
+
+		auto physComp = std::make_shared<PhysicsComponent>((unsigned int)m_entities.size());
+		physComp->SetBody(body);
+		entity->AddComponent(physComp);
+
+		auto renderComp = std::make_shared<RenderComponent>((unsigned int)m_entities.size());
+		renderComp->SetRenderScale(extents * 0.5f);
+		renderComp->SetEntityData(mass == 0.0f ? 0u : 1u);
+		entity->AddComponent(renderComp);
+
+		m_entities.push_back(entity);
+	}
+
 	return body;
 }
 
@@ -77,6 +101,7 @@ void PhysicsScene::BuildBoxStackTest()
 
 	// PhysicsSystem::Init set this; it is not part of the ported core.
 	m_world->SetGravity(glm::vec3(0.0f, -9.8f, 0.0f));
+	m_world->SetPhysDebugDrawer(m_debugDraw);
 
 	// Ground slab: mass 0, gravity off.
 	AddBox(glm::vec3(60.0f, 2.0f, 60.0f), glm::vec3(0.0f, 0.0f, 0.0f), 0.0f, false);
@@ -94,6 +119,13 @@ void PhysicsScene::BuildBoxStackTest()
 	AddBox(glm::vec3(2.0f, 2.0f, 2.0f), glm::vec3(0.0f, 22.0f, 0.0f), 1.0f, true);
 }
 
+void PhysicsScene::SetDebugDraw(orb::IDebugDraw* debugDraw)
+{
+	m_debugDraw = debugDraw;
+	if (m_world)
+		m_world->SetPhysDebugDrawer(m_debugDraw);
+}
+
 void PhysicsScene::Step(float frameSeconds)
 {
 	if (!m_world)
@@ -105,23 +137,28 @@ void PhysicsScene::Step(float frameSeconds)
 	m_world->StepSimulation(frameSeconds, MAX_SUBSTEPS, FIXED_TIMESTEP);
 }
 
+void PhysicsScene::UpdateComponents(float dt)
+{
+	for (auto& entity : m_entities)
+		entity->UpdateComponents(dt);
+}
+
 void PhysicsScene::CollectBodyViews(std::vector<BodyView>& out) const
 {
 	out.clear();
-	out.reserve(m_bodies.size());
+	out.reserve(m_entities.size());
 
-	for (size_t i = 0; i < m_bodies.size(); ++i)
+	for (size_t i = 0; i < m_entities.size(); ++i)
 	{
-		const orb::OTransform& t = m_bodies[i]->GetTransform();
+		const Entity& e = *m_entities[i];
+		auto renderComp = e.GetComponent<RenderComponent>();
 
 		BodyView v;
-		v.position = t.GetOrigin();
-		// GetRotation()/SetRotation() are the pair the integrator itself uses.
-		// OTransform::GetOpenGLMatrix() transposes the basis and would hand back
-		// the inverse rotation, which is not what the solver is working in.
-		v.orientation  = t.GetRotation();
-		v.renderScale  = m_renderScales[i];
-		v.isStatic     = m_isStatic[i];
+		// Written by PhysicsComponent::Update from the body transform.
+		v.position    = e.GetPosition();
+		v.orientation = e.GetRotation();
+		v.renderScale = renderComp ? renderComp->GetRenderScale() : e.GetScale();
+		v.isStatic    = m_isStatic[i];
 		out.push_back(v);
 	}
 }

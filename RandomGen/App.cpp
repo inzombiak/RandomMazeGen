@@ -2,6 +2,7 @@
 
 #include "Rendering/Window.h"
 #include "Rendering/Renderer_D12.h"
+#include "Rendering/DebugRenderer_D12.h"
 #include "MazeGenDefs.h"
 
 #include <iostream>
@@ -216,6 +217,8 @@ void App::SetPhysicsTestEnabled(bool enabled)
 
     m_physicsTestEnabled = enabled;
     if (enabled)
+        m_physics.SetDebugDraw(RENDERER ? RENDERER->GetDebugDraw() : nullptr);
+    if (enabled)
         m_physics.BuildBoxStackTest();
     else
         m_physics.Clear();
@@ -332,7 +335,12 @@ void App::OnUpdate(UpdateEventArgs& e)
     // gated behind the toggle until that is addressed.
     if (m_physicsTestEnabled && m_physics.IsBuilt())
     {
+        // Physics re-emits its debug geometry every Step, so drop last frame first.
+        if (DebugRenderer_D12* dbg = RENDERER ? RENDERER->GetDebugDraw() : nullptr)
+            dbg->Clear();
         m_physics.Step((float)dt);
+        // Pull body transforms onto their entities before anything reads them.
+        m_physics.UpdateComponents((float)dt);
         if (Globals::STARTUP_VALS.physics_test)
         {
             static double traceTime = 0.0;

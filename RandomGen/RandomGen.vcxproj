@@ -172,6 +172,8 @@
   <ItemGroup>
     <ClCompile Include="App.cpp" />
     <ClCompile Include="Scene\PhysicsScene.cpp" />
+    <ClCompile Include="Scene\Components.cpp" />
+    <ClCompile Include="Rendering\DebugRenderer_D12.cpp" />
     <ClCompile Include="AssetManager.cpp">
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">true</ExcludedFromBuild>
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|x64'">true</ExcludedFromBuild>
@@ -226,6 +228,11 @@
   <ItemGroup>
     <ClInclude Include="App.h" />
     <ClInclude Include="Scene\PhysicsScene.h" />
+    <ClInclude Include="Scene\Entity.h" />
+    <ClInclude Include="Scene\ObjectComponent.h" />
+    <ClInclude Include="Scene\PhysicsComponent.h" />
+    <ClInclude Include="Scene\RenderComponent.h" />
+    <ClInclude Include="Rendering\DebugRenderer_D12.h" />
     <ClInclude Include="AppDefs.h" />
     <ClInclude Include="AssetManager.h" />
     <ClInclude Include="Events.h" />
@@ -293,6 +300,22 @@
     <ClInclude Include="Rendering\Window.h" />
   </ItemGroup>
   <ItemGroup>
+    <FxCompile Include="Resources\Shaders\pixel_debugline.hlsl">
+      <ShaderType Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">Pixel</ShaderType>
+      <ShaderType Condition="'$(Configuration)|$(Platform)'=='Release|x64'">Pixel</ShaderType>
+      <ShaderModel Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">5.1</ShaderModel>
+      <ShaderModel Condition="'$(Configuration)|$(Platform)'=='Release|x64'">5.1</ShaderModel>
+      <DisableOptimizations Condition="'$(Configuration)|$(Platform)'=='Release|x64'">true</DisableOptimizations>
+      <EnableDebuggingInformation Condition="'$(Configuration)|$(Platform)'=='Release|x64'">true</EnableDebuggingInformation>
+    </FxCompile>
+    <FxCompile Include="Resources\Shaders\vertex_debugline.hlsl">
+      <ShaderType Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">Vertex</ShaderType>
+      <ShaderType Condition="'$(Configuration)|$(Platform)'=='Release|x64'">Vertex</ShaderType>
+      <ShaderModel Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">5.1</ShaderModel>
+      <ShaderModel Condition="'$(Configuration)|$(Platform)'=='Release|x64'">5.1</ShaderModel>
+      <DisableOptimizations Condition="'$(Configuration)|$(Platform)'=='Release|x64'">true</DisableOptimizations>
+      <EnableDebuggingInformation Condition="'$(Configuration)|$(Platform)'=='Release|x64'">true</EnableDebuggingInformation>
+    </FxCompile>
     <FxCompile Include="Resources\Shaders\pixel_basic.hlsl">
       <ShaderType Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">Pixel</ShaderType>
       <ShaderType Condition="'$(Configuration)|$(Platform)'=='Release|x64'">Pixel</ShaderType>

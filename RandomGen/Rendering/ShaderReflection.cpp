@@ -220,6 +220,17 @@ void ShaderReflector::ReflectDecoratorComments(const std::wstring& shaderName, S
                         outMetadata.renderDefs.cullMode = D3D12_CULL_MODE_NONE;
                     }
                 }
+                else if (val = GetValueInLine(line, "Topology"); val.size() > 0) {
+                    if (val.compare("Line") == 0) {
+                        outMetadata.renderDefs.topologyType = D3D12_PRIMITIVE_TOPOLOGY_TYPE_LINE;
+                    }
+                    else if (val.compare("Point") == 0) {
+                        outMetadata.renderDefs.topologyType = D3D12_PRIMITIVE_TOPOLOGY_TYPE_POINT;
+                    }
+                    else if (val.compare("Triangle") == 0) {
+                        outMetadata.renderDefs.topologyType = D3D12_PRIMITIVE_TOPOLOGY_TYPE_TRIANGLE;
+                    }
+                }
                 else if (line.find("RenderTargets") != std::string::npos) {
                     getline(fileInput, line);
                     auto start = line.find("{");

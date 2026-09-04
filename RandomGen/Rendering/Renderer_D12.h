@@ -49,6 +49,7 @@ class DescriptorAllocation_D12;
 class DynamicDescriptorHeap_D12;
 class RootSignature_D12;
 class Texture_D12;
+class DebugRenderer_D12;
 
 #include "imgui.h"
 #include "imgui_impl_dx12.h"
@@ -162,6 +163,12 @@ class Renderer_D12 {
 
 		bool GUIInitialized() const;
 
+		// Physics debug lines. Null until PostInit builds the line PSO; hand this
+		// to PhysicsWorld::SetPhysDebugDrawer.
+		DebugRenderer_D12* GetDebugDraw() const;
+		void SetDebugDrawEnabled(bool enabled) { m_debugDrawEnabled = enabled; }
+		bool IsDebugDrawEnabled() const { return m_debugDrawEnabled; }
+
 		ExampleDescriptorHeapAllocator				m_imGUIAllocator;
 
 	private:
@@ -239,6 +246,9 @@ class Renderer_D12 {
 		uint64_t			m_currentFrame = 0;
 
 		bool m_tearingSupported = false;
+		std::shared_ptr<DebugRenderer_D12> m_debugDraw;
+		bool m_debugDrawEnabled = true;
+
 		bool m_initalized = false;
 };
 

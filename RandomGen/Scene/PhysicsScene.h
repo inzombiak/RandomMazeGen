@@ -3,6 +3,9 @@
 
 #include <Core/MathConfig.h>
 
+#include "Entity.h"
+
+#include <memory>
 #include <vector>
 
 namespace orb
@@ -13,6 +16,7 @@ namespace orb
 	class IConstraintSolver;
 	class IRigidBody;
 	class ICollisionShape;
+	class IDebugDraw;
 }
 
 // Owns a physics world and everything in it.
@@ -48,9 +52,18 @@ public:
 	// clamps the substep count itself.
 	void Step(float frameSeconds);
 
+	// Physics emits its debug geometry through this during Step(); pass null to
+	// turn it off. Survives BuildBoxStackTest so it only needs setting once.
+	void SetDebugDraw(orb::IDebugDraw* debugDraw);
+
 	bool   IsBuilt() const { return m_world != nullptr && !m_bodies.empty(); }
 	size_t BodyCount() const { return m_bodies.size(); }
 	void   CollectBodyViews(std::vector<BodyView>& out) const;
+
+	// Entities own the transform + component set; the body views above are
+	// derived from them for the renderer.
+	const std::vector<std::shared_ptr<Entity>>& GetEntities() const { return m_entities; }
+	void UpdateComponents(float dt);
 
 	// Orbitals ran 1/60 with maxSubSteps=1, which silently drops time whenever a
 	// frame runs long. Allowing catch-up steps keeps the sim in step with the
@@ -67,9 +80,11 @@ private:
 	orb::IBroadphase*       m_broadphase = nullptr;
 	orb::INarrowphase*      m_narrowphase = nullptr;
 	orb::IConstraintSolver* m_solver = nullptr;
+	orb::IDebugDraw*        m_debugDraw = nullptr;
 
 	std::vector<orb::IRigidBody*>      m_bodies;
 	std::vector<orb::ICollisionShape*> m_shapes;
+	std::vector<std::shared_ptr<Entity>> m_entities;
 	std::vector<glm::vec3>             m_renderScales;
 	std::vector<bool>                  m_isStatic;
 };

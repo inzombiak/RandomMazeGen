@@ -42,6 +42,10 @@ struct ShaderConstantBuffer {
 struct ShaderRenderDefs {
     D3D12_CULL_MODE cullMode = D3D12_CULL_MODE::D3D12_CULL_MODE_BACK;
 
+    // Declared in the shader as `Topology: Line` (default Triangle); the debug
+    // line renderer needs a line-list PSO.
+    D3D12_PRIMITIVE_TOPOLOGY_TYPE topologyType = D3D12_PRIMITIVE_TOPOLOGY_TYPE_TRIANGLE;
+
     std::vector<DXGI_FORMAT> renderTargets;
 };
 

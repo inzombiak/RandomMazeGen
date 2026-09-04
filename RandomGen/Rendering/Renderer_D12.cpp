@@ -9,6 +9,8 @@
 #include "Texture_D12.h"
 
 #include "Window.h"
+#include "DebugRenderer_D12.h"
+#include <iostream>
 #include "MazeGenDefs.h"
 
 // Validate GPU structure sizes to ensure correct memory layout
@@ -385,6 +387,12 @@ void Renderer_D12::Render() {
 		}
 	}
 
+	// Physics debug lines, over the scene and under ImGui.
+	if (m_debugDraw && m_debugDrawEnabled && m_sceneDataBuffer)
+	{
+		m_debugDraw->Record(commandList, m_sceneDataBuffer->m_resource->GetGPUVirtualAddress());
+	}
+
 	// Present
 	{
 
@@ -621,6 +629,24 @@ void Renderer_D12::LoadTextures() {
 	m_basicLitMatId = hasher("BasicLit");
 	CreateMaterial("Shadowmap", L"vertex_shadow", L"pixel_shadow");;
 	m_shadowmapMatId = hasher("Shadowmap");
+
+	// Physics debug lines get their own line-topology PSO, declared via the
+	// `Topology: Line` decorator in pixel_debugline.hlsl.
+	{
+		try {
+			PipelineStateObject* linePso = BuildPipelineState(L"vertex_debugline", L"pixel_debugline");
+			m_debugDraw = std::make_shared<DebugRenderer_D12>();
+			if (!m_debugDraw->Initialize(m_device, linePso))
+				m_debugDraw.reset();
+		} catch (const std::exception& e) {
+			std::cout << "Debug line renderer unavailable: " << e.what() << std::endl;
+			m_debugDraw.reset();
+		}
+	}
+}
+
+DebugRenderer_D12* Renderer_D12::GetDebugDraw() const {
+	return m_debugDraw.get();
 }
 
 void Renderer_D12::UpdateInstanceData(const std::vector<Renderable>& renderables) {
@@ -863,7 +889,7 @@ PipelineStateObject* Renderer_D12::BuildPipelineState(const std::wstring& vertex
 	pipelineStateStream.pRootSignature = entry.rootSignature->GetD3D12RootSignature().Get();
 	// Use the automatically generated input layout
 	pipelineStateStream.InputLayout = { inputLayout.data(), static_cast<UINT>(inputLayout.size()) };
-	pipelineStateStream.PrimitiveTopologyType = D3D12_PRIMITIVE_TOPOLOGY_TYPE_TRIANGLE;
+	pipelineStateStream.PrimitiveTopologyType = pixelMetadata.renderDefs.topologyType;
 	pipelineStateStream.VS = CD3DX12_SHADER_BYTECODE(vertexMetadata.shaderBlob.Get());
 	pipelineStateStream.PS = CD3DX12_SHADER_BYTECODE(pixelMetadata.shaderBlob.Get());
 	pipelineStateStream.DSVFormat = DXGI_FORMAT_D32_FLOAT;
