@@ -4,13 +4,8 @@
 #include "HighResolutionClock.h"
 #include "MazeGenDefs.h"
 
-// GLM Math library
-#define GLM_FORCE_LEFT_HANDED
-#define GLM_FORCE_DEPTH_ZERO_TO_ONE
-#include <glm/glm.hpp>
-#include <glm/gtc/matrix_transform.hpp>
-#include <glm/gtc/quaternion.hpp>
-#include <glm/gtc/type_ptr.hpp>
+// GLM Math library (handedness/depth macros are set project-wide; see Core/MathConfig.h)
+#include <Core/MathConfig.h>
 
 #include "Renderable.h"
 
@@ -18,7 +13,6 @@
 #include <string>
 #include <vector>
 
-#define WIN32_LEAN_AND_MEAN
 #include <Windows.h>
 #include <shellapi.h>
 

@@ -105,8 +105,8 @@
       </PrecompiledHeader>
       <WarningLevel>Level3</WarningLevel>
       <Optimization>Disabled</Optimization>
-      <PreprocessorDefinitions>WIN32;_DEBUG;_CONSOLE;_LIB;%(PreprocessorDefinitions)</PreprocessorDefinitions>
-      <AdditionalIncludeDirectories>Extern\assimp\include;Extern\imgui\backends;Extern\imgui;$(SolutionDir)\include;$(SolutionDir)MazeGenerator\include;$(SolutionDir)include\glm$(SolutionDir)include\glm$(SolutionDir)MazeGenerator\include</AdditionalIncludeDirectories>
+      <PreprocessorDefinitions>GLM_FORCE_LEFT_HANDED;GLM_FORCE_DEPTH_ZERO_TO_ONE;NOMINMAX;WIN32_LEAN_AND_MEAN;WIN32;_DEBUG;_CONSOLE;_LIB;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <AdditionalIncludeDirectories>Extern\assimp\include;Extern\imgui\backends;Extern\imgui;$(SolutionDir)\include;$(SolutionDir)MazeGenerator\include;$(SolutionDir)include\glm;$(SolutionDir)MazeGenerator\include</AdditionalIncludeDirectories>
       <RuntimeLibrary>MultiThreadedDebugDLL</RuntimeLibrary>
       <LanguageStandard>stdcpp20</LanguageStandard>
       <ConformanceMode>false</ConformanceMode>
@@ -149,8 +149,8 @@
       <Optimization>MaxSpeed</Optimization>
       <FunctionLevelLinking>true</FunctionLevelLinking>
       <IntrinsicFunctions>true</IntrinsicFunctions>
-      <PreprocessorDefinitions>SFML_STATIC;WIN32;NDEBUG;_CONSOLE;_LIB;%(PreprocessorDefinitions)</PreprocessorDefinitions>
-      <AdditionalIncludeDirectories>Extern\assimp\include;Extern\imgui\backends;Extern\imgui;$(SolutionDir)\include;$(SolutionDir)MazeGenerator\include;$(SolutionDir)include\glm$(SolutionDir)include\glm%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <PreprocessorDefinitions>GLM_FORCE_LEFT_HANDED;GLM_FORCE_DEPTH_ZERO_TO_ONE;NOMINMAX;WIN32_LEAN_AND_MEAN;WIN32;NDEBUG;_CONSOLE;_LIB;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <AdditionalIncludeDirectories>Extern\assimp\include;Extern\imgui\backends;Extern\imgui;$(SolutionDir)\include;$(SolutionDir)MazeGenerator\include;$(SolutionDir)include\glm;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <RuntimeLibrary>MultiThreaded</RuntimeLibrary>
       <LanguageStandard>stdcpp20</LanguageStandard>
       <ConformanceMode>false</ConformanceMode>
@@ -171,7 +171,10 @@
   </ItemDefinitionGroup>
   <ItemGroup>
     <ClCompile Include="App.cpp" />
-    <ClCompile Include="AssetManager.cpp" />
+    <ClCompile Include="AssetManager.cpp">
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">true</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|x64'">true</ExcludedFromBuild>
+    </ClCompile>
     <ClCompile Include="Extern\DDSTextureLoader\DDSTextureLoader11.cpp" />
     <ClCompile Include="Extern\DDSTextureLoader\DDSTextureLoader12.cpp" />
     <ClCompile Include="Extern\DDSTextureLoader\DDSTextureLoader9.cpp" />

@@ -5,13 +5,8 @@
 #include <dxgi1_6.h>
 #include <d3dcompiler.h>
 
-// GLM Math library
-#define GLM_FORCE_LEFT_HANDED
-#define GLM_FORCE_DEPTH_ZERO_TO_ONE
-#include <glm/glm.hpp>
-#include <glm/gtc/matrix_transform.hpp>
-#include <glm/gtc/quaternion.hpp>
-#include <glm/gtc/type_ptr.hpp>
+// GLM Math library (handedness/depth macros are set project-wide; see Core/MathConfig.h)
+#include <Core/MathConfig.h>
 
 // D3D12 extension library.
 #include "d3dx12/d3dx12.h"

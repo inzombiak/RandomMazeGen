@@ -14,7 +14,7 @@
 #define _128MB _MB(128)
 #define _256MB _MB(256)
 
-#include <glm/glm.hpp>
+#include <Core/MathConfig.h>
 
 struct VertexInput
 {

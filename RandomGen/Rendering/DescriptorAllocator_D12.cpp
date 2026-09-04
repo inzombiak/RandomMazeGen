@@ -1,6 +1,8 @@
 #include "DescriptorAllocator_D12.h"
 #include "DescriptorAllocatorPage_D12.h"
 
+#include <algorithm>
+
 DescriptorAllocator_D12::DescriptorAllocator_D12(D3D12_DESCRIPTOR_HEAP_TYPE type, uint32_t numDescriptorsPerHeap)
     : m_heapType(type)
     , m_numDescriptorsPerHeap(numDescriptorsPerHeap)
@@ -42,7 +44,7 @@ DescriptorAllocation_D12 DescriptorAllocator_D12::Allocate(uint32_t numDescripto
         // Create a page large enough for this allocation, but don't permanently
         // increase the default page size. This prevents memory waste from one
         // large allocation causing all future pages to be oversized.
-        auto pageSize = max(m_numDescriptorsPerHeap, numDescriptors);
+        auto pageSize = std::max(m_numDescriptorsPerHeap, numDescriptors);
         auto newPage = CreateAllocatorPage(pageSize);
 
         allocation = newPage->Allocate(numDescriptors);

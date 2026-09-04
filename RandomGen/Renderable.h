@@ -6,8 +6,7 @@ using namespace Microsoft::WRL;
 #include "Rendering/RenderDefs.h"
 #include "Material.h"
 
-#include "glm/glm.hpp"
-#include "glm/gtc/quaternion.hpp"
+#include <Core/MathConfig.h>
 
 #include <string>
 #include <memory>
