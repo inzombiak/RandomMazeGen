@@ -10,6 +10,8 @@ Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "RandomGen", "RandomGen\Rand
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "MazeGenerator", "MazeGenerator\MazeGenerator.vcxproj", "{36D706EB-EE95-4E4A-83C4-8B2D3774ECE0}"
 EndProject
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "Physics", "Physics\Physics.vcxproj", "{7F3A9C21-4B5E-4D8A-9E11-2C6D8F0A3B57}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Win32 = Debug|Win32
@@ -34,6 +36,12 @@ Global
 		{36D706EB-EE95-4E4A-83C4-8B2D3774ECE0}.Release|Win32.Build.0 = Release|Win32
 		{36D706EB-EE95-4E4A-83C4-8B2D3774ECE0}.Release|x64.ActiveCfg = Release|x64
 		{36D706EB-EE95-4E4A-83C4-8B2D3774ECE0}.Release|x64.Build.0 = Release|x64
+		{7F3A9C21-4B5E-4D8A-9E11-2C6D8F0A3B57}.Debug|Win32.ActiveCfg = Debug|x64
+		{7F3A9C21-4B5E-4D8A-9E11-2C6D8F0A3B57}.Debug|x64.ActiveCfg = Debug|x64
+		{7F3A9C21-4B5E-4D8A-9E11-2C6D8F0A3B57}.Debug|x64.Build.0 = Debug|x64
+		{7F3A9C21-4B5E-4D8A-9E11-2C6D8F0A3B57}.Release|Win32.ActiveCfg = Release|x64
+		{7F3A9C21-4B5E-4D8A-9E11-2C6D8F0A3B57}.Release|x64.ActiveCfg = Release|x64
+		{7F3A9C21-4B5E-4D8A-9E11-2C6D8F0A3B57}.Release|x64.Build.0 = Release|x64
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
