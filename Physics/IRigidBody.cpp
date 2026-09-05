@@ -4,8 +4,11 @@ namespace orb
 {
 
 
+unsigned int IRigidBody::s_nextId = 0;
+
 IRigidBody::IRigidBody(const PhysicsDefs::RigidBodyConstructionInfo& rbci)
 {
+	m_id = s_nextId++;
 	m_gravity = glm::vec3(0.f);
 
 	m_mass				= rbci.mass;

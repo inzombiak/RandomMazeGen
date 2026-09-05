@@ -15,6 +15,9 @@ namespace Globals {
 		bool use_warp = false;
 		bool physics_test = false;
 		bool physics_headless = false;
+		bool physics_fixed = false;
+		int  physics_steps = 0;
+		int  physics_trace_every = 30;
 	};
 
 	extern bool VSYNC_ENABLED;

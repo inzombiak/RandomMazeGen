@@ -115,6 +115,8 @@ bool NarrowphaseSAT::SATDetectionOBB(IRigidBody* body1, IRigidBody* body2, Manif
 	PhysicsDefs::ContactInfo contactInfo;
 	float ra, rb, depth;
 	const float fudge_factor = 1.05f;
+	const float COLLISION_MARGIN = 0.01f;
+	const bool EDGE_AXES_MAY_SELECT = false;
 	contactInfo.depth = -FLT_MAX;
 	glm::mat3 R, absR;
 	PhysicsDefs::OBB obb1 = body1->GetOBB();
@@ -153,10 +155,10 @@ bool NarrowphaseSAT::SATDetectionOBB(IRigidBody* body1, IRigidBody* body2, Manif
 
 		depth = std::abs(TL) - (ra + rb);
 		
-		if (depth > 0)
+		if (depth > COLLISION_MARGIN)
 			return false;
 
-		if (depth < -0.00001f && depth * fudge_factor > contactInfo.depth)
+		if (depth < COLLISION_MARGIN && depth * fudge_factor > contactInfo.depth)
 		{
 			invertNormal = TL < 0;
 			contactInfo.depth = depth;
@@ -173,10 +175,10 @@ bool NarrowphaseSAT::SATDetectionOBB(IRigidBody* body1, IRigidBody* body2, Manif
 		TL = trans[0] * R[0][i] + trans[1] * R[1][i] + trans[2] * R[2][i];
 		depth = std::abs(TL) - (ra + rb);
 
-		if (depth > 0)
+		if (depth > COLLISION_MARGIN)
 			return false;
 
-		if (depth < -0.00001f && depth * fudge_factor > contactInfo.depth)
+		if (depth < COLLISION_MARGIN && depth * fudge_factor > contactInfo.depth)
 		{
 			invertNormal = TL < 0;
 			contactInfo.depth = depth;
@@ -191,12 +193,12 @@ bool NarrowphaseSAT::SATDetectionOBB(IRigidBody* body1, IRigidBody* body2, Manif
 	rb = obb2.halfExtents[1] * absR[0][2] + obb2.halfExtents[2] * absR[0][1];
 	TL = trans[2] * R[1][0] - trans[1] * R[2][0];
 	depth = std::abs(TL) - (ra + rb);
-	if (depth > 0)
+	if (depth > COLLISION_MARGIN)
 		return false;
 	else
 	{
 		normal = glm::cross(obb1.localAxes[0], obb2.localAxes[0]);
-		if (depth > 0.00001f && depth * fudge_factor > contactInfo.depth && normal != glm::vec3(0.f))
+		if (EDGE_AXES_MAY_SELECT && depth * fudge_factor > contactInfo.depth && normal != glm::vec3(0.f))
 		{
 			invertNormal = TL < 0;
 			contactInfo.depth = depth;
@@ -211,13 +213,12 @@ bool NarrowphaseSAT::SATDetectionOBB(IRigidBody* body1, IRigidBody* body2, Manif
 	TL = trans[2] * R[1][1] - trans[1] * R[2][1];
 
 	depth = std::abs(TL) - (ra + rb);
-	if (depth > 0)
+	if (depth > COLLISION_MARGIN)
 		return false;
 	else
 	{
-
 		normal = glm::cross(obb1.localAxes[0], obb2.localAxes[1]);
-		if (depth > 0.00001f && depth * fudge_factor > contactInfo.depth && normal != glm::vec3(0.f))
+		if (EDGE_AXES_MAY_SELECT && depth * fudge_factor > contactInfo.depth && normal != glm::vec3(0.f))
 		{
 			invertNormal = TL < 0;
 			contactInfo.depth = depth;
@@ -232,12 +233,12 @@ bool NarrowphaseSAT::SATDetectionOBB(IRigidBody* body1, IRigidBody* body2, Manif
 	TL = trans[2] * R[1][2] - trans[1] * R[2][2];
 
 	depth = std::abs(TL) - (ra + rb);
-	if (depth > 0)
+	if (depth > COLLISION_MARGIN)
 		return false;
 	else
 	{
 		normal = glm::cross(obb1.localAxes[0], obb2.localAxes[2]);
-		if (depth > 0.00001f && depth * fudge_factor > contactInfo.depth && normal != glm::vec3(0.f))
+		if (EDGE_AXES_MAY_SELECT && depth * fudge_factor > contactInfo.depth && normal != glm::vec3(0.f))
 		{
 			invertNormal = TL < 0;
 			contactInfo.depth = depth;
@@ -252,12 +253,12 @@ bool NarrowphaseSAT::SATDetectionOBB(IRigidBody* body1, IRigidBody* body2, Manif
 	TL = trans[0] * R[2][0] - trans[2] * R[0][0];
 
 	depth = std::abs(TL) - (ra + rb);
-	if (depth > 0)
+	if (depth > COLLISION_MARGIN)
 		return false;
 	else
 	{
 		normal = glm::cross(obb1.localAxes[1], obb2.localAxes[0]);
-		if (depth > 0.00001f && depth * fudge_factor > contactInfo.depth && normal != glm::vec3(0.f))
+		if (EDGE_AXES_MAY_SELECT && depth * fudge_factor > contactInfo.depth && normal != glm::vec3(0.f))
 		{
 			invertNormal = TL < 0;
 			contactInfo.depth = depth;
@@ -272,12 +273,12 @@ bool NarrowphaseSAT::SATDetectionOBB(IRigidBody* body1, IRigidBody* body2, Manif
 	TL = trans[0] * R[2][1] - trans[2] * R[0][1];
 
 	depth = std::abs(TL) - (ra + rb);
-	if (depth > 0)
+	if (depth > COLLISION_MARGIN)
 		return false;
 	else
 	{
 		normal = glm::cross(obb1.localAxes[1], obb2.localAxes[1]);
-		if (depth > 0.00001f && depth * fudge_factor > contactInfo.depth && normal != glm::vec3(0.f))
+		if (EDGE_AXES_MAY_SELECT && depth * fudge_factor > contactInfo.depth && normal != glm::vec3(0.f))
 		{
 			invertNormal = TL < 0;
 			contactInfo.depth = depth;
@@ -292,12 +293,12 @@ bool NarrowphaseSAT::SATDetectionOBB(IRigidBody* body1, IRigidBody* body2, Manif
 	TL = trans[0] * R[2][2] - trans[2] * R[0][2];
 
 	depth = std::abs(TL) - (ra + rb);
-	if (depth > 0)
+	if (depth > COLLISION_MARGIN)
 		return false;
 	else
 	{
 		normal = glm::cross(obb1.localAxes[1], obb2.localAxes[2]);
-		if (depth > 0.00001f && depth * fudge_factor > contactInfo.depth && normal != glm::vec3(0.f))
+		if (EDGE_AXES_MAY_SELECT && depth * fudge_factor > contactInfo.depth && normal != glm::vec3(0.f))
 		{
 			invertNormal = TL < 0;
 			contactInfo.depth = depth;
@@ -311,12 +312,12 @@ bool NarrowphaseSAT::SATDetectionOBB(IRigidBody* body1, IRigidBody* body2, Manif
 	rb = obb2.halfExtents[1] * absR[2][2] + obb2.halfExtents[2] * absR[2][1];
 	TL = trans[1] * R[0][0] - trans[0] * R[1][0];
 	depth = std::abs(TL) - (ra + rb);
-	if (depth > 0)
+	if (depth > COLLISION_MARGIN)
 		return false;
 	else
 	{
 		normal = glm::cross(obb1.localAxes[2], obb2.localAxes[0]);
-		if (depth > 0.00001f && depth * fudge_factor > contactInfo.depth && normal != glm::vec3(0.f))
+		if (EDGE_AXES_MAY_SELECT && depth * fudge_factor > contactInfo.depth && normal != glm::vec3(0.f))
 		{
 			invertNormal = TL < 0;
 			contactInfo.depth = depth;
@@ -331,12 +332,12 @@ bool NarrowphaseSAT::SATDetectionOBB(IRigidBody* body1, IRigidBody* body2, Manif
 	TL = trans[1] * R[0][1] - trans[0] * R[1][1];
 
 	depth = std::abs(TL) - (ra + rb);
-	if (depth > 0)
+	if (depth > COLLISION_MARGIN)
 		return false;
 	else
 	{
 		normal = glm::cross(obb1.localAxes[2], obb2.localAxes[1]);
-		if (depth > 0.00001f && depth * fudge_factor > contactInfo.depth && normal != glm::vec3(0.f))
+		if (EDGE_AXES_MAY_SELECT && depth * fudge_factor > contactInfo.depth && normal != glm::vec3(0.f))
 		{
 			invertNormal = TL < 0;
 			contactInfo.depth = depth;
@@ -351,12 +352,12 @@ bool NarrowphaseSAT::SATDetectionOBB(IRigidBody* body1, IRigidBody* body2, Manif
 	TL = trans[1] * R[0][2] - trans[0] * R[1][2];
 
 	depth = std::abs(TL) - (ra + rb);
-	if (depth > 0)
+	if (depth > COLLISION_MARGIN)
 		return false;
 	else
 	{
 		normal = glm::cross(obb1.localAxes[2], obb2.localAxes[2]);
-		if (depth > 0.00001f && depth * fudge_factor > contactInfo.depth && normal != glm::vec3(0.f))
+		if (EDGE_AXES_MAY_SELECT && depth * fudge_factor > contactInfo.depth && normal != glm::vec3(0.f))
 		{
 			invertNormal = TL < 0;
 			contactInfo.depth = depth;
@@ -421,9 +422,8 @@ bool NarrowphaseSAT::SATDetectionOBB(IRigidBody* body1, IRigidBody* body2, Manif
 		pb += ub * beta;
 
 		contactInfo.worldPos = 0.5f * (pa + pb);
-		OTransform invTrans1 = body1->GetInterpolationTransform().Inverse(), invTrans2 = body2->GetInterpolationTransform().Inverse();
-		contactInfo.localPointA = invTrans1 * contactInfo.worldPos;
-		contactInfo.localPointB = invTrans2 * contactInfo.worldPos;
+		contactInfo.localPointA = (contactInfo.worldPos - obb1.pos) * obb1.localAxes;
+		contactInfo.localPointB = (contactInfo.worldPos - obb2.pos) * obb2.localAxes;
 		manifold.Update(&contactInfo, 1);
 		return true;
 	}
@@ -668,8 +668,8 @@ bool NarrowphaseSAT::SATDetectionOBB(IRigidBody* body1, IRigidBody* body2, Manif
 	OTransform invTrans1 = body1->GetInterpolationTransform().Inverse(), invTrans2 = body2->GetInterpolationTransform().Inverse();
 	for (int i = 0; i < count; ++i)
 	{
-		contacts[i].localPointA = contacts[i].worldPos - obb1.pos;
-		contacts[i].localPointB = contacts[i].worldPos - obb2.pos;
+		contacts[i].localPointA = (contacts[i].worldPos - obb1.pos) * obb1.localAxes;
+		contacts[i].localPointB = (contacts[i].worldPos - obb2.pos) * obb2.localAxes;
 	}
 
 	manifold.Update(contacts, count);

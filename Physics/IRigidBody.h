@@ -13,6 +13,8 @@ public:
 	IRigidBody(const PhysicsDefs::RigidBodyConstructionInfo& rbci);
 	virtual ~IRigidBody() {};
 
+	unsigned int GetId() const { return m_id; }
+
 	void ClearForces();
 
 	void ApplyGravity();
@@ -48,6 +50,9 @@ public:
 	glm::vec3 GetSupportPoint(glm::vec3 dir) const;
 
 private:
+
+	static unsigned int s_nextId;
+	unsigned int m_id = 0;
 
 	bool m_enableGravity;
 	glm::vec3 m_gravity;

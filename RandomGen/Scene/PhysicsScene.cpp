@@ -12,6 +12,8 @@
 const float PhysicsScene::FIXED_TIMESTEP    = 1.0f / 60.0f;
 const int   PhysicsScene::MAX_SUBSTEPS      = 8;
 const float PhysicsScene::MAX_FRAME_SECONDS = 0.25f;
+const float PhysicsScene::DEFAULT_LINEAR_DAMPING  = 0.0f;
+const float PhysicsScene::DEFAULT_ANGULAR_DAMPING = 0.0f;
 
 PhysicsScene::PhysicsScene()
 {
@@ -43,7 +45,8 @@ void PhysicsScene::Clear()
 }
 
 orb::IRigidBody* PhysicsScene::AddBox(const glm::vec3& extents, const glm::vec3& position,
-                                      float mass, bool enableGravity)
+                                      float mass, bool enableGravity,
+                                      float linearDamping, float angularDamping)
 {
 	// BoxShape takes FULL extents and halves them internally, so the render
 	// scale is half the extents -- the shared box mesh already spans -1..+1.
@@ -55,6 +58,8 @@ orb::IRigidBody* PhysicsScene::AddBox(const glm::vec3& extents, const glm::vec3&
 	rbci.collisionShape = shape;
 	rbci.friction       = 0.5f;
 	rbci.resititution   = 0.1f;
+	rbci.linearDamping  = linearDamping;
+	rbci.angularDamping = angularDamping;
 	rbci.transform.SetIdentity();
 	rbci.transform.SetOrigin(position);
 
@@ -104,13 +109,13 @@ void PhysicsScene::BuildBoxStackTest()
 	m_world->SetPhysDebugDrawer(m_debugDraw);
 
 	// Ground slab: mass 0, gravity off.
-	AddBox(glm::vec3(60.0f, 2.0f, 60.0f), glm::vec3(0.0f, 0.0f, 0.0f), 0.0f, false);
+	AddBox(glm::vec3(60.0f, 2.0f, 60.0f), glm::vec3(0.0f, 0.0f, 0.0f), 0.0f, false, 0.0f, 0.0f);
 
 	// The handedness probe. Gravity off and a torque impulse about -X, so it
 	// hangs in place and only spins. If the render basis disagrees with the
 	// solver, this is the object that shows it -- it will spin the wrong way
 	// while everything else still looks plausible.
-	orb::IRigidBody* spinner = AddBox(glm::vec3(2.0f, 2.0f, 2.0f), glm::vec3(0.0f, 3.0f, -7.0f), 5.0f, false);
+	orb::IRigidBody* spinner = AddBox(glm::vec3(2.0f, 2.0f, 2.0f), glm::vec3(0.0f, 3.0f, -7.0f), 5.0f, false, 0.0f, 0.0f);
 	spinner->ApplyTorqueImpulse(glm::vec3(-4.0f, 0.0f, 0.0f));
 
 	// Falling stack.
@@ -141,6 +146,23 @@ void PhysicsScene::UpdateComponents(float dt)
 {
 	for (auto& entity : m_entities)
 		entity->UpdateComponents(dt);
+}
+
+void PhysicsScene::GetResidualMotion(float& outMaxLinear, float& outMaxAngular) const
+{
+	outMaxLinear  = 0.0f;
+	outMaxAngular = 0.0f;
+
+	for (size_t i = 2; i < m_bodies.size(); ++i)
+	{
+		if (m_isStatic[i])
+			continue;
+
+		const float lin = glm::length(m_bodies[i]->GetLinearVelocity());
+		const float ang = glm::length(m_bodies[i]->GetAngularVelocity());
+		if (lin > outMaxLinear)  outMaxLinear  = lin;
+		if (ang > outMaxAngular) outMaxAngular = ang;
+	}
 }
 
 void PhysicsScene::CollectBodyViews(std::vector<BodyView>& out) const

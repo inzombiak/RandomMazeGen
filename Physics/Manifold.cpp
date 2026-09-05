@@ -7,7 +7,7 @@ using namespace PhysicsDefs;
 
 Manifold::Manifold(IRigidBody* a, IRigidBody* b)
 {
-	if (a < b)
+	if (a->GetId() < b->GetId())
 	{
 		m_bodyA = a;
 		m_bodyB = b;
@@ -27,113 +27,135 @@ void Manifold::Solve()
 
 void Manifold::Update(PhysicsDefs::ContactInfo* newContacts, int newContactCount)
 {
-	std::vector<ContactInfo> mergedContacts;
-
 	//Merge the old and new contacts
 	//Based on Allen Chou's Game Physics series
-	if (m_contacts.size() == 0)
-	{
-		for (int i = 0; i < newContactCount; ++i)
-		{
-			m_contacts.push_back(newContacts[i]);
-		}
+	std::vector<ContactInfo> mergedContacts;
+	mergedContacts.reserve(newContactCount);
 
-		return;
-	}
-	//Merge points, except those too close to an old point
-	glm::vec3 rA, rB;
 	for (int i = 0; i < newContactCount; ++i)
 	{
-		for (int j = 0; j < m_contacts.size(); ++j)
-		{
-			rA = newContacts[i].localPointA - m_contacts[j].localPointA;
-			rB = newContacts[i].localPointB - m_contacts[j].localPointB;
+		ContactInfo contact = newContacts[i];
 
-			if (glm::dot(rA, rA) > 0.001 && glm::dot(rB, rB) > 0.001)
+		for (size_t j = 0; j < m_contacts.size(); ++j)
+		{
+			const glm::vec3 rA = contact.localPointA - m_contacts[j].localPointA;
+			const glm::vec3 rB = contact.localPointB - m_contacts[j].localPointB;
+
+			if (glm::dot(rA, rA) < PERSISTENT_CONTACT_TOLERANCE_SQ &&
+			    glm::dot(rB, rB) < PERSISTENT_CONTACT_TOLERANCE_SQ)
 			{
-				m_contacts.push_back(newContacts[i]);
+				contact.prevNormalImp = m_contacts[j].prevNormalImp;
+				contact.prevTangImp1  = m_contacts[j].prevTangImp1;
+				contact.prevTangImp2  = m_contacts[j].prevTangImp2;
+				break;
 			}
-				
 		}
-	
+
+		mergedContacts.push_back(contact);
 	}
+
+	if ((int)mergedContacts.size() <= MIN_POINTS)
+	{
+		m_contacts = mergedContacts;
+		return;
+	}
+
+	m_contacts = ReduceToFour(mergedContacts);
+}
+
+std::vector<PhysicsDefs::ContactInfo> Manifold::ReduceToFour(const std::vector<PhysicsDefs::ContactInfo>& candidates)
+{
+	std::vector<ContactInfo> result;
+	result.reserve(MIN_POINTS);
+
+	int taken[MIN_POINTS] = { -1, -1, -1, -1 };
+	int takenCount = 0;
+
+	auto alreadyTaken = [&](int idx)
+	{
+		for (int t = 0; t < takenCount; ++t)
+			if (taken[t] == idx)
+				return true;
+		return false;
+	};
+
+	auto take = [&](int idx)
+	{
+		taken[takenCount++] = idx;
+		result.push_back(candidates[idx]);
+	};
 
 	//Find deepest point
-	//TODO: change to pointer
-	//TODO: get rid of the bool
-	bool found = false;
-	PhysicsDefs::ContactInfo deepest;
+	int best = -1;
 	float currMax = -FLT_MAX;
-	for (int i = 0; i < m_contacts.size(); ++i)
+	for (size_t i = 0; i < candidates.size(); ++i)
 	{
-		if (m_contacts[i].depth > currMax)
+		if (candidates[i].depth > currMax)
 		{
-			currMax = m_contacts[i].depth;
-			deepest = m_contacts[i];
-			found = true;
+			currMax = candidates[i].depth;
+			best = (int)i;
 		}
 	}
-
-	if (found)
-		mergedContacts.push_back(deepest);
+	if (best < 0)
+		return result;
+	take(best);
 
 	//Find second point, furthest from the deepest point
-	PhysicsDefs::ContactInfo point1;
-	glm::vec3 diff;
-	float distance;
+	best = -1;
 	currMax = -FLT_MAX;
-	found = false;
-	for (int i = 0; i < m_contacts.size(); ++i)
+	for (size_t i = 0; i < candidates.size(); ++i)
 	{
-		diff = m_contacts[i].localPointA - deepest.localPointA;
-		distance = glm::dot(diff, diff);
+		if (alreadyTaken((int)i))
+			continue;
+		const glm::vec3 diff = candidates[i].localPointA - result[0].localPointA;
+		const float distance = glm::dot(diff, diff);
 		if (distance > currMax)
 		{
 			currMax = distance;
-			point1 = m_contacts[i];
-			found = true;
+			best = (int)i;
 		}
 	}
+	if (best < 0)
+		return result;
+	take(best);
 
-	if (found)
-		mergedContacts.push_back(point1);
-
-	//Find third point, furthest from the line between deepest and point1
-	PhysicsDefs::ContactInfo point2;
+	//Find third point, furthest from the line between the first two
+	best = -1;
 	currMax = -FLT_MAX;
-	found = false;
-	for (int i = 0; i < m_contacts.size(); ++i)
+	for (size_t i = 0; i < candidates.size(); ++i)
 	{
-		distance = DistanceToLineSq(deepest.localPointA, point1.localPointA, m_contacts[i].localPointA);
+		if (alreadyTaken((int)i))
+			continue;
+		const float distance = DistanceToLineSq(result[0].localPointA, result[1].localPointA,
+		                                        candidates[i].localPointA);
 		if (distance > currMax)
 		{
 			currMax = distance;
-			point2 = m_contacts[i];
-			found = true;
+			best = (int)i;
 		}
 	}
+	if (best < 0)
+		return result;
+	take(best);
 
-	if (found)
-		mergedContacts.push_back(point2);
-
-	//Find fourth point, furthest from triangle formed by deepest, point1 and point2
-	PhysicsDefs::ContactInfo point3;
+	//Find fourth point, furthest from the triangle formed by the first three
+	best = -1;
 	currMax = -FLT_MAX;
-	found = false;
-	for (int i = 0; i < m_contacts.size(); ++i)
+	for (size_t i = 0; i < candidates.size(); ++i)
 	{
-		distance = DistanceToTriangleSq(deepest.localPointA, point1.localPointA, point2.localPointA, m_contacts[i].localPointA);
+		if (alreadyTaken((int)i))
+			continue;
+		const float distance = DistanceToTriangleSq(result[0].localPointA, result[1].localPointA,
+		                                            result[2].localPointA, candidates[i].localPointA);
 		if (distance > currMax)
 		{
 			currMax = distance;
-			point3 = m_contacts[i];
-			found = true;
+			best = (int)i;
 		}
 	}
+	if (best >= 0)
+		take(best);
 
-	if (found)
-		mergedContacts.push_back(point3);
-	
-	m_contacts = mergedContacts;
+	return result;
 } 
 }

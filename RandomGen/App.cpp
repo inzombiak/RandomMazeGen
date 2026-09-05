@@ -6,6 +6,7 @@
 #include "MazeGenDefs.h"
 
 #include <iostream>
+#include <iomanip>
 #ifndef M_PI
 #define M_PI 3.14159265358979323846
 #endif
@@ -338,23 +339,54 @@ void App::OnUpdate(UpdateEventArgs& e)
         // Physics re-emits its debug geometry every Step, so drop last frame first.
         if (DebugRenderer_D12* dbg = RENDERER ? RENDERER->GetDebugDraw() : nullptr)
             dbg->Clear();
-        m_physics.Step((float)dt);
+        const bool  fixedMode = Globals::STARTUP_VALS.physics_fixed;
+        const float stepDt    = fixedMode ? PhysicsScene::FIXED_TIMESTEP : (float)dt;
+
+        m_physics.Step(stepDt);
         // Pull body transforms onto their entities before anything reads them.
-        m_physics.UpdateComponents((float)dt);
+        m_physics.UpdateComponents(stepDt);
         if (Globals::STARTUP_VALS.physics_test)
         {
+            static int    stepIndex = 0;
             static double traceTime = 0.0;
             static double nextTrace = 0.0;
-            traceTime += dt;
-            if (traceTime >= nextTrace)
+            ++stepIndex;
+            traceTime += stepDt;
+
+            const int  traceEvery = Globals::STARTUP_VALS.physics_trace_every;
+            const bool doTrace    = fixedMode ? (traceEvery > 0 && (stepIndex % traceEvery) == 0)
+                                              : (traceTime >= nextTrace);
+            if (doTrace)
             {
                 nextTrace += 0.5;
                 m_physics.CollectBodyViews(m_bodyViews);
-                std::cout << "[phys t=" << traceTime << "]";
+                float resLin = 0.0f, resAng = 0.0f;
+                m_physics.GetResidualMotion(resLin, resAng);
+                std::cout << "[phys step=" << stepIndex
+                          << " t=" << std::fixed << std::setprecision(3) << traceTime
+                          << " resLin=" << std::setprecision(5) << resLin
+                          << " resAng=" << resAng << "]";
                 for (size_t i = 0; i < m_bodyViews.size(); ++i)
-                    std::cout << " b" << i << "(y=" << m_bodyViews[i].position.y
-                              << ",qx=" << m_bodyViews[i].orientation.x << ")";
+                    std::cout << " b" << i << "(" << std::setprecision(2) << m_bodyViews[i].position.x
+                              << "," << std::setprecision(5) << m_bodyViews[i].position.y
+                              << "," << std::setprecision(2) << m_bodyViews[i].position.z
+                              << " qx=" << m_bodyViews[i].orientation.x << ")";
                 std::cout << std::endl;
+            }
+
+            const int budget = Globals::STARTUP_VALS.physics_steps;
+            if (budget > 0 && stepIndex >= budget)
+            {
+                m_physics.CollectBodyViews(m_bodyViews);
+                float resLin = 0.0f, resAng = 0.0f;
+                m_physics.GetResidualMotion(resLin, resAng);
+                std::cout << "[phys done steps=" << stepIndex
+                          << " resLin=" << std::fixed << std::setprecision(5) << resLin
+                          << " resAng=" << resAng << "]";
+                for (size_t i = 0; i < m_bodyViews.size(); ++i)
+                    std::cout << " b" << i << "(y=" << std::setprecision(5) << m_bodyViews[i].position.y << ")";
+                std::cout << std::endl;
+                ::PostQuitMessage(0);
             }
         }
 

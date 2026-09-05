@@ -60,6 +60,8 @@ public:
 	size_t BodyCount() const { return m_bodies.size(); }
 	void   CollectBodyViews(std::vector<BodyView>& out) const;
 
+	void GetResidualMotion(float& outMaxLinear, float& outMaxAngular) const;
+
 	// Entities own the transform + component set; the body views above are
 	// derived from them for the renderer.
 	const std::vector<std::shared_ptr<Entity>>& GetEntities() const { return m_entities; }
@@ -72,9 +74,14 @@ public:
 	static const int   MAX_SUBSTEPS;
 	static const float MAX_FRAME_SECONDS;
 
+	static const float DEFAULT_LINEAR_DAMPING;
+	static const float DEFAULT_ANGULAR_DAMPING;
+
 private:
 	orb::IRigidBody* AddBox(const glm::vec3& extents, const glm::vec3& position,
-	                        float mass, bool enableGravity);
+	                        float mass, bool enableGravity,
+	                        float linearDamping = DEFAULT_LINEAR_DAMPING,
+	                        float angularDamping = DEFAULT_ANGULAR_DAMPING);
 
 	orb::PhysicsWorld*      m_world = nullptr;
 	orb::IBroadphase*       m_broadphase = nullptr;

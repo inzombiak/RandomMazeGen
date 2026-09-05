@@ -33,6 +33,21 @@ void ParseCommandLineArguments()
 			Globals::STARTUP_VALS.physics_test = true;
 			Globals::STARTUP_VALS.physics_headless = true;
 		}
+		if (::wcscmp(argv[i], L"-physicsfixed") == 0)
+		{
+			Globals::STARTUP_VALS.physics_test = true;
+			Globals::STARTUP_VALS.physics_fixed = true;
+		}
+		if (::wcscmp(argv[i], L"-physicssteps") == 0)
+		{
+			Globals::STARTUP_VALS.physics_test = true;
+			Globals::STARTUP_VALS.physics_fixed = true;
+			Globals::STARTUP_VALS.physics_steps = ::wcstol(argv[++i], nullptr, 10);
+		}
+		if (::wcscmp(argv[i], L"-physicstraceevery") == 0)
+		{
+			Globals::STARTUP_VALS.physics_trace_every = ::wcstol(argv[++i], nullptr, 10);
+		}
 	}
 
 	// Free memory allocated by CommandLineToArgvW

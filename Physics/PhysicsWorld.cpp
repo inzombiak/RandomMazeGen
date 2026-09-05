@@ -169,8 +169,8 @@ void PhysicsWorld::StepSimulation(float timeStep, int maxSubSteps, float fixedTi
 			{
 				ci = it->second.m_contacts[j];
 				m_physDebugDrawer->DrawPoint(ci.worldPos, 0.2f, glm::vec3(0, 1, 1));
-				m_physDebugDrawer->DrawLine(pos1, pos1 + ci.localPointA, glm::vec3(0.5, 0.5, 0.5));
-				m_physDebugDrawer->DrawLine(pos2, pos2 + ci.localPointB, glm::vec3(0.5, 0.f, 0.5));
+				m_physDebugDrawer->DrawLine(pos1, pos1 + it->second.m_bodyA->GetOBB().localAxes * ci.localPointA, glm::vec3(0.5, 0.5, 0.5));
+				m_physDebugDrawer->DrawLine(pos2, pos2 + it->second.m_bodyB->GetOBB().localAxes * ci.localPointB, glm::vec3(0.5, 0.f, 0.5));
 			}
 		}
 	}
@@ -195,6 +195,8 @@ void PhysicsWorld::PredictMotion(float timeStep)
 	glm::quat rot;
 	for (unsigned int i = 0; i < m_nonStaticRigidBodies.size(); ++i)
 	{
+		m_nonStaticRigidBodies[i]->ApplyDamping(timeStep);
+
 		linVel = m_nonStaticRigidBodies[i]->GetLinearVelocity();
 		angVel = m_nonStaticRigidBodies[i]->GetAngularVelocity();
 		totalF = m_nonStaticRigidBodies[i]->GetTotalForce();
@@ -260,46 +262,44 @@ void PhysicsWorld::PerformMovement(float timeStep)
 void PhysicsWorld::PerformCollisionCheck(float dt)
 {
 	auto collidingPairs = m_broadphase->GetCollisionPairs();
-	
-	if (collidingPairs.size() != 0)
+
+	if (collidingPairs.size() == 0)
 	{
-		std::vector<Manifold> newManifolds;
-		newManifolds = m_narrowphase->CheckCollision(collidingPairs, NarrowphaseErrorCalback);
-		if (newManifolds.size() == 0)
-		{
-			m_manifolds.clear();
-			return;
-		}
-			
-		//This requires improvement, shouldn't have to recreate map every frame
-		ManifoldMap manifoldMap;
-		ManifoldMapIter it;
-
-		for (int i = 0; i < newManifolds.size(); ++i)
-		{
-			ManifoldKey key(newManifolds[i].m_bodyA, newManifolds[i].m_bodyB);
-
-			it = m_manifolds.find(key);
-
-			//If no manifold is found, add it and move on
-			if (it == m_manifolds.end())
-			{
-				manifoldMap.emplace(key, newManifolds[i]);
-
-				continue;
-			}
-
-			//Otherwise we need to merge
-			it->second.Update(newManifolds[i].m_contacts.data(), (unsigned int)newManifolds[i].m_contacts.size());// , newManifolds[i].m_contactCount);
-			it->second.m_isPersistent = true;
-			//Add it to the new map, this step needs to be improved
-			manifoldMap.emplace(it->first, it->second);
-			newManifolds[i].m_isPersistent = true;
-			newManifolds[i].m_contacts = it->second.m_contacts;
-		}
-		m_manifolds = manifoldMap;
-		m_constraintSolver->SolveConstraints2(newManifolds, dt);
+		m_manifolds.clear();
+		return;
 	}
+
+	std::vector<Manifold> newManifolds;
+	newManifolds = m_narrowphase->CheckCollision(collidingPairs, NarrowphaseErrorCalback);
+	if (newManifolds.size() == 0)
+	{
+		m_manifolds.clear();
+		return;
+	}
+
+	ManifoldMapIter it;
+	for (int i = 0; i < newManifolds.size(); ++i)
+	{
+		ManifoldKey key(newManifolds[i].m_bodyA, newManifolds[i].m_bodyB);
+
+		it = m_manifolds.find(key);
+		if (it == m_manifolds.end())
+			continue;
+
+		it->second.Update(newManifolds[i].m_contacts.data(), (unsigned int)newManifolds[i].m_contacts.size());
+		newManifolds[i].m_isPersistent = true;
+		newManifolds[i].m_contacts = it->second.m_contacts;
+	}
+
+	m_constraintSolver->SolveConstraints2(newManifolds, dt);
+
+	ManifoldMap manifoldMap;
+	for (int i = 0; i < newManifolds.size(); ++i)
+	{
+		ManifoldKey key(newManifolds[i].m_bodyA, newManifolds[i].m_bodyB);
+		manifoldMap.emplace(key, newManifolds[i]);
+	}
+	m_manifolds = manifoldMap;
 }
 
 void PhysicsWorld::NarrowphaseErrorCalback(std::vector<glm::vec3> finalResult)
