@@ -6,13 +6,13 @@
 namespace orb
 {
 
-///TODO: ADD AABB REMOVAL
 class IBroadphase
 {
 public:
 	virtual ~IBroadphase() {}
 
 	virtual void AddAABB(const PhysicsDefs::AABB *aabb) = 0;
+	virtual void RemoveAABB(const PhysicsDefs::AABB *aabb) = 0;
 	virtual void Update() = 0;
 
 	virtual const std::vector<PhysicsDefs::CollisionPair>& GetCollisionPairs() = 0;

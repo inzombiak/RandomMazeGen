@@ -15,6 +15,11 @@ const std::vector<PhysicsDefs::CollisionPair>& BroadphaseAABB::GetCollisionPairs
 		aabb1Inverse = glm::inverse(m_aabbs[i]->worldTransform);
 		for (int j = i + 1; j < m_aabbs.size(); ++j)
 		{
+			// Two static bodies can never collide with each other.
+			if (m_aabbs[i]->body && m_aabbs[j]->body &&
+				m_aabbs[i]->body->IsStatic() && m_aabbs[j]->body->IsStatic())
+				continue;
+
 			aabb2to1 = aabb1Inverse * m_aabbs[j]->worldTransform;
 			otherAABBtoLocal.min = glm::vec3(aabb2to1 * glm::vec4(m_aabbs[j]->min, 1.f));
 			otherAABBtoLocal.max = glm::vec3(aabb2to1 * glm::vec4(m_aabbs[j]->max, 1.f));

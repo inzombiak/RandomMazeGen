@@ -15,6 +15,10 @@ public:
 
 	unsigned int GetId() const { return m_id; }
 
+	// Zero mass means infinite mass: the body never integrates, never receives
+	// gravity, and never pairs against another static body.
+	bool IsStatic() const { return m_mass == 0.f; }
+
 	void ClearForces();
 
 	void ApplyGravity();

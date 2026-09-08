@@ -1,4 +1,4 @@
-<?xml version="1.0" encoding="utf-8"?>
+﻿<?xml version="1.0" encoding="utf-8"?>
 <Project DefaultTargets="Build" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
   <ItemGroup Label="ProjectConfigurations">
     <ProjectConfiguration Include="Debug|x64"><Configuration>Debug</Configuration><Platform>x64</Platform></ProjectConfiguration>
@@ -51,6 +51,7 @@
   <ItemGroup>
     <ClCompile Include="BoxShape.cpp" />
     <ClCompile Include="BroadphaseAABB.cpp" />
+    <ClCompile Include="BroadphaseUniformGrid.cpp" />
     <ClCompile Include="ConstraintSolverSeqImpulse.cpp" />
     <ClCompile Include="ICollisionShape.cpp" />
     <ClCompile Include="IRigidBody.cpp" />
@@ -63,6 +64,7 @@
   <ItemGroup>
     <ClInclude Include="BoxShape.h" />
     <ClInclude Include="BroadphaseAABB.h" />
+    <ClInclude Include="BroadphaseUniformGrid.h" />
     <ClInclude Include="ConstraintSolverSeqImpulse.h" />
     <ClInclude Include="IBroadphase.h" />
     <ClInclude Include="ICollisionShape.h" />

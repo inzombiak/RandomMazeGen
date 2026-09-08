@@ -18,6 +18,7 @@ namespace Globals {
 		bool physics_fixed = false;
 		int  physics_steps = 0;
 		int  physics_trace_every = 30;
+		int  physics_maze = 0;
 	};
 
 	extern bool VSYNC_ENABLED;

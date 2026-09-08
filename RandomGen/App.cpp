@@ -127,8 +127,16 @@ bool App::LoadContent() {
     GenerateMap(m_width, m_height, m_rows, m_columns);
     RENDERER->ResizeDepthBuffer(m_width, m_height);
 
-    if (Globals::STARTUP_VALS.physics_test)
+    if (Globals::STARTUP_VALS.physics_maze > 0)
+    {
+        m_physicsMazeMode = true;
+        m_mazePropCount = Globals::STARTUP_VALS.physics_maze;
+        m_mazeCollisionStale = true;
+    }
+    else if (Globals::STARTUP_VALS.physics_test)
+    {
         SetPhysicsTestEnabled(true);
+    }
 
     m_contentLoaded = true;
     return true;
@@ -211,6 +219,113 @@ void App::BuildRenderablesFromTiles() {
     AppendPhysicsRenderables();
 }
 
+void App::BuildMazeCollision()
+{
+    // Collision walls are the same thickness as the visual ones. Fast props
+    // will tunnel at this thickness; widening collision independently of the
+    // render geometry is the cheap mitigation when that gets tuned.
+    const float WALL_THICKNESS = 0.2f;
+    const float TILE_PITCH     = 2.0f;
+
+    m_physics.BuildEmpty();
+
+    auto solid = [&](int i, int j) {
+        return m_tileProperties[i][j].type != MazeDefs::TileType::Empty;
+    };
+    auto hasWall = [&](int i, int j, int p) {
+        if (!solid(i, j))
+            return false;
+        return (m_tileProperties[i][j].directions & MazeDefs::DIRECTIONS[p]) != MazeDefs::DIRECTIONS[p];
+    };
+
+    // Floors, merged along each row.
+    for (int i = 0; i < m_rows; ++i)
+    {
+        int j = 0;
+        while (j < m_columns)
+        {
+            if (!solid(i, j)) { ++j; continue; }
+            const int j0 = j;
+            while (j < m_columns && solid(i, j)) ++j;
+            const int j1 = j - 1;
+            const int span = j1 - j0 + 1;
+
+            const float cx = TILE_PITCH * (j0 + j1) * 0.5f;
+            const float cz = TILE_PITCH * i;
+            m_physics.AddStaticBox(glm::vec3(TILE_PITCH * span, 2.0f, TILE_PITCH),
+                                   glm::vec3(cx, 0.0f, cz));
+        }
+    }
+
+    // Walls, merged along whichever axis each one runs.
+    for (int p = 0; p < 4; ++p)
+    {
+        const auto delta = MazeDefs::DIRECTION_CHANGES[p];
+
+        if (delta.first != 0)
+        {
+            // Runs along X at a fixed Z.
+            for (int i = 0; i < m_rows; ++i)
+            {
+                int j = 0;
+                while (j < m_columns)
+                {
+                    if (!hasWall(i, j, p)) { ++j; continue; }
+                    const int j0 = j;
+                    while (j < m_columns && hasWall(i, j, p)) ++j;
+                    const int j1 = j - 1;
+                    const int span = j1 - j0 + 1;
+
+                    const float cx = TILE_PITCH * (j0 + j1) * 0.5f;
+                    const float cz = TILE_PITCH * i + delta.first;
+                    m_physics.AddStaticBox(glm::vec3(TILE_PITCH * span, 2.0f, WALL_THICKNESS),
+                                           glm::vec3(cx, 2.0f, cz));
+                }
+            }
+        }
+        else
+        {
+            // Runs along Z at a fixed X.
+            for (int j = 0; j < m_columns; ++j)
+            {
+                int i = 0;
+                while (i < m_rows)
+                {
+                    if (!hasWall(i, j, p)) { ++i; continue; }
+                    const int i0 = i;
+                    while (i < m_rows && hasWall(i, j, p)) ++i;
+                    const int i1 = i - 1;
+                    const int span = i1 - i0 + 1;
+
+                    const float cz = TILE_PITCH * (i0 + i1) * 0.5f;
+                    const float cx = TILE_PITCH * j + delta.second;
+                    m_physics.AddStaticBox(glm::vec3(WALL_THICKNESS, 2.0f, TILE_PITCH * span),
+                                           glm::vec3(cx, 2.0f, cz));
+                }
+            }
+        }
+    }
+
+    // Props, dropped over open tiles.
+    int dropped = 0;
+    for (int i = 0; i < m_rows && dropped < m_mazePropCount; ++i)
+    {
+        for (int j = 0; j < m_columns && dropped < m_mazePropCount; ++j)
+        {
+            if (!solid(i, j) || ((i * m_columns + j) % 7) != 0)
+                continue;
+            m_physics.AddDynamicBox(glm::vec3(1.0f, 1.0f, 1.0f),
+                                    glm::vec3(TILE_PITCH * j, 6.0f + (dropped % 4) * 2.0f, TILE_PITCH * i),
+                                    2.0f);
+            ++dropped;
+        }
+    }
+
+    std::cout << "[maze collision] bodies=" << m_physics.BodyCount()
+              << " props=" << dropped
+              << " unmerged=" << m_mazeRenderableCount << std::endl;
+}
+
 void App::SetPhysicsTestEnabled(bool enabled)
 {
     if (enabled == m_physicsTestEnabled)
@@ -251,6 +366,11 @@ void App::AppendPhysicsRenderables()
         r.m_scale       = v.renderScale;
         // 0 picks the grass/floor texture, 1 the wall texture; give dynamic
         // bodies the wall look so they read against the ground slab.
+        // In maze mode the static geometry is already drawn by the tile pass;
+        // only the props need instances.
+        if (m_physicsMazeMode && v.isStatic)
+            continue;
+
         r.m_entityData  = v.isStatic ? 0u : 1u;
         m_renderables.push_back(std::move(r));
     }
@@ -328,6 +448,25 @@ void App::OnUpdate(UpdateEventArgs& e)
 
         // Clear dirty flag after sync for both modes
         ClearMazeDirtyFlag();
+
+        // Tiles just moved, so any collision built from them is stale.
+        m_mazeCollisionStale = true;
+        m_secondsSinceTileSync = 0.0;
+    }
+
+    // R11: GridManager carves from detached threads and the only handshake is
+    // the dirty flag, so collision is rebuilt only once generation has gone
+    // quiet -- never incrementally during Step-mode visualisation.
+    if (m_physicsMazeMode && m_mazeCollisionStale)
+    {
+        m_secondsSinceTileSync += dt;
+        const double MAZE_QUIET_SECONDS = 0.25;
+        if (!IsMazeDirty() && m_secondsSinceTileSync >= MAZE_QUIET_SECONDS)
+        {
+            BuildMazeCollision();
+            m_mazeCollisionStale = false;
+            m_physicsTestEnabled = true;
+        }
     }
 
     // While the physics test runs the bodies move every frame, so the

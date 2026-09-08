@@ -21,17 +21,35 @@ PhysicsWorld::PhysicsWorld(IBroadphase* broadphase, INarrowphase* narrowphase, I
 void PhysicsWorld::AddRigidBody(IRigidBody* body)
 {
 	body->SetGravity(m_gravity);
-	m_nonStaticRigidBodies.push_back(body);
+	if (body->IsStatic())
+		m_staticRigidBodies.push_back(body);
+	else
+		m_nonStaticRigidBodies.push_back(body);
 	m_broadphase->AddAABB(&body->GetAABB());
 }
 
 void PhysicsWorld::RemoveRigidBody(IRigidBody* body)
 {
-	auto it = std::find(m_nonStaticRigidBodies.begin(), m_nonStaticRigidBodies.end(), body);
-	if (it != m_nonStaticRigidBodies.end())
+	m_broadphase->RemoveAABB(&body->GetAABB());
+
+	// std::swap on the ITERATORS swapped two local copies and popped whichever
+	// body happened to be last, leaving the target in the list.
+	std::vector<IRigidBody*>& bodies = body->IsStatic() ? m_staticRigidBodies : m_nonStaticRigidBodies;
+	auto it = std::find(bodies.begin(), bodies.end(), body);
+	if (it != bodies.end())
 	{
-		std::swap(it, m_nonStaticRigidBodies.end() - 1);
-		m_nonStaticRigidBodies.pop_back();
+		std::swap(*it, bodies.back());
+		bodies.pop_back();
+	}
+
+	// Manifolds hold raw body pointers, so any referencing this body has to go
+	// with it or the next solve dereferences freed memory.
+	for (auto mit = m_manifolds.begin(); mit != m_manifolds.end(); )
+	{
+		if (mit->second.m_bodyA == body || mit->second.m_bodyB == body)
+			mit = m_manifolds.erase(mit);
+		else
+			++mit;
 	}
 }
 
@@ -109,15 +127,18 @@ void PhysicsWorld::StepSimulation(float timeStep, int maxSubSteps, float fixedTi
 	PhysicsDefs::AABB aabb;
 	PhysicsDefs::OBB obb;
 	glm::vec3 color(1.f, 0.f, 0.f), colorOBB(0.f, 0.f, 1.f);
-	for (unsigned int i = 0; i < m_nonStaticRigidBodies.size(); ++i)
+	const std::vector<IRigidBody*>* debugLists[2] = { &m_nonStaticRigidBodies, &m_staticRigidBodies };
+	for (int l = 0; l < 2; ++l)
+	for (unsigned int i = 0; i < debugLists[l]->size(); ++i)
 	{
-		aabb = m_nonStaticRigidBodies[i]->GetAABB();
-		auto transform = m_nonStaticRigidBodies[i]->GetTransform();
+		IRigidBody* dbgBody = (*debugLists[l])[i];
+		aabb = dbgBody->GetAABB();
+		auto transform = dbgBody->GetTransform();
 		aabb.min = transform.GetOrigin() + aabb.min;
 		aabb.max = transform.GetOrigin() + aabb.max;
 		m_physDebugDrawer->DrawAABB(aabb.min, aabb.max, color);
 
-		obb = m_nonStaticRigidBodies[i]->GetOBB();
+		obb = dbgBody->GetOBB();
 
 		glm::vec3 currentVertex(-1, -1, -1);
 		glm::vec3 x, y, z;

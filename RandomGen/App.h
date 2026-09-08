@@ -136,11 +136,21 @@ private:
     std::vector<Renderable> m_renderables;
 
     void BuildRenderablesFromTiles();
+
+    // Emits static collision geometry for the maze, merging colinear floor and
+    // wall runs so the body count stays an order of magnitude below one box per
+    // tile. Rebuilt only once generation has gone quiet -- GridManager carves
+    // from detached threads, so rebuilding mid-generation is a genuine race.
+    void BuildMazeCollision();
     void AppendPhysicsRenderables();
     void SetPhysicsTestEnabled(bool enabled);
 
     PhysicsScene m_physics;
     bool m_physicsTestEnabled = false;
+    bool m_physicsMazeMode = false;
+    bool m_mazeCollisionStale = false;
+    double m_secondsSinceTileSync = 0.0;
+    int  m_mazePropCount = 0;
     size_t m_mazeRenderableCount = 0;
     std::vector<PhysicsScene::BodyView> m_bodyViews;
 

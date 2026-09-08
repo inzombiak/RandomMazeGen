@@ -3,6 +3,8 @@
 
 #include "IBroadphase.h"
 
+#include <algorithm>
+
 namespace orb
 {
 
@@ -13,6 +15,16 @@ public:
 	virtual void AddAABB(const PhysicsDefs::AABB *aabb)
 	{
 		m_aabbs.push_back(aabb);
+	}
+
+	virtual void RemoveAABB(const PhysicsDefs::AABB *aabb)
+	{
+		auto it = std::find(m_aabbs.begin(), m_aabbs.end(), aabb);
+		if (it != m_aabbs.end())
+		{
+			std::swap(*it, m_aabbs.back());
+			m_aabbs.pop_back();
+		}
 	}
 
 	virtual void Update()

@@ -1,7 +1,7 @@
 #include "PhysicsScene.h"
 
 #include "PhysicsWorld.h"
-#include "BroadphaseAABB.h"
+#include "BroadphaseUniformGrid.h"
 #include "NarrowphaseSAT.h"
 #include "ConstraintSolverSeqImpulse.h"
 #include "BoxShape.h"
@@ -99,7 +99,7 @@ void PhysicsScene::BuildBoxStackTest()
 {
 	Clear();
 
-	m_broadphase  = new orb::BroadphaseAABB();
+	m_broadphase  = new orb::BroadphaseUniformGrid();
 	m_narrowphase = new orb::NarrowphaseSAT();
 	m_solver      = new orb::ConstraintSolverSeqImpulse();
 	m_world       = new orb::PhysicsWorld(m_broadphase, m_narrowphase, m_solver);
@@ -122,6 +122,29 @@ void PhysicsScene::BuildBoxStackTest()
 	AddBox(glm::vec3(2.0f, 2.0f, 2.0f), glm::vec3(0.0f, 14.0f, 0.0f), 5.0f, true);
 	AddBox(glm::vec3(2.0f, 2.0f, 2.0f), glm::vec3(0.0f, 18.0f, 0.0f), 1.0f, true);
 	AddBox(glm::vec3(2.0f, 2.0f, 2.0f), glm::vec3(0.0f, 22.0f, 0.0f), 1.0f, true);
+}
+
+void PhysicsScene::BuildEmpty()
+{
+	Clear();
+
+	m_broadphase  = new orb::BroadphaseUniformGrid();
+	m_narrowphase = new orb::NarrowphaseSAT();
+	m_solver      = new orb::ConstraintSolverSeqImpulse();
+	m_world       = new orb::PhysicsWorld(m_broadphase, m_narrowphase, m_solver);
+
+	m_world->SetGravity(glm::vec3(0.0f, -9.8f, 0.0f));
+	m_world->SetPhysDebugDrawer(m_debugDraw);
+}
+
+orb::IRigidBody* PhysicsScene::AddStaticBox(const glm::vec3& extents, const glm::vec3& position)
+{
+	return AddBox(extents, position, 0.0f, false, 0.0f, 0.0f);
+}
+
+orb::IRigidBody* PhysicsScene::AddDynamicBox(const glm::vec3& extents, const glm::vec3& position, float mass)
+{
+	return AddBox(extents, position, mass, true);
 }
 
 void PhysicsScene::SetDebugDraw(orb::IDebugDraw* debugDraw)

@@ -46,6 +46,13 @@ public:
 	// Reproduces Orbitals' Engine::Test(): a static ground slab, one box that
 	// only spins (gravity off, torque impulse), and a three-box falling stack.
 	void BuildBoxStackTest();
+
+	// An empty world, ready to be filled with maze geometry and props.
+	void BuildEmpty();
+
+	orb::IRigidBody* AddStaticBox(const glm::vec3& extents, const glm::vec3& position);
+	orb::IRigidBody* AddDynamicBox(const glm::vec3& extents, const glm::vec3& position, float mass);
+
 	void Clear();
 
 	// Feed real frame time; PhysicsWorld does the fixed-step accumulation and
