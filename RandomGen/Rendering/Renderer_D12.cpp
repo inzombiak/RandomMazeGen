@@ -710,6 +710,8 @@ void Renderer_D12::UpdateInstanceData(const std::vector<Renderable>& renderables
 	}
 
 	m_worldWidth = (int)(maxZ + 2);
+	if (m_perEntityDataBuffer)
+		FreeSRVAlloc(m_perEntityDataBuffer->m_srvAlloc);
 	m_perEntityDataBuffer = CreateSRVBuffer("PerEntityBuffer", sizeof(PerEntityData), peds.size(), peds.data());
 
 	auto fenceValue = m_commQueue->ExecuteActiveCommandList();
@@ -747,14 +749,23 @@ SRVAllocation Renderer_D12::GetNextSRVAlloc() {
 	if (pageIdx == -1) {
 		SRVAllocationPage srvAP(std::move(m_shaderResourceAllocator->Allocate(128)));
 		out = srvAP.GetNextHandle();
+		out.pageIdx = (uint32_t)m_srvAllocPages.size();
 		m_srvAllocPages.emplace_back(std::move(srvAP));
 
 	}
 	else {
 		out = m_srvAllocPages[pageIdx].GetNextHandle();
+		out.pageIdx = (uint32_t)pageIdx;
 	}
 
 	return out;
+}
+
+void Renderer_D12::FreeSRVAlloc(const SRVAllocation& alloc) {
+	if (alloc.pageIdx == SRVAllocation::INVALID_PAGE || alloc.pageIdx >= m_srvAllocPages.size())
+		return;
+
+	m_srvAllocPages[alloc.pageIdx].FreeAllocation(alloc);
 }
 
 

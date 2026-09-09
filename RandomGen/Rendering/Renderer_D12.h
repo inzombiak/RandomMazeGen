@@ -179,6 +179,7 @@ class Renderer_D12 {
 		std::shared_ptr<Buffer> CreateCBVBuffer(const std::string& name, size_t size, void* data, void** dataCPUHandle, std::shared_ptr<CommandList_D12> cmdList);
 
 		SRVAllocation GetNextSRVAlloc();
+		void FreeSRVAlloc(const SRVAllocation& alloc);
 
 		D3D12_CPU_DESCRIPTOR_HANDLE GetCurrentRenderTargetView() const;
 

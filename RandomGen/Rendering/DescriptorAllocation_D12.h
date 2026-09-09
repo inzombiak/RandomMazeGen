@@ -56,8 +56,12 @@ private:
 };
 
 struct SRVAllocation {
+    static const uint32_t INVALID_PAGE = 0xFFFFFFFFu;
+
     D3D12_CPU_DESCRIPTOR_HANDLE cpuHandle;
     uint32_t allocId = 0;
+    // Page the slot came from, so it can be routed back to its owner.
+    uint32_t pageIdx = INVALID_PAGE;
 };
 
 class SRVAllocationPage {
